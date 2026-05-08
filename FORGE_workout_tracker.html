@@ -1025,8 +1025,17 @@ select.input { appearance: none; }
       <div id="run-active-timer" style="display:none"></div>
     </div>
 
-    <button class="btn btn-primary btn-full" onclick="saveUnifiedSession()">Save Session</button>
-    <button class="btn btn-ghost btn-full btn-sm" onclick="closeModal('modal-log')" style="margin-top:8px">Cancel</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <button class="btn btn-secondary btn-full" onclick="saveUnifiedSession('planned')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Plan
+      </button>
+      <button class="btn btn-primary btn-full" onclick="saveUnifiedSession('completed')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Complete
+      </button>
+    </div>
+    <button class="btn btn-ghost btn-full btn-sm" onclick="closeModal('modal-log')">Cancel</button>
   </div>
 </div>
 
@@ -1414,6 +1423,9 @@ function openLogModal() {
   document.getElementById('strength-session-name').value = '';
   exerciseCount = 0;
   Object.keys(blockMetaState).forEach(k => delete blockMetaState[k]);
+  window._editingSessionId = null;
+  window._editingMode = null;
+  resetLogModalButtons();
   addExerciseBlock();
   renderRunProgramSelect();
   openModal('modal-log');
@@ -1787,17 +1799,21 @@ function collectExercises() {
 // ============================================================
 // SAVE UNIFIED SESSION
 // ============================================================
-function saveUnifiedSession() {
+function saveUnifiedSession(status = 'completed', existingId = null) {
   const name = document.getElementById('strength-session-name').value.trim() || 'Session';
   const exercises = collectExercises();
   if (!exercises.length) { alert('Add at least one exercise.'); return; }
 
   const state = getState();
+  const now = new Date().toISOString();
+
   const session = {
-    id: Date.now().toString(),
+    id: existingId || Date.now().toString(),
     type: 'unified',
+    status, // 'planned' | 'completed'
     name,
-    date: new Date().toISOString(),
+    date: existingId ? (state.sessions.find(s => s.id === existingId)?.date || now) : now,
+    completedAt: status === 'completed' ? now : null,
     exercises,
     newPRs: 0
   };
@@ -1872,13 +1888,24 @@ function saveUnifiedSession() {
   });
 
   session.newPRs = prCount;
-  state.sessions.push(session);
+
+  // Replace existing or push new
+  if (existingId) {
+    const idx = state.sessions.findIndex(s => s.id === existingId);
+    if (idx > -1) state.sessions[idx] = session;
+    else state.sessions.push(session);
+  } else {
+    state.sessions.push(session);
+  }
+
   saveState(state);
   closeModal('modal-log');
   renderLogList();
   renderDashboard();
-  if (prCount) showToast(`🏆 ${prCount} new PR${prCount > 1 ? 's' : ''}!`);
-  else showToast('Session saved!');
+
+  if (status === 'planned') showToast('Workout planned! 📅');
+  else if (prCount) showToast(`🏆 ${prCount} new PR${prCount > 1 ? 's' : ''}!`);
+  else showToast('Session completed! ✓');
 }
 
 // Keep old functions that other parts call
@@ -1897,47 +1924,67 @@ function renderLogList() {
     return;
   }
 
-  // Group by month
+  const planned = sessions.filter(s => s.status === 'planned');
+  const completed = sessions.filter(s => s.status !== 'planned');
+
+  function sessionRowHTML(s) {
+    const d = new Date(s.date);
+    const exes = s.exercises || [];
+    const hasCardio = exes.some(e => ['treadmill','peloton','row'].includes(e.exType));
+    const hasStrength = exes.some(e => e.exType === 'strength' || e.exType === 'core');
+    const tagClass = s.type === 'run' ? 'tag-run' : hasCardio && !hasStrength ? 'tag-cardio' : 'tag-strength';
+    const tagLabel = s.type === 'run' ? 'Run' : hasCardio && hasStrength ? 'Mixed' : hasCardio ? 'Cardio' : 'Lift';
+    const vol = exes.filter(e => e.exType === 'strength' || e.exType === 'core')
+      .reduce((sum, ex) => sum + (ex.sets||[]).reduce((ss, set) => ss + (set.weight||0)*(set.reps||0), 0), 0);
+    const parts = [];
+    const strengthEx = exes.filter(e => e.exType === 'strength' || e.exType === 'core');
+    const cardioEx = exes.filter(e => ['treadmill','peloton','row'].includes(e.exType));
+    if (strengthEx.length) parts.push(`${strengthEx.length} exercise${strengthEx.length>1?'s':''}`);
+    if (vol > 0) parts.push(Math.round(vol).toLocaleString() + ' lbs');
+    if (cardioEx.length) parts.push(cardioEx.map(e => e.name).join(', '));
+
+    const isPlanned = s.status === 'planned';
+    return `<div class="history-entry" onclick="viewSession('${s.id}')" style="${isPlanned ? 'opacity:0.85' : ''}">
+      <div class="history-date" style="text-align:center">
+        <div>${d.toLocaleDateString('en-US',{month:'short'})}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;line-height:1">${d.getDate()}</div>
+      </div>
+      <div class="history-content">
+        <div class="history-title">
+          ${s.name}
+          ${isPlanned ? '<span style="font-family:\'DM Mono\',monospace;font-size:9px;background:rgba(71,200,255,0.15);color:#47c8ff;border:1px solid rgba(71,200,255,0.3);border-radius:4px;padding:2px 6px;margin-left:6px">PLANNED</span>' : ''}
+          ${s.newPRs ? '<span class="pr-badge">'+s.newPRs+' PR</span>' : ''}
+        </div>
+        <div class="history-detail"><span class="tag ${tagClass}">${tagLabel}</span> &nbsp;${parts.join(' · ')}</div>
+      </div>
+    </div>`;
+  }
+
+  let html = '';
+
+  if (planned.length) {
+    html += `<div style="margin-bottom:4px">
+      <div class="section-title" style="color:#47c8ff;margin-bottom:10px">📅 Planned</div>
+      ${planned.map(sessionRowHTML).join('')}
+    </div><hr class="divider">`;
+  }
+
+  // Group completed by month
   const groups = {};
-  sessions.forEach(s => {
+  completed.forEach(s => {
     const key = new Date(s.date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     if (!groups[key]) groups[key] = [];
     groups[key].push(s);
   });
 
-  el.innerHTML = Object.entries(groups).map(([month, sArr]) => `
+  html += Object.entries(groups).map(([month, sArr]) => `
     <div>
       <div class="section-title" style="margin-bottom:10px">${month}</div>
-      ${sArr.map(s => {
-        const d = new Date(s.date);
-        // Determine dominant type for tag display
-        const exes = s.exercises || [];
-        const hasCardio = exes.some(e => ['treadmill','peloton','row'].includes(e.exType));
-        const hasStrength = exes.some(e => e.exType === 'strength' || e.exType === 'core');
-        const hasRun = s.type === 'run';
-        const tagClass = hasRun ? 'tag-run' : hasCardio && !hasStrength ? 'tag-cardio' : 'tag-strength';
-        const tagLabel = hasRun ? 'Run' : hasCardio && hasStrength ? 'Mixed' : hasCardio ? 'Cardio' : 'Lift';
-
-        // Build detail string
-        const strengthEx = exes.filter(e => e.exType === 'strength' || e.exType === 'core');
-        const cardioEx = exes.filter(e => ['treadmill','peloton','row'].includes(e.exType));
-        const vol = strengthEx.reduce((sum, ex) => sum + (ex.sets||[]).reduce((ss, set) =>
-          ss + (set.weight||0) * (set.reps||0), 0), 0);
-        const parts = [];
-        if (strengthEx.length) parts.push(`${strengthEx.length} exercise${strengthEx.length>1?'s':''}`);
-        if (vol > 0) parts.push(Math.round(vol).toLocaleString() + ' lbs');
-        if (cardioEx.length) parts.push(cardioEx.map(e => e.name).join(', '));
-
-        return `<div class="history-entry" onclick="viewSession('${s.id}')">
-          <div class="history-date">${d.toLocaleDateString('en-US',{month:'short',day:'numeric'}).replace(' ','\n')}</div>
-          <div class="history-content">
-            <div class="history-title">${s.name} ${s.newPRs ? '<span class="pr-badge">'+s.newPRs+' PR</span>' : ''}</div>
-            <div class="history-detail"><span class="tag ${tagClass}">${tagLabel}</span> &nbsp;${parts.join(' · ')}</div>
-          </div>
-        </div>`;
-      }).join('')}
+      ${sArr.map(sessionRowHTML).join('')}
     </div>
   `).join('<hr class="divider">');
+
+  el.innerHTML = html;
 }
 
 function viewSession(id) {
@@ -1945,49 +1992,246 @@ function viewSession(id) {
   const s = state.sessions.find(s => s.id === id);
   if (!s) return;
   const d = new Date(s.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const isPlanned = s.status === 'planned';
 
   let content = `<div class="modal-title">${s.name}</div>
-    <div style="margin-bottom:16px">
-      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${d}</span>
+    <div style="margin-bottom:16px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+      ${isPlanned ? '<span style="font-family:\'DM Mono\',monospace;font-size:10px;background:rgba(71,200,255,0.15);color:#47c8ff;border:1px solid rgba(71,200,255,0.3);border-radius:4px;padding:3px 8px">PLANNED</span>' : '<span style="font-family:\'DM Mono\',monospace;font-size:10px;background:rgba(71,255,138,0.12);color:var(--success);border:1px solid rgba(71,255,138,0.25);border-radius:4px;padding:3px 8px">COMPLETED</span>'}
+      <span style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text2)">${d}</span>
     </div>`;
 
   const exercises = s.exercises || [];
-
   content += exercises.map(ex => {
     const isCardioEx = ex.exType === 'treadmill' || ex.exType === 'peloton' || ex.exType === 'row';
     if (isCardioEx) {
       const m = ex.metrics || {};
       const metricLines = Object.entries(m).map(([k, v]) => {
         const def = METRIC_DEFS[k];
-        return `<span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent3)">${def?.label || k}: <strong>${v}</strong></span>`;
+        return `<span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent3)">${def?.label||k}: <strong>${v}</strong></span>`;
       }).join(' &nbsp;·&nbsp; ');
-      const typeColor = ex.exType === 'treadmill' ? 'tag-run' : 'tag-cardio';
       return `<div style="margin-bottom:14px">
-        <div style="font-weight:500;margin-bottom:6px">${ex.name} <span class="tag ${typeColor}" style="font-size:9px">${ex.exType}</span></div>
-        <div style="padding:8px 0">${metricLines || '<span style="color:var(--text3);font-size:12px">No metrics recorded</span>'}</div>
+        <div style="font-weight:500;margin-bottom:6px">${ex.name} <span class="tag tag-cardio" style="font-size:9px">${ex.exType}</span></div>
+        <div style="padding:8px 0">${metricLines||'<span style="color:var(--text3);font-size:12px">No metrics</span>'}</div>
       </div>`;
     } else {
       const isCore = ex.exType === 'core';
       return `<div style="margin-bottom:14px">
-        <div style="font-weight:500;margin-bottom:6px">${ex.name}${isCore ? ' <span class="mini-tag" style="background:rgba(232,255,71,0.12);color:var(--accent);border:1px solid rgba(232,255,71,0.25);font-size:9px">CORE</span>' : ''}</div>
-        ${(ex.sets||[]).map((set, i) => {
-          const parts = [];
-          if (set.bodyweight) parts.push('Bodyweight');
-          else if (set.weight) parts.push(set.weight + ' lbs');
-          if (set.reps) parts.push(set.reps + ' reps');
-          if (set.time_sec) parts.push(set.time_sec + 's');
+        <div style="font-weight:500;margin-bottom:6px">${ex.name}${isCore?' <span class="mini-tag" style="background:rgba(232,255,71,0.12);color:var(--accent);border:1px solid rgba(232,255,71,0.25);font-size:9px">CORE</span>':''}</div>
+        ${(ex.sets||[]).map((set,i)=>{
+          const parts=[];
+          if(set.bodyweight)parts.push('BW');else if(set.weight)parts.push(set.weight+' lbs');
+          if(set.reps)parts.push(set.reps+' reps');
+          if(set.time_sec)parts.push(set.time_sec+'s');
           return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:12px">
             <span style="color:var(--text3);min-width:20px">${i+1}</span>
             <span>${parts.join(' · ')}</span>
-            ${set.isPR ? '<span class="pr-badge">PR</span>' : ''}
+            ${set.isPR?'<span class="pr-badge">PR</span>':''}
           </div>`;
         }).join('')}
       </div>`;
     }
   }).join('');
 
+  // Action buttons
+  content += `<hr class="divider">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${isPlanned ? `<button class="btn btn-primary btn-full" onclick="editSession('${s.id}','complete')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Complete This Workout
+      </button>` : ''}
+      <button class="btn btn-secondary btn-full" onclick="editSession('${s.id}','edit')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit Session
+      </button>
+      <button class="btn btn-ghost btn-full" onclick="openAddToProgramModal('${s.id}')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M12 12v6M9 15h6"/></svg>
+        Add to Program
+      </button>
+      <button class="btn btn-danger btn-full" onclick="deleteSession('${s.id}')">Delete</button>
+    </div>
+    <button class="btn btn-ghost btn-full btn-sm" onclick="closeModal('modal-view-session')" style="margin-top:8px">Close</button>`;
+
   document.getElementById('view-session-content').innerHTML = content;
   openModal('modal-view-session');
+}
+
+// ============================================================
+// SESSION ACTIONS — edit, delete, add to program
+// ============================================================
+function deleteSession(id) {
+  closeModal('modal-view-session');
+  showConfirm('Delete Session', 'This cannot be undone.', () => {
+    const state = getState();
+    state.sessions = state.sessions.filter(s => s.id !== id);
+    saveState(state);
+    renderLogList();
+    renderDashboard();
+    showToast('Session deleted');
+  });
+}
+
+function editSession(id, mode) {
+  const state = getState();
+  const s = state.sessions.find(s => s.id === id);
+  if (!s) return;
+  closeModal('modal-view-session');
+
+  // Pre-populate the log modal with the session's data
+  document.getElementById('strength-session-name').value = s.name;
+  document.getElementById('exercises-container').innerHTML = '';
+  exerciseCount = 0;
+  Object.keys(blockMetaState).forEach(k => delete blockMetaState[k]);
+
+  (s.exercises || []).forEach(ex => {
+    if (ex.exType === 'treadmill' || ex.exType === 'peloton' || ex.exType === 'row') {
+      addExerciseBlock(ex.name);
+      // Fill in metric values after block is created
+      setTimeout(() => {
+        const meta = Object.entries(blockMetaState).find(([k]) => {
+          const nameEl = document.getElementById('ex-name-' + k);
+          return nameEl && nameEl.value.toLowerCase() === ex.name.toLowerCase();
+        });
+        if (meta) {
+          const id = meta[0];
+          Object.entries(ex.metrics || {}).forEach(([mKey, val]) => {
+            const el = document.getElementById('cm-' + id + '-' + mKey);
+            if (el) el.value = val;
+          });
+        }
+      }, 50);
+    } else {
+      const sets = ex.sets || [{}];
+      addExerciseBlock(ex.name, sets);
+    }
+  });
+
+  // Store which session we're editing and what mode
+  window._editingSessionId = id;
+  window._editingMode = mode; // 'edit' = save back same status, 'complete' = mark completed
+
+  // Swap save buttons temporarily
+  const modal = document.getElementById('modal-log');
+  const btnGrid = modal.querySelector('.btn-primary')?.closest('div[style*="grid"]');
+  if (btnGrid) {
+    if (mode === 'complete') {
+      btnGrid.innerHTML = `
+        <button class="btn btn-secondary btn-full" onclick="finishEditSession('planned')">Save as Planned</button>
+        <button class="btn btn-primary btn-full" onclick="finishEditSession('completed')">Mark Complete ✓</button>
+      `;
+    } else {
+      const origStatus = s.status || 'completed';
+      btnGrid.innerHTML = `
+        <button class="btn btn-secondary btn-full" onclick="finishEditSession('planned')">Save as Planned</button>
+        <button class="btn btn-primary btn-full" onclick="finishEditSession('completed')">Save Complete ✓</button>
+      `;
+    }
+  }
+
+  renderRunProgramSelect();
+  openModal('modal-log');
+}
+
+function finishEditSession(status) {
+  const id = window._editingSessionId;
+  window._editingSessionId = null;
+  window._editingMode = null;
+  saveUnifiedSession(status, id);
+  // Restore original buttons
+  resetLogModalButtons();
+}
+
+function resetLogModalButtons() {
+  const modal = document.getElementById('modal-log');
+  const btnGrid = modal.querySelector('div[style*="grid"]');
+  if (btnGrid) {
+    btnGrid.innerHTML = `
+      <button class="btn btn-secondary btn-full" onclick="saveUnifiedSession('planned')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Plan
+      </button>
+      <button class="btn btn-primary btn-full" onclick="saveUnifiedSession('completed')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Complete
+      </button>
+    `;
+  }
+}
+
+function openAddToProgramModal(sessionId) {
+  const state = getState();
+  const programs = state.programs.filter(p => p.type === 'strength' && p.schedule);
+  closeModal('modal-view-session');
+
+  if (!programs.length) {
+    showToast('No programs found. Build one first.');
+    return;
+  }
+
+  const session = state.sessions.find(s => s.id === sessionId);
+
+  document.getElementById('vault-detail-content').innerHTML = `
+    <div class="modal-title" style="font-size:18px">Add to Program</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">
+      Select a program and week to add <strong>${session?.name || 'this session'}</strong> to.
+    </p>
+    <div class="input-group">
+      <label class="input-label">Program</label>
+      <select class="input" id="atp-program" onchange="renderAtpWeeks()">
+        ${programs.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Week</label>
+      <select class="input" id="atp-week"></select>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="confirmAddToProgram('${sessionId}')">Add to Program</button>
+    <button class="btn btn-ghost btn-full btn-sm" onclick="closeModal('modal-vault-detail')" style="margin-top:8px">Cancel</button>
+  `;
+  openModal('modal-vault-detail');
+  renderAtpWeeks();
+}
+
+function renderAtpWeeks() {
+  const state = getState();
+  const progId = document.getElementById('atp-program')?.value;
+  const prog = state.programs.find(p => p.id === progId);
+  const weekSel = document.getElementById('atp-week');
+  if (!weekSel || !prog?.schedule) return;
+  weekSel.innerHTML = prog.schedule.map((w, i) =>
+    `<option value="${i}">Week ${w.week}${w.theme ? ' — ' + w.theme : ''}</option>`
+  ).join('');
+}
+
+function confirmAddToProgram(sessionId) {
+  const state = getState();
+  const progId = document.getElementById('atp-program')?.value;
+  const weekIdx = parseInt(document.getElementById('atp-week')?.value);
+  const prog = state.programs.find(p => p.id === progId);
+  const session = state.sessions.find(s => s.id === sessionId);
+  if (!prog || !session) return;
+
+  const week = prog.schedule[weekIdx];
+  if (!week) return;
+
+  // Build a new session entry from the logged session
+  const newProgramSession = {
+    day: `Session ${week.sessions.length + 1}`,
+    label: session.name,
+    focus: 'custom',
+    effort: 'custom',
+    exercises: (session.exercises || []).map(ex => ({
+      name: ex.name,
+      sets: ex.sets?.length || 1,
+      reps: ex.sets?.map(s => s.reps).filter(Boolean).join('-') || '—',
+      intensity: ex.sets?.map(s => s.weight ? s.weight + 'lbs' : 'BW').join(', ') || '—',
+      tier: 4
+    }))
+  };
+
+  prog.schedule[weekIdx].sessions.push(newProgramSession);
+  saveState(state);
+  closeModal('modal-vault-detail');
+  showToast(`Added to ${prog.name} — Week ${week.week}`);
 }
 
 // ============================================================
