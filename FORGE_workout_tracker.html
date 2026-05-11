@@ -2996,8 +2996,9 @@ function addSavedWorkoutToProgram(progId, weekIdx, sessionIdx, savedId) {
   const week = prog.schedule[weekIdx];
   if (!week) return;
 
-  const newSession = {
-    day: 'Session ' + (week.sessions.length + 1),
+  // Build replacement session from saved workout
+  const replacementSession = {
+    day: week.sessions[sessionIdx]?.day || ('Session ' + (sessionIdx + 1)),
     label: saved.name,
     focus: 'custom',
     effort: 'custom',
@@ -3010,11 +3011,16 @@ function addSavedWorkoutToProgram(progId, weekIdx, sessionIdx, savedId) {
     }))
   };
 
-  prog.schedule[weekIdx].sessions.push(newSession);
+  // Replace the specific session at sessionIdx
+  if (sessionIdx >= 0 && sessionIdx < week.sessions.length) {
+    week.sessions[sessionIdx] = replacementSession;
+  } else {
+    week.sessions.push(replacementSession);
+  }
+
   saveState(state);
   closeSavedPickerPanel();
-  showToast('Added to Week ' + week.week);
-  // Refresh program view
+  showToast('Session ' + (sessionIdx + 1) + ' replaced with: ' + saved.name);
   showProgramWeek(progId, weekIdx);
 }
 
@@ -3332,7 +3338,7 @@ function showProgramWeek(progId, weekIdx) {
   document.querySelectorAll('.week-tab').forEach((t, i) => t.classList.toggle('active', i === weekIdx));
 
   const el = document.getElementById('program-week-content');
-  el.innerHTML = week.sessions.map(session => {
+  el.innerHTML = week.sessions.map((session, sessionIdx) => {
     const focusColor = session.focus === 'hypertrophy' ? '#ffb74d' : session.focus === 'strength' ? '#47c8ff' : '#f06292';
     const effortLabel = session.effort === 'max' ? 'MAX EFFORT' : session.effort === 'dynamic' ? 'DYNAMIC EFFORT' : '';
     return `
@@ -3362,7 +3368,7 @@ function showProgramWeek(progId, weekIdx) {
         }).join('')}
         <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
           <button class="btn btn-primary btn-sm" style="flex:1" onclick="logFromProgram('${progId}', ${weekIdx}, '${session.day}')">Log This Session</button>
-          <button class="btn btn-ghost btn-sm" style="flex:1;border-color:rgba(71,200,255,0.35);color:var(--accent3)" onclick="openSavedWorkoutPickerForProgram('${progId}', ${weekIdx}, ${weekIdx})">+ Add Saved</button>
+          <button class="btn btn-ghost btn-sm" style="flex:1;border-color:rgba(71,200,255,0.35);color:var(--accent3)" onclick="openSavedWorkoutPickerForProgram('${progId}', ${weekIdx}, ${sessionIdx})">+ Add Saved</button>
           <button class="btn btn-danger btn-sm" style="padding:6px 12px" title="Delete session" onclick="deleteProgramSession('${progId}', ${weekIdx}, '${session.day}')">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
           </button>
