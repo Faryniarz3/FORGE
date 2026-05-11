@@ -1120,10 +1120,17 @@ select.input { appearance: none; }
 
 <!-- BUILD PROGRAM MODAL -->
 <div id="modal-build-program" class="modal-overlay">
-  <div class="modal">
+  <div class="modal" style="position:relative">
     <div class="modal-handle"></div>
     <div class="modal-title" id="build-modal-title">Build Program</div>
     <div id="build-program-steps"></div>
+    <!-- Saved workout picker panel - slides over the modal content -->
+    <div id="saved-picker-panel" style="display:none;position:absolute;inset:0;background:var(--surface);border-radius:20px 20px 0 0;padding:24px 20px;overflow-y:auto;z-index:10">
+      <div class="modal-title" style="font-size:18px;margin-bottom:4px">Add Saved Workout</div>
+      <p id="saved-picker-subtitle" style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5"></p>
+      <div id="saved-picker-list"></div>
+      <button class="btn btn-ghost btn-full btn-sm" style="margin-top:12px" onclick="closeSavedPickerPanel()">← Back</button>
+    </div>
   </div>
 </div>
 
@@ -2550,6 +2557,7 @@ function openBuildProgramModal() {
   buildData = { exercises: [], week1Sessions: [], exerciseSelection: null, sessionsPerWeek: 4, weeks: 6 };
   builderExCount = {};
   activeBuilderSession = 0;
+  closeSavedPickerPanel();
   renderBuildStep();
   openModal('modal-build-program');
 }
@@ -2727,76 +2735,71 @@ function openSavedWorkoutPicker(sessionIdx) {
   savedPickerSessionIdx = sessionIdx;
   const state = getState();
   const saved = [...state.sessions].sort((a, b) => new Date(b.date) - new Date(a.date));
-  if (!saved.length) { showToast('No logged sessions yet. Log or plan a workout first.'); return; }
 
-  // Render inline inside the build program modal (avoids z-index stacking issue)
-  const el = document.getElementById('build-program-steps');
-  const title = document.getElementById('build-modal-title');
-  title.textContent = 'Add Saved Workout';
-  el.innerHTML = '';
+  const panel = document.getElementById('saved-picker-panel');
+  const subtitle = document.getElementById('saved-picker-subtitle');
+  const list = document.getElementById('saved-picker-list');
+  if (!panel || !list) { showToast('Error opening picker'); return; }
 
-  const sub = document.createElement('p');
-  sub.style.cssText = 'font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5';
-  sub.textContent = 'Select a session to import into Session ' + (sessionIdx + 1) + '.';
-  el.appendChild(sub);
+  subtitle.textContent = 'Select a session to import into Session ' + (sessionIdx + 1) + '.';
+  list.innerHTML = '';
 
-  saved.forEach(s => {
-    const row = document.createElement('div');
-    row.className = 'history-entry';
-    row.style.cssText = 'cursor:pointer;padding:12px 0;border-bottom:1px solid var(--border)';
-    row.onclick = function() { importSavedWorkout(s.id); };
+  if (!saved.length) {
+    list.innerHTML = '<div class="empty-state" style="padding:20px 0"><div class="empty-icon">📝</div><div class="empty-title">No sessions yet</div><div class="empty-text">Log or plan a workout first, then come back.</div></div>';
+  } else {
+    saved.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'history-entry';
+      row.style.cursor = 'pointer';
+      row.onclick = function() { importSavedWorkout(s.id); };
 
-    const d = new Date(s.date);
-    const dateEl = document.createElement('div');
-    dateEl.className = 'history-date';
-    dateEl.style.textAlign = 'center';
-    const monthEl = document.createElement('div');
-    monthEl.style.cssText = 'font-size:10px;color:var(--text3)';
-    monthEl.textContent = d.toLocaleDateString('en-US', {month:'short'});
-    const dayEl = document.createElement('div');
-    dayEl.style.cssText = 'font-family:"Bebas Neue",sans-serif;font-size:20px;line-height:1;color:var(--text)';
-    dayEl.textContent = d.getDate();
-    dateEl.appendChild(monthEl);
-    dateEl.appendChild(dayEl);
+      const d = new Date(s.date);
+      const dateEl = document.createElement('div');
+      dateEl.className = 'history-date';
+      dateEl.style.textAlign = 'center';
+      const monthEl = document.createElement('div');
+      monthEl.style.cssText = 'font-size:10px;color:var(--text3)';
+      monthEl.textContent = d.toLocaleDateString('en-US', {month:'short'});
+      const dayEl = document.createElement('div');
+      dayEl.style.cssText = 'font-family:"Bebas Neue",sans-serif;font-size:20px;line-height:1;color:var(--text)';
+      dayEl.textContent = d.getDate();
+      dateEl.appendChild(monthEl);
+      dateEl.appendChild(dayEl);
 
-    const info = document.createElement('div');
-    info.className = 'history-content';
+      const info = document.createElement('div');
+      info.className = 'history-content';
 
-    const nameRow = document.createElement('div');
-    nameRow.className = 'history-title';
-    nameRow.textContent = s.name;
-    if (s.status === 'planned') {
-      const badge = document.createElement('span');
-      badge.style.cssText = 'font-family:"DM Mono",monospace;font-size:9px;background:rgba(71,200,255,0.15);color:#47c8ff;border:1px solid rgba(71,200,255,0.3);border-radius:3px;padding:1px 5px;margin-left:5px';
-      badge.textContent = 'PLANNED';
-      nameRow.appendChild(badge);
-    }
+      const nameRow = document.createElement('div');
+      nameRow.className = 'history-title';
+      nameRow.textContent = s.name;
+      if (s.status === 'planned') {
+        const badge = document.createElement('span');
+        badge.style.cssText = 'font-family:"DM Mono",monospace;font-size:9px;background:rgba(71,200,255,0.15);color:#47c8ff;border:1px solid rgba(71,200,255,0.3);border-radius:3px;padding:1px 5px;margin-left:5px';
+        badge.textContent = 'PLANNED';
+        nameRow.appendChild(badge);
+      }
 
-    const exCount = (s.exercises || []).filter(e => e.exType === 'strength' || e.exType === 'core').length;
-    const dateStr = d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
-    const detail = document.createElement('div');
-    detail.className = 'history-detail';
-    detail.style.cssText = 'font-family:"DM Mono",monospace;font-size:11px;color:var(--text3)';
-    detail.textContent = dateStr + (exCount ? ' · ' + exCount + ' exercises' : '');
+      const exCount = (s.exercises || []).filter(e => e.exType === 'strength' || e.exType === 'core').length;
+      const detail = document.createElement('div');
+      detail.className = 'history-detail';
+      detail.style.cssText = 'font-family:"DM Mono",monospace;font-size:11px;color:var(--text3)';
+      detail.textContent = d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) +
+        (exCount ? ' · ' + exCount + ' exercises' : '');
 
-    info.appendChild(nameRow);
-    info.appendChild(detail);
-    row.appendChild(dateEl);
-    row.appendChild(info);
-    el.appendChild(row);
-  });
+      info.appendChild(nameRow);
+      info.appendChild(detail);
+      row.appendChild(dateEl);
+      row.appendChild(info);
+      list.appendChild(row);
+    });
+  }
 
-  const backBtn = document.createElement('button');
-  backBtn.className = 'btn btn-ghost btn-full btn-sm';
-  backBtn.style.marginTop = '14px';
-  backBtn.textContent = '← Back';
-  backBtn.onclick = function() {
-    buildStep = 1;
-    renderBuildStep();
-    // Restore the active session tab
-    setTimeout(() => switchBuilderSession(savedPickerSessionIdx), 50);
-  };
-  el.appendChild(backBtn);
+  panel.style.display = 'block';
+}
+
+function closeSavedPickerPanel() {
+  const panel = document.getElementById('saved-picker-panel');
+  if (panel) panel.style.display = 'none';
 }
 
 
@@ -2806,25 +2809,26 @@ function importSavedWorkout(sessionId) {
   const idx = savedPickerSessionIdx;
   if (!session || idx === null) return;
 
-  // Restore builder view
-  buildStep = 1;
-  renderBuildStep();
+  // Close the picker panel
+  closeSavedPickerPanel();
 
-  setTimeout(() => {
-    switchBuilderSession(idx);
-    const nameInput = document.getElementById('builder-session-name-' + idx);
-    if (nameInput && !nameInput.value.trim()) nameInput.value = session.name;
+  // Switch to the correct session tab
+  switchBuilderSession(idx);
 
-    (session.exercises || []).forEach(ex => {
-      if (ex.exType === 'treadmill' || ex.exType === 'peloton' || ex.exType === 'row') {
-        addBuilderExercise(idx, ex.name);
-      } else {
-        addBuilderExercise(idx, ex.name, ex.sets || null);
-      }
-    });
+  // Set session name if empty
+  const nameInput = document.getElementById('builder-session-name-' + idx);
+  if (nameInput && !nameInput.value.trim()) nameInput.value = session.name;
 
-    showToast('Imported: ' + session.name);
-  }, 80);
+  // Import exercises
+  (session.exercises || []).forEach(ex => {
+    if (ex.exType === 'treadmill' || ex.exType === 'peloton' || ex.exType === 'row') {
+      addBuilderExercise(idx, ex.name);
+    } else {
+      addBuilderExercise(idx, ex.name, ex.sets || null);
+    }
+  });
+
+  showToast('Imported: ' + session.name);
 }
 
 function openSavedWorkoutPickerForProgram(progId, weekIdx, sessionIdx) {
