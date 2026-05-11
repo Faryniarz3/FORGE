@@ -3795,44 +3795,43 @@ function autofillSets(exId, field, value) {
 // QUICK-ADD EXERCISE FROM VAULT PICKER
 // ============================================================
 function openQuickAddExercise() {
-  // Show inline quick-add form inside vault picker body
   const body = document.getElementById('vault-picker-body');
   if (!body) return;
 
-  body.innerHTML = `
-    <div style="padding:4px 0 16px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.08em;margin-bottom:14px">New Exercise</div>
+  const muscles = ['chest','back','shoulders','biceps','triceps','legs','core','cardio'];
+  const equipment = ['barbell','dumbbell','cable','machine','bodyweight','kettlebell','bands','other'];
+  const muscleColors = {chest:'#ff6b35',back:'#47c8ff',shoulders:'#ba68c8',biceps:'#ffb74d',triceps:'#ffd54f',legs:'#81c784',core:'#e8ff47',cardio:'#47c8ff'};
 
-      <div class="input-group">
-        <label class="input-label">Exercise Name</label>
-        <input type="text" class="input" id="quick-ex-name" placeholder="e.g. Cable Fly">
-      </div>
+  const muscleHTML = muscles.map(m =>
+    '<button class="muscle-tag" data-group="' + m + '" onclick="toggleMuscleTag(this)" style="font-size:10px;padding:4px 8px">' +
+    m.charAt(0).toUpperCase() + m.slice(1) + '</button>'
+  ).join('');
 
-      <div class="input-group">
-        <label class="input-label">Muscle Groups</label>
-        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="quick-muscle-selector">
-          ${['chest','back','shoulders','biceps','triceps','legs','core','cardio'].map(m => {
-            const colors = {chest:'#ff6b35',back:'#47c8ff',shoulders:'#ba68c8',biceps:'#ffb74d',triceps:'#ffd54f',legs:'#81c784',core:'#e8ff47',cardio:'#47c8ff'};
-            return \`<button class="muscle-tag" data-group="\${m}" onclick="toggleMuscleTag(this)" style="font-size:10px;padding:4px 8px">\${m.charAt(0).toUpperCase()+m.slice(1)}</button>\`;
-          }).join('')}
-        </div>
-      </div>
+  const equipHTML = equipment.map(e =>
+    '<button class="equip-tag" data-equip="' + e + '" onclick="toggleQuickEquipTag(this)" style="font-size:10px;padding:4px 8px">' +
+    e.charAt(0).toUpperCase() + e.slice(1) + '</button>'
+  ).join('');
 
-      <div class="input-group">
-        <label class="input-label">Equipment</label>
-        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="quick-equip-selector">
-          ${['barbell','dumbbell','cable','machine','bodyweight','kettlebell','bands','other'].map(e =>
-            \`<button class="equip-tag" data-equip="\${e}" onclick="toggleQuickEquipTag(this)" style="font-size:10px;padding:4px 8px">\${e.charAt(0).toUpperCase()+e.slice(1)}</button>\`
-          ).join('')}
-        </div>
-      </div>
-
-      <div style="display:flex;gap:8px;margin-top:4px">
-        <button class="btn btn-primary" style="flex:1" onclick="saveQuickExercise()">Save & Add</button>
-        <button class="btn btn-ghost" style="flex:1" onclick="renderVaultPicker()">Cancel</button>
-      </div>
-    </div>
-  `;
+  body.innerHTML =
+    '<div style="padding:4px 0 16px">' +
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:18px;letter-spacing:0.08em;margin-bottom:14px">New Exercise</div>' +
+      '<div class="input-group">' +
+        '<label class="input-label">Exercise Name</label>' +
+        '<input type="text" class="input" id="quick-ex-name" placeholder="e.g. Cable Fly">' +
+      '</div>' +
+      '<div class="input-group">' +
+        '<label class="input-label">Muscle Groups</label>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="quick-muscle-selector">' + muscleHTML + '</div>' +
+      '</div>' +
+      '<div class="input-group">' +
+        '<label class="input-label">Equipment</label>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="quick-equip-selector">' + equipHTML + '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;margin-top:12px">' +
+        '<button class="btn btn-primary" style="flex:1" onclick="saveQuickExercise()">Save & Add</button>' +
+        '<button class="btn btn-ghost" style="flex:1" onclick="renderVaultPicker()">Cancel</button>' +
+      '</div>' +
+    '</div>';
 }
 
 function toggleQuickEquipTag(btn) {
