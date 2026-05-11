@@ -1077,9 +1077,15 @@ select.input { appearance: none; }
     <div class="modal-handle"></div>
     <div class="modal-title">New Session</div>
 
-    <div class="input-group">
-      <label class="input-label">Session Name</label>
-      <input type="text" class="input" id="strength-session-name" placeholder="e.g. Upper Body A, Full Body, Core">
+    <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;margin-bottom:8px">
+      <div class="input-group" style="margin-bottom:0">
+        <label class="input-label">Session Name</label>
+        <input type="text" class="input" id="strength-session-name" placeholder="e.g. Upper Body A, Full Body, Core">
+      </div>
+      <div class="input-group" style="margin-bottom:0">
+        <label class="input-label">Date</label>
+        <input type="date" class="input" id="session-date" style="padding:8px 10px;min-width:130px">
+      </div>
     </div>
 
     <!-- Unified exercise container — strength, cardio, core all live here -->
@@ -1509,6 +1515,9 @@ const blockMetaState = {};
 function openLogModal() {
   document.getElementById('exercises-container').innerHTML = '';
   document.getElementById('strength-session-name').value = '';
+  const todayStr = new Date().toISOString().slice(0,10);
+  const dateEl = document.getElementById('session-date');
+  if (dateEl) dateEl.value = todayStr;
   exerciseCount = 0;
   Object.keys(blockMetaState).forEach(k => delete blockMetaState[k]);
   window._editingSessionId = null;
@@ -2048,13 +2057,17 @@ function saveUnifiedSession(status = 'completed', existingId = null) {
 
   const state = getState();
   const now = new Date().toISOString();
+  const dateInput = document.getElementById('session-date')?.value;
+  const sessionDate = dateInput
+    ? new Date(dateInput + 'T12:00:00').toISOString()
+    : (existingId ? (state.sessions.find(s => s.id === existingId)?.date || now) : now);
 
   const session = {
     id: existingId || Date.now().toString(),
     type: 'unified',
     status, // 'planned' | 'completed'
     name,
-    date: existingId ? (state.sessions.find(s => s.id === existingId)?.date || now) : now,
+    date: sessionDate,
     completedAt: status === 'completed' ? now : null,
     exercises,
     newPRs: 0
@@ -2365,6 +2378,8 @@ function editSession(id, mode) {
 
   // Pre-populate the log modal with the session's data
   document.getElementById('strength-session-name').value = s.name;
+  const editDateEl = document.getElementById('session-date');
+  if (editDateEl && s.date) editDateEl.value = s.date.slice(0, 10);
   document.getElementById('exercises-container').innerHTML = '';
   exerciseCount = 0;
   Object.keys(blockMetaState).forEach(k => delete blockMetaState[k]);
