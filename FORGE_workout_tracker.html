@@ -1411,7 +1411,6 @@ function openLogModal() {
   setLogType('strength');
   document.getElementById('exercises-container').innerHTML = '';
   document.getElementById('strength-session-name').value = '';
-  addExerciseBlock();
   openModal('modal-log');
 }
 
@@ -1509,7 +1508,6 @@ function openLogModal() {
   window._editingMode = null;
   supersetCount = 0;
   resetLogModalButtons();
-  addExerciseBlock();
   renderRunProgramSelect();
   openModal('modal-log');
   // Init drag reorder after modal opens
