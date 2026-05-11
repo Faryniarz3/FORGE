@@ -634,6 +634,62 @@ select.input { appearance: none; }
 .scroll-x { overflow-x: auto; scrollbar-width: none; }
 .scroll-x::-webkit-scrollbar { display: none; }
 
+/* SUPERSET */
+.superset-group {
+  position: relative;
+  margin-bottom: 14px;
+  padding-left: 12px;
+}
+.superset-group::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--accent2);
+  border-radius: 3px;
+}
+.superset-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--accent2);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.superset-slot-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--accent2);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  padding: 2px 8px;
+  background: rgba(255,107,53,0.1);
+  border-radius: 4px;
+  display: inline-block;
+}
+.superset-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--accent2);
+  letter-spacing: 0.1em;
+}
+.superset-divider::before, .superset-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,107,53,0.25);
+}
+
 /* Responsive tweaks */
 @media (min-width: 500px) {
   .page { max-width: 500px; margin: 0 auto; }
@@ -1015,6 +1071,10 @@ select.input { appearance: none; }
       <button class="btn btn-secondary btn-sm" style="flex:1" onclick="openVaultPicker('log')">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
         From Vault
+      </button>
+      <button class="btn btn-ghost btn-sm" style="flex:1;border-color:rgba(255,107,53,0.4);color:var(--accent2)" onclick="addSupersetBlock()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+        Superset
       </button>
     </div>
 
@@ -1425,6 +1485,7 @@ function openLogModal() {
   Object.keys(blockMetaState).forEach(k => delete blockMetaState[k]);
   window._editingSessionId = null;
   window._editingMode = null;
+  supersetCount = 0;
   resetLogModalButtons();
   addExerciseBlock();
   renderRunProgramSelect();
@@ -1445,6 +1506,59 @@ function addExerciseBlock(name = '', prefillSets = null) {
   div.innerHTML = buildExerciseBlockHTML(id, name, exType, prefillSets);
   container.appendChild(div);
 }
+// ---- SUPERSET ----
+let supersetCount = 0;
+
+function addSupersetBlock(nameA, nameB, setsA, setsB) {
+  nameA = nameA || ''; nameB = nameB || '';
+  setsA = setsA || null; setsB = setsB || null;
+  supersetCount++;
+  const ssId = 'ss' + supersetCount;
+  exerciseCount++; const idA = exerciseCount;
+  exerciseCount++; const idB = exerciseCount;
+  const exTypeA = getExerciseType(nameA);
+  const exTypeB = getExerciseType(nameB);
+  blockMetaState[idA] = buildDefaultMeta(nameA, exTypeA);
+  blockMetaState[idB] = buildDefaultMeta(nameB, exTypeB);
+  const container = document.getElementById('exercises-container');
+  const wrapper = document.createElement('div');
+  wrapper.className = 'superset-group';
+  wrapper.id = 'superset-' + ssId;
+  wrapper.setAttribute('data-ss-id', ssId);
+  wrapper.setAttribute('data-ex-a', idA);
+  wrapper.setAttribute('data-ex-b', idB);
+  const bodyA = buildExerciseBlockHTML(idA, nameA, exTypeA, setsA);
+  const bodyB = buildExerciseBlockHTML(idB, nameB, exTypeB, setsB);
+  wrapper.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+      '<div class="superset-label">' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>' +
+        'Superset' +
+      '</div>' +
+      '<button class="btn btn-ghost btn-sm" onclick="removeSuperset(\''+ssId+'\')" style="padding:4px 8px;font-size:11px;color:var(--text3)">✕ Remove</button>' +
+    '</div>' +
+    '<div style="margin-bottom:6px">' +
+      '<div class="superset-slot-label">SS-A</div>' +
+      '<div class="card" id="ex-block-'+idA+'" style="margin-bottom:0">' + bodyA + '</div>' +
+    '</div>' +
+    '<div class="superset-divider">↕ repeat</div>' +
+    '<div>' +
+      '<div class="superset-slot-label">SS-B</div>' +
+      '<div class="card" id="ex-block-'+idB+'" style="margin-bottom:0">' + bodyB + '</div>' +
+    '</div>';
+  container.appendChild(wrapper);
+}
+
+function removeSuperset(ssId) {
+  const wrapper = document.getElementById('superset-' + ssId);
+  if (!wrapper) return;
+  const idA = wrapper.getAttribute('data-ex-a');
+  const idB = wrapper.getAttribute('data-ex-b');
+  delete blockMetaState[idA];
+  delete blockMetaState[idB];
+  wrapper.remove();
+}
+
 
 function buildDefaultMeta(name, exType) {
   if (isCardioType(exType)) {
@@ -1748,49 +1862,58 @@ function removeExerciseBlock(id) {
 
 function collectExercises() {
   const container = document.getElementById('exercises-container');
+
+  // Build superset map: exId -> { ssId, slot }
+  const supersetMap = {};
+  container.querySelectorAll('.superset-group').forEach(ss => {
+    const ssId = ss.getAttribute('data-ss-id');
+    const idA = ss.getAttribute('data-ex-a');
+    const idB = ss.getAttribute('data-ex-b');
+    if (idA) supersetMap[String(idA)] = { ssId, slot: 'A' };
+    if (idB) supersetMap[String(idB)] = { ssId, slot: 'B' };
+  });
+
   const blocks = container.querySelectorAll('[id^="ex-block-"]');
   const results = [];
 
-  Array.from(blocks).forEach(block => {
-    const id = block.id.replace('ex-block-', '');
+  function collectBlock(id) {
     const name = document.getElementById('ex-name-' + id)?.value?.trim() || '';
-    if (!name) return;
-
+    if (!name) return null;
     const exType = getExerciseType(name);
     const meta = blockMetaState[id] || {};
+    const ss = supersetMap[String(id)];
 
     if (isCardioType(exType)) {
-      // Collect cardio fields — all optional
       const entry = { name, exType: exType.type, metrics: {} };
+      if (ss) { entry.superset = ss.ssId; entry.supersetSlot = ss.slot; }
       meta.metrics.forEach(mKey => {
         const el = document.getElementById('cm-' + id + '-' + mKey);
         if (el && el.value !== '') {
           entry.metrics[mKey] = mKey === 'class_type' ? el.value.trim() : parseFloat(el.value);
         }
       });
-      results.push(entry);
+      return entry;
     } else {
-      // Strength / core — collect sets
-      const setRows = block.querySelectorAll('.set-row');
+      const setRows = document.getElementById('ex-block-' + id)?.querySelectorAll('.set-row') || [];
       const sets = Array.from(setRows).map((row, i) => {
         const setNum = i + 1;
         const set = { bodyweight: meta.bodyweight || false };
-        if (meta.metrics?.includes('reps')) {
-          const v = document.getElementById('r-' + id + '-' + setNum)?.value;
-          if (v !== undefined) set.reps = parseInt(v) || 0;
-        }
-        if (meta.metrics?.includes('weight') && !meta.bodyweight) {
-          const v = document.getElementById('w-' + id + '-' + setNum)?.value;
-          if (v !== undefined) set.weight = parseFloat(v) || 0;
-        }
-        if (meta.metrics?.includes('time_sec')) {
-          const v = document.getElementById('t-' + id + '-' + setNum)?.value;
-          if (v !== undefined) set.time_sec = parseInt(v) || 0;
-        }
+        if (meta.metrics?.includes('reps')) { const v = document.getElementById('r-' + id + '-' + setNum)?.value; if (v !== undefined) set.reps = parseInt(v) || 0; }
+        if (meta.metrics?.includes('weight') && !meta.bodyweight) { const v = document.getElementById('w-' + id + '-' + setNum)?.value; if (v !== undefined) set.weight = parseFloat(v) || 0; }
+        if (meta.metrics?.includes('time_sec')) { const v = document.getElementById('t-' + id + '-' + setNum)?.value; if (v !== undefined) set.time_sec = parseInt(v) || 0; }
         return set;
       }).filter(s => s.reps > 0 || s.time_sec > 0);
-      if (sets.length) results.push({ name, exType: exType === 'core' ? 'core' : 'strength', sets, metrics: meta.metrics, bodyweight: meta.bodyweight });
+      if (!sets.length && !ss) return null;
+      const entry = { name, exType: exType === 'core' ? 'core' : 'strength', sets, metrics: meta.metrics, bodyweight: meta.bodyweight };
+      if (ss) { entry.superset = ss.ssId; entry.supersetSlot = ss.slot; }
+      return entry;
     }
+  }
+
+  Array.from(blocks).forEach(block => {
+    const id = block.id.replace('ex-block-', '');
+    const entry = collectBlock(id);
+    if (entry) results.push(entry);
   });
 
   return results;
@@ -2001,33 +2124,78 @@ function viewSession(id) {
     </div>`;
 
   const exercises = s.exercises || [];
-  content += exercises.map(ex => {
+
+  // Group superset pairs together for display
+  function renderExBlock(ex, slotLabel) {
     const isCardioEx = ex.exType === 'treadmill' || ex.exType === 'peloton' || ex.exType === 'row';
+    const slotHTML = slotLabel ? `<span class="superset-slot-label" style="margin-right:6px">${slotLabel}</span>` : '';
     if (isCardioEx) {
       const m = ex.metrics || {};
-      const metricLines = Object.entries(m).map(([k, v]) => {
+      const metricLines = Object.entries(m).map(([k,v]) => {
         const def = METRIC_DEFS[k];
         return `<span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent3)">${def?.label||k}: <strong>${v}</strong></span>`;
       }).join(' &nbsp;·&nbsp; ');
-      return `<div style="margin-bottom:14px">
-        <div style="font-weight:500;margin-bottom:6px">${ex.name} <span class="tag tag-cardio" style="font-size:9px">${ex.exType}</span></div>
-        <div style="padding:8px 0">${metricLines||'<span style="color:var(--text3);font-size:12px">No metrics</span>'}</div>
+      return `<div style="margin-bottom:8px">
+        <div style="font-weight:500;margin-bottom:4px">${slotHTML}${ex.name} <span class="tag tag-cardio" style="font-size:9px">${ex.exType}</span></div>
+        <div style="padding:4px 0">${metricLines||'<span style="color:var(--text3);font-size:12px">No metrics</span>'}</div>
       </div>`;
     } else {
       const isCore = ex.exType === 'core';
-      return `<div style="margin-bottom:14px">
-        <div style="font-weight:500;margin-bottom:6px">${ex.name}${isCore?' <span class="mini-tag" style="background:rgba(232,255,71,0.12);color:var(--accent);border:1px solid rgba(232,255,71,0.25);font-size:9px">CORE</span>':''}</div>
+      return `<div style="margin-bottom:8px">
+        <div style="font-weight:500;margin-bottom:4px">${slotHTML}${ex.name}${isCore?' <span class="mini-tag" style="background:rgba(232,255,71,0.12);color:var(--accent);border:1px solid rgba(232,255,71,0.25);font-size:9px">CORE</span>':''}</div>
         ${(ex.sets||[]).map((set,i)=>{
           const parts=[];
           if(set.bodyweight)parts.push('BW');else if(set.weight)parts.push(set.weight+' lbs');
           if(set.reps)parts.push(set.reps+' reps');
           if(set.time_sec)parts.push(set.time_sec+'s');
-          return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:12px">
+          return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:12px">
             <span style="color:var(--text3);min-width:20px">${i+1}</span>
             <span>${parts.join(' · ')}</span>
             ${set.isPR?'<span class="pr-badge">PR</span>':''}
           </div>`;
         }).join('')}
+      </div>`;
+    }
+  }
+
+  // Separate superset pairs from standalone exercises
+  const ssMap = {};
+  const ssOrder = [];
+  const standalone = [];
+  exercises.forEach(ex => {
+    if (ex.superset) {
+      if (!ssMap[ex.superset]) { ssMap[ex.superset] = {}; ssOrder.push({type:'ss', id:ex.superset}); }
+      ssMap[ex.superset][ex.supersetSlot] = ex;
+    } else {
+      standalone.push(ex);
+    }
+  });
+
+  // Build ordered display — maintain original sequence
+  const allItems = [];
+  const seenSS = new Set();
+  exercises.forEach(ex => {
+    if (ex.superset) {
+      if (!seenSS.has(ex.superset)) { seenSS.add(ex.superset); allItems.push({type:'ss', id:ex.superset}); }
+    } else {
+      allItems.push({type:'ex', ex});
+    }
+  });
+
+  content += allItems.map(item => {
+    if (item.type === 'ex') {
+      return `<div style="margin-bottom:14px">${renderExBlock(item.ex, null)}</div>`;
+    } else {
+      const pair = ssMap[item.id] || {};
+      const exA = pair['A']; const exB = pair['B'];
+      return `<div class="superset-group" style="margin-bottom:14px">
+        <div class="superset-label" style="margin-bottom:8px">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+          Superset
+        </div>
+        ${exA ? renderExBlock(exA, 'SS-A') : ''}
+        ${exA && exB ? '<div class="superset-divider">↕ repeat</div>' : ''}
+        ${exB ? renderExBlock(exB, 'SS-B') : ''}
       </div>`;
     }
   }).join('');
@@ -2082,26 +2250,51 @@ function editSession(id, mode) {
   exerciseCount = 0;
   Object.keys(blockMetaState).forEach(k => delete blockMetaState[k]);
 
+  // Group superset pairs before restoring
+  const ssPairs = {};
+  const ssInsertOrder = [];
+  const seenSS = new Set();
   (s.exercises || []).forEach(ex => {
-    if (ex.exType === 'treadmill' || ex.exType === 'peloton' || ex.exType === 'row') {
-      addExerciseBlock(ex.name);
-      // Fill in metric values after block is created
-      setTimeout(() => {
-        const meta = Object.entries(blockMetaState).find(([k]) => {
-          const nameEl = document.getElementById('ex-name-' + k);
-          return nameEl && nameEl.value.toLowerCase() === ex.name.toLowerCase();
-        });
-        if (meta) {
-          const id = meta[0];
-          Object.entries(ex.metrics || {}).forEach(([mKey, val]) => {
-            const el = document.getElementById('cm-' + id + '-' + mKey);
-            if (el) el.value = val;
-          });
-        }
-      }, 50);
+    if (ex.superset) {
+      if (!ssPairs[ex.superset]) { ssPairs[ex.superset] = {}; }
+      ssPairs[ex.superset][ex.supersetSlot] = ex;
+      if (!seenSS.has(ex.superset)) { seenSS.add(ex.superset); ssInsertOrder.push({type:'ss', id:ex.superset}); }
     } else {
-      const sets = ex.sets || [{}];
-      addExerciseBlock(ex.name, sets);
+      ssInsertOrder.push({type:'ex', ex});
+    }
+  });
+
+  // Reconstruct in original order using ssInsertOrder
+  const seenSS2 = new Set();
+  (s.exercises || []).forEach(ex => {
+    if (ex.superset) {
+      if (seenSS2.has(ex.superset)) return;
+      seenSS2.add(ex.superset);
+      const pair = ssPairs[ex.superset];
+      const exA = pair['A']; const exB = pair['B'];
+      addSupersetBlock(
+        exA?.name || '', exB?.name || '',
+        exA?.sets || null, exB?.sets || null
+      );
+    } else {
+      if (ex.exType === 'treadmill' || ex.exType === 'peloton' || ex.exType === 'row') {
+        addExerciseBlock(ex.name);
+        setTimeout(() => {
+          const meta = Object.entries(blockMetaState).find(([k]) => {
+            const nameEl = document.getElementById('ex-name-' + k);
+            return nameEl && nameEl.value.toLowerCase() === ex.name.toLowerCase();
+          });
+          if (meta) {
+            const id = meta[0];
+            Object.entries(ex.metrics || {}).forEach(([mKey, val]) => {
+              const el = document.getElementById('cm-' + id + '-' + mKey);
+              if (el) el.value = val;
+            });
+          }
+        }, 50);
+      } else {
+        addExerciseBlock(ex.name, ex.sets || [{}]);
+      }
     }
   });
 
