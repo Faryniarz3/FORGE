@@ -2559,7 +2559,7 @@ function renderBuildStep() {
   const title = document.getElementById('build-modal-title');
 
   if (buildStep === 0) {
-    // ── Step 0: Program name + sessions/week ──
+    // ── Step 0: Program name + sessions/week + choose path ──
     title.textContent = 'Program Setup';
     el.innerHTML = `
       <div class="input-group">
@@ -2576,11 +2576,19 @@ function renderBuildStep() {
           <option value="6">6x / week</option>
         </select>
       </div>
-      <p style="font-size:12px;color:var(--text3);line-height:1.6;margin-bottom:16px">
-        Next you'll build your Week 1 session by session. The AI will extrapolate a full 6-week program from it using your saved training philosophy.
-      </p>
-      <button class="btn btn-primary btn-full" onclick="initWeek1Builder()">Next: Build Week 1 →</button>
-      <button class="btn btn-ghost btn-full btn-sm" onclick="closeModal('modal-build-program')" style="margin-top:8px">Cancel</button>
+      <hr class="divider">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:0.08em;margin-bottom:10px">CHOOSE HOW TO BUILD</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px">
+        <button class="btn btn-primary btn-full" onclick="initWeek1Builder()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          Generate with AI
+        </button>
+        <button class="btn btn-secondary btn-full" onclick="initBlankProgram()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Create Blank Program
+        </button>
+      </div>
+      <button class="btn btn-ghost btn-full btn-sm" onclick="closeModal('modal-build-program')">Cancel</button>
     `;
 
   } else if (buildStep === 1) {
@@ -2610,11 +2618,15 @@ function renderBuildStep() {
                 value="${buildData.week1Sessions?.[i]?.name || ''}">
             </div>
             <div id="builder-ex-container-${i}"></div>
-            <div style="display:flex;gap:8px;margin-bottom:4px">
+            <div style="display:flex;gap:6px;margin-bottom:4px;flex-wrap:wrap">
               <button class="btn btn-ghost btn-sm" style="flex:1" onclick="addBuilderExercise(${i})">+ Exercise</button>
               <button class="btn btn-secondary btn-sm" style="flex:1" onclick="openVaultPicker('builder-${i}')">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                From Vault
+                Vault
+              </button>
+              <button class="btn btn-ghost btn-sm" style="flex:1;border-color:rgba(71,200,255,0.35);color:var(--accent3)" onclick="openSavedWorkoutPicker(${i})">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Saved
               </button>
             </div>
           </div>
@@ -2665,6 +2677,169 @@ function initWeek1Builder() {
   activeBuilderSession = 0;
   buildStep = 1;
   renderBuildStep();
+}
+
+
+// ── Blank program shell ──
+function initBlankProgram() {
+  const name = document.getElementById('prog-name')?.value?.trim() || 'My Program';
+  const sessionsPerWeek = parseInt(document.getElementById('prog-sessions')?.value) || 4;
+
+  const state = getState();
+  // Build a blank 4-week shell — user can expand later
+  const blankWeeks = Array.from({length: 4}, (_, wi) => ({
+    week: wi + 1,
+    theme: wi === 0 ? 'Week 1' : wi === 1 ? 'Week 2' : wi === 2 ? 'Week 3' : 'Week 4',
+    sessions: Array.from({length: sessionsPerWeek}, (_, si) => ({
+      day: 'Session ' + (si + 1),
+      label: 'Session ' + (si + 1),
+      focus: 'custom',
+      effort: 'custom',
+      exercises: []
+    }))
+  }));
+
+  const program = {
+    id: Date.now().toString(),
+    type: 'strength',
+    name,
+    philosophy: '',
+    sessionsPerWeek,
+    weeks: 4,
+    split: 'Custom',
+    schedule: blankWeeks,
+    active: false,
+    currentWeek: 1,
+    createdAt: new Date().toISOString()
+  };
+
+  state.programs.push(program);
+  saveState(state);
+  closeModal('modal-build-program');
+  renderProgramsList();
+  showToast('Program created! Add sessions to build it out.');
+}
+
+// ── Saved workout picker for program builder sessions ──
+let savedPickerSessionIdx = null;
+
+function openSavedWorkoutPicker(sessionIdx) {
+  savedPickerSessionIdx = sessionIdx;
+  const state = getState();
+  const saved = [...state.sessions].sort((a, b) => new Date(b.date) - new Date(a.date));
+  if (!saved.length) { showToast('No logged sessions yet. Complete a workout first.'); return; }
+  renderSavedPickerModal(saved, 'Session ' + (sessionIdx + 1), function(s) { importSavedWorkout(s.id); });
+}
+
+function openSavedWorkoutPickerForProgram(progId, weekIdx, sessionIdx) {
+  const state = getState();
+  const saved = [...state.sessions].sort((a, b) => new Date(b.date) - new Date(a.date));
+  if (!saved.length) { showToast('No logged sessions yet.'); return; }
+  renderSavedPickerModal(saved, 'program slot', function(s) { addSavedWorkoutToProgram(progId, weekIdx, sessionIdx, s.id); });
+}
+
+function renderSavedPickerModal(sessions, slotLabel, onSelect) {
+  const el = document.getElementById('vault-detail-content');
+  el.innerHTML = '';
+
+  const title = document.createElement('div');
+  title.className = 'modal-title';
+  title.style.fontSize = '18px';
+  title.textContent = 'Add Saved Workout';
+  el.appendChild(title);
+
+  const sub = document.createElement('p');
+  sub.style.cssText = 'font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5';
+  sub.textContent = 'Pick a logged session to add to ' + slotLabel + '.';
+  el.appendChild(sub);
+
+  const list = document.createElement('div');
+  sessions.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'history-entry';
+    row.style.cursor = 'pointer';
+    row.onclick = function() { closeModal('modal-vault-detail'); onSelect(s); };
+
+    const d = new Date(s.date);
+    const dateEl = document.createElement('div');
+    dateEl.className = 'history-date';
+    dateEl.style.textAlign = 'center';
+    const monthEl = document.createElement('div');
+    monthEl.style.cssText = 'font-size:10px;color:var(--text3)';
+    monthEl.textContent = d.toLocaleDateString('en-US', {month:'short'});
+    const dayEl = document.createElement('div');
+    dayEl.style.cssText = 'font-family:"Bebas Neue",sans-serif;font-size:20px;line-height:1;color:var(--text)';
+    dayEl.textContent = d.getDate();
+    dateEl.appendChild(monthEl);
+    dateEl.appendChild(dayEl);
+
+    const info = document.createElement('div');
+    info.className = 'history-content';
+
+    const nameRow = document.createElement('div');
+    nameRow.className = 'history-title';
+    nameRow.textContent = s.name;
+    if (s.status === 'planned') {
+      const badge = document.createElement('span');
+      badge.style.cssText = 'font-family:"DM Mono",monospace;font-size:9px;background:rgba(71,200,255,0.15);color:#47c8ff;border:1px solid rgba(71,200,255,0.3);border-radius:3px;padding:1px 5px;margin-left:5px';
+      badge.textContent = 'PLANNED';
+      nameRow.appendChild(badge);
+    }
+
+    const exCount = (s.exercises || []).filter(e => e.exType === 'strength' || e.exType === 'core').length;
+    const dateStr = d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+    const detail = document.createElement('div');
+    detail.className = 'history-detail';
+    detail.style.cssText = 'font-family:"DM Mono",monospace;font-size:11px;color:var(--text3)';
+    detail.textContent = dateStr + (exCount ? ' · ' + exCount + ' exercises' : '');
+
+    info.appendChild(nameRow);
+    info.appendChild(detail);
+    row.appendChild(dateEl);
+    row.appendChild(info);
+    list.appendChild(row);
+  });
+  el.appendChild(list);
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-ghost btn-full btn-sm';
+  cancelBtn.style.marginTop = '12px';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = function() { closeModal('modal-vault-detail'); };
+  el.appendChild(cancelBtn);
+
+  openModal('modal-vault-detail');
+}
+
+function addSavedWorkoutToProgram(progId, weekIdx, sessionIdx, savedId) {
+  const state = getState();
+  const prog = state.programs.find(p => p.id === progId);
+  const saved = state.sessions.find(s => s.id === savedId);
+  if (!prog || !saved) return;
+
+  const week = prog.schedule[weekIdx];
+  if (!week) return;
+
+  const newSession = {
+    day: 'Session ' + (week.sessions.length + 1),
+    label: saved.name,
+    focus: 'custom',
+    effort: 'custom',
+    exercises: (saved.exercises || []).map(ex => ({
+      name: ex.name,
+      sets: ex.sets?.length || 1,
+      reps: ex.sets?.map(s => s.reps).filter(Boolean).join('-') || '—',
+      intensity: ex.sets?.map(s => s.weight ? s.weight + 'lbs' : (s.bodyweight ? 'BW' : '—')).join(', ') || '—',
+      tier: 4
+    }))
+  };
+
+  prog.schedule[weekIdx].sessions.push(newSession);
+  saveState(state);
+  closeModal('modal-vault-detail');
+  showToast('Added to Week ' + week.week);
+  // Refresh program view
+  showProgramWeek(progId, weekIdx);
 }
 
 function switchBuilderSession(idx) {
@@ -2996,7 +3171,10 @@ function showProgramWeek(progId, weekIdx) {
             <div class="exercise-scheme">${ex.sets} × ${ex.reps}</div>
           </div>`;
         }).join('')}
-        <button class="btn btn-primary btn-sm btn-full" style="margin-top:10px" onclick="logFromProgram('${progId}', ${weekIdx}, '${session.day}')">Log This Session</button>
+        <div style="display:flex;gap:6px;margin-top:10px">
+          <button class="btn btn-primary btn-sm" style="flex:1" onclick="logFromProgram('${progId}', ${weekIdx}, '${session.day}')">Log This Session</button>
+          <button class="btn btn-ghost btn-sm" style="flex:1;border-color:rgba(71,200,255,0.35);color:var(--accent3)" onclick="openSavedWorkoutPickerForProgram('${progId}', ${weekIdx}, ${session.sessionIndex !== undefined ? session.sessionIndex : "week.sessions.indexOf(session)"})">+ Add Saved</button>
+        </div>
       </div>
     </div>
   `;
