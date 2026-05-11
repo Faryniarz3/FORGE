@@ -2830,17 +2830,27 @@ function importSavedWorkout(sessionId) {
   const idx = savedPickerSessionIdx;
   if (!session || idx === null) return;
 
-  // Close the picker panel
   closeSavedPickerPanel();
-
-  // Switch to the correct session tab
   switchBuilderSession(idx);
 
-  // Set session name if empty
+  // Replace session name
   const nameInput = document.getElementById('builder-session-name-' + idx);
-  if (nameInput && !nameInput.value.trim()) nameInput.value = session.name;
+  if (nameInput) nameInput.value = session.name;
 
-  // Import exercises
+  // Clear existing exercises in this session
+  const container = document.getElementById('builder-ex-container-' + idx);
+  if (container) {
+    container.innerHTML = '';
+    builderExCount[idx] = 0;
+    // Clean up blockMetaState for this session's blocks
+    Object.keys(blockMetaState).forEach(k => {
+      if (String(k).startsWith(idx + '_') || String(k).startsWith('b' + idx + '_')) {
+        delete blockMetaState[k];
+      }
+    });
+  }
+
+  // Import exercises from saved session
   (session.exercises || []).forEach(ex => {
     if (ex.exType === 'treadmill' || ex.exType === 'peloton' || ex.exType === 'row') {
       addBuilderExercise(idx, ex.name);
@@ -2849,7 +2859,7 @@ function importSavedWorkout(sessionId) {
     }
   });
 
-  showToast('Imported: ' + session.name);
+  showToast('Session ' + (idx + 1) + ' replaced with: ' + session.name);
 }
 
 function openSavedWorkoutPickerForProgram(progId, weekIdx, sessionIdx) {
