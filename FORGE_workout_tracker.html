@@ -1130,13 +1130,18 @@ select.input { appearance: none; }
     <div class="modal-handle"></div>
     <div class="modal-title" id="build-modal-title">Build Program</div>
     <div id="build-program-steps"></div>
-    <!-- Saved workout picker panel - slides over the modal content -->
-    <div id="saved-picker-panel" style="display:none;position:absolute;inset:0;background:var(--surface);border-radius:20px 20px 0 0;padding:24px 20px;overflow-y:auto;z-index:10">
-      <div class="modal-title" style="font-size:18px;margin-bottom:4px">Add Saved Workout</div>
-      <p id="saved-picker-subtitle" style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5"></p>
-      <div id="saved-picker-list"></div>
-      <button class="btn btn-ghost btn-full btn-sm" style="margin-top:12px" onclick="closeSavedPickerPanel()">← Back</button>
-    </div>
+
+  </div>
+</div>
+
+<!-- SAVED WORKOUT PICKER MODAL (z-index 400 - above all other modals) -->
+<div id="modal-saved-picker" style="position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:400;display:none;align-items:flex-end;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:24px 20px calc(20px + var(--safe-bottom));width:100%;max-height:90vh;overflow-y:auto;animation:slideUp 0.3s ease">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px"></div>
+    <div class="modal-title" style="font-size:20px;margin-bottom:4px">Add Saved Workout</div>
+    <p id="saved-picker-subtitle" style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5"></p>
+    <div id="saved-picker-list"></div>
+    <button class="btn btn-ghost btn-full btn-sm" style="margin-top:12px" onclick="closeSavedPickerPanel()">← Cancel</button>
   </div>
 </div>
 
@@ -2751,16 +2756,20 @@ function openSavedWorkoutPicker(sessionIdx) {
   const state = getState();
   const saved = [...state.sessions].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  const panel = document.getElementById('saved-picker-panel');
+  const modal = document.getElementById('modal-saved-picker');
   const subtitle = document.getElementById('saved-picker-subtitle');
   const list = document.getElementById('saved-picker-list');
-  if (!panel || !list) { showToast('Error opening picker'); return; }
+  if (!modal) return;
 
   subtitle.textContent = 'Select a session to import into Session ' + (sessionIdx + 1) + '.';
   list.innerHTML = '';
 
   if (!saved.length) {
-    list.innerHTML = '<div class="empty-state" style="padding:20px 0"><div class="empty-icon">📝</div><div class="empty-title">No sessions yet</div><div class="empty-text">Log or plan a workout first, then come back.</div></div>';
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.style.padding = '20px 0';
+    empty.innerHTML = '<div class="empty-icon">📝</div><div class="empty-title">No sessions yet</div><div class="empty-text">Log or plan a workout first.</div>';
+    list.appendChild(empty);
   } else {
     saved.forEach(s => {
       const row = document.createElement('div');
@@ -2783,7 +2792,6 @@ function openSavedWorkoutPicker(sessionIdx) {
 
       const info = document.createElement('div');
       info.className = 'history-content';
-
       const nameRow = document.createElement('div');
       nameRow.className = 'history-title';
       nameRow.textContent = s.name;
@@ -2793,14 +2801,12 @@ function openSavedWorkoutPicker(sessionIdx) {
         badge.textContent = 'PLANNED';
         nameRow.appendChild(badge);
       }
-
       const exCount = (s.exercises || []).filter(e => e.exType === 'strength' || e.exType === 'core').length;
       const detail = document.createElement('div');
       detail.className = 'history-detail';
       detail.style.cssText = 'font-family:"DM Mono",monospace;font-size:11px;color:var(--text3)';
       detail.textContent = d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) +
         (exCount ? ' · ' + exCount + ' exercises' : '');
-
       info.appendChild(nameRow);
       info.appendChild(detail);
       row.appendChild(dateEl);
@@ -2809,12 +2815,12 @@ function openSavedWorkoutPicker(sessionIdx) {
     });
   }
 
-  panel.style.display = 'block';
+  modal.style.display = 'flex';
 }
 
 function closeSavedPickerPanel() {
-  const panel = document.getElementById('saved-picker-panel');
-  if (panel) panel.style.display = 'none';
+  const modal = document.getElementById('modal-saved-picker');
+  if (modal) modal.style.display = 'none';
 }
 
 
@@ -2849,8 +2855,53 @@ function importSavedWorkout(sessionId) {
 function openSavedWorkoutPickerForProgram(progId, weekIdx, sessionIdx) {
   const state = getState();
   const saved = [...state.sessions].sort((a, b) => new Date(b.date) - new Date(a.date));
-  if (!saved.length) { showToast('No logged sessions yet.'); return; }
-  renderSavedPickerModal(saved, 'program slot', function(s) { addSavedWorkoutToProgram(progId, weekIdx, sessionIdx, s.id); });
+  const modal = document.getElementById('modal-saved-picker');
+  const subtitle = document.getElementById('saved-picker-subtitle');
+  const list = document.getElementById('saved-picker-list');
+  if (!modal) return;
+
+  subtitle.textContent = 'Select a session to add to this program week.';
+  list.innerHTML = '';
+
+  if (!saved.length) {
+    list.innerHTML = '<div class="empty-state" style="padding:20px 0"><div class="empty-icon">📝</div><div class="empty-title">No sessions yet</div></div>';
+  } else {
+    saved.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'history-entry';
+      row.style.cursor = 'pointer';
+      row.onclick = function() { addSavedWorkoutToProgram(progId, weekIdx, sessionIdx, s.id); };
+      const d = new Date(s.date);
+      const dateEl = document.createElement('div');
+      dateEl.className = 'history-date';
+      dateEl.style.textAlign = 'center';
+      const monthEl = document.createElement('div');
+      monthEl.style.cssText = 'font-size:10px;color:var(--text3)';
+      monthEl.textContent = d.toLocaleDateString('en-US', {month:'short'});
+      const dayEl = document.createElement('div');
+      dayEl.style.cssText = 'font-family:"Bebas Neue",sans-serif;font-size:20px;line-height:1;color:var(--text)';
+      dayEl.textContent = d.getDate();
+      dateEl.appendChild(monthEl);
+      dateEl.appendChild(dayEl);
+      const info = document.createElement('div');
+      info.className = 'history-content';
+      const nameRow = document.createElement('div');
+      nameRow.className = 'history-title';
+      nameRow.textContent = s.name;
+      const exCount = (s.exercises || []).filter(e => e.exType === 'strength' || e.exType === 'core').length;
+      const detail = document.createElement('div');
+      detail.className = 'history-detail';
+      detail.style.cssText = 'font-family:"DM Mono",monospace;font-size:11px;color:var(--text3)';
+      detail.textContent = d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) +
+        (exCount ? ' · ' + exCount + ' exercises' : '');
+      info.appendChild(nameRow);
+      info.appendChild(detail);
+      row.appendChild(dateEl);
+      row.appendChild(info);
+      list.appendChild(row);
+    });
+  }
+  modal.style.display = 'flex';
 }
 
 function renderSavedPickerModal(sessions, slotLabel, onSelect) {
@@ -2951,7 +3002,7 @@ function addSavedWorkoutToProgram(progId, weekIdx, sessionIdx, savedId) {
 
   prog.schedule[weekIdx].sessions.push(newSession);
   saveState(state);
-  closeModal('modal-vault-detail');
+  closeSavedPickerPanel();
   showToast('Added to Week ' + week.week);
   // Refresh program view
   showProgramWeek(progId, weekIdx);
@@ -3187,6 +3238,19 @@ JSON structure:
   }
 }
 
+
+function deleteProgramSession(progId, weekIdx, sessionDay) {
+  showConfirm('Delete Session', 'Remove this session from the program?', () => {
+    const state = getState();
+    const prog = state.programs.find(p => p.id === progId);
+    if (!prog || !prog.schedule[weekIdx]) return;
+    prog.schedule[weekIdx].sessions = prog.schedule[weekIdx].sessions.filter(s => s.day !== sessionDay);
+    saveState(state);
+    showProgramWeek(progId, weekIdx);
+    showToast('Session deleted');
+  });
+}
+
 function renderProgramsList() {
   const state = getState();
   const el = document.getElementById('programs-list');
@@ -3286,9 +3350,12 @@ function showProgramWeek(progId, weekIdx) {
             <div class="exercise-scheme">${ex.sets} × ${ex.reps}</div>
           </div>`;
         }).join('')}
-        <div style="display:flex;gap:6px;margin-top:10px">
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
           <button class="btn btn-primary btn-sm" style="flex:1" onclick="logFromProgram('${progId}', ${weekIdx}, '${session.day}')">Log This Session</button>
-          <button class="btn btn-ghost btn-sm" style="flex:1;border-color:rgba(71,200,255,0.35);color:var(--accent3)" onclick="openSavedWorkoutPickerForProgram('${progId}', ${weekIdx}, ${session.sessionIndex !== undefined ? session.sessionIndex : "week.sessions.indexOf(session)"})">+ Add Saved</button>
+          <button class="btn btn-ghost btn-sm" style="flex:1;border-color:rgba(71,200,255,0.35);color:var(--accent3)" onclick="openSavedWorkoutPickerForProgram('${progId}', ${weekIdx}, ${weekIdx})">+ Add Saved</button>
+          <button class="btn btn-danger btn-sm" style="padding:6px 12px" title="Delete session" onclick="deleteProgramSession('${progId}', ${weekIdx}, '${session.day}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>
         </div>
       </div>
     </div>
