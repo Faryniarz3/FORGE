@@ -123,9 +123,9 @@ body::before {
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 10px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
 }
 .card-title {
   font-family: 'Bebas Neue', sans-serif;
@@ -169,22 +169,22 @@ body::before {
 .btn-sm { padding: 8px 14px; font-size: 11px; }
 
 /* INPUTS */
-.input-group { margin-bottom: 14px; }
+.input-group { margin-bottom: 8px; }
 .input-label {
   font-family: 'DM Mono', monospace;
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text2);
-  margin-bottom: 6px;
+  margin-bottom: 3px;
   display: block;
 }
 .input {
   width: 100%;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px 14px;
+  border-radius: 7px;
+  padding: 8px 10px;
   color: var(--text);
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
@@ -239,18 +239,37 @@ select.input { appearance: none; }
 /* SET ROW */
 .set-row {
   display: grid;
-  grid-template-columns: 32px 1fr 1fr auto;
-  gap: 8px;
+  grid-template-columns: 22px 1fr 1fr auto;
+  gap: 5px;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 .set-num {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 18px;
+  font-size: 14px;
   color: var(--text3);
   text-align: center;
 }
-.set-row .input { padding: 10px 12px; font-size: 16px; text-align: center; }
+.set-row .input { padding: 7px 6px; font-size: 14px; text-align: center; }
+
+/* DRAG REORDER */
+.ex-drag-handle {
+  cursor: grab;
+  color: var(--text3);
+  padding: 4px 2px;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+}
+.ex-drag-handle:active { cursor: grabbing; }
+.ex-block-dragging {
+  opacity: 0.4;
+  border: 1px dashed var(--accent) !important;
+}
+.ex-block-drag-over {
+  border-color: var(--accent) !important;
+  background: rgba(232,255,71,0.05) !important;
+}
 
 /* INTERVAL BLOCKS */
 .interval-block {
@@ -1490,6 +1509,8 @@ function openLogModal() {
   addExerciseBlock();
   renderRunProgramSelect();
   openModal('modal-log');
+  // Init drag reorder after modal opens
+  setTimeout(() => initDragReorder(document.getElementById('exercises-container')), 50);
 }
 
 function addExerciseBlock(name = '', prefillSets = null) {
@@ -1582,11 +1603,14 @@ function buildExerciseBlockHTML(id, name, exType, prefillSets) {
     : '';
 
   return `
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
-      <input type="text" class="input" style="flex:1" placeholder="Exercise name" value="${name}"
+    <div style="display:flex;align-items:center;gap:5px;margin-bottom:8px">
+      <div class="ex-drag-handle" draggable="false" title="Hold to reorder">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
+      </div>
+      <input type="text" class="input" style="flex:1;padding:7px 10px;font-size:13px" placeholder="Exercise name" value="${name}"
         id="ex-name-${id}" oninput="onExNameChange(${id},this.value)">
       ${typeTag ? `<div id="ex-type-tag-${id}">${typeTag}</div>` : `<div id="ex-type-tag-${id}"></div>`}
-      <button class="btn btn-ghost btn-sm" onclick="removeExerciseBlock(${id})" style="padding:6px 10px">✕</button>
+      <button class="btn btn-ghost btn-sm" onclick="removeExerciseBlock(${id})" style="padding:4px 8px;font-size:13px">✕</button>
     </div>
     ${isCardio ? buildCardioFieldsHTML(id, exType, meta) : buildStrengthCoreFieldsHTML(id, isCore, meta, prefillSets)}
   `;
@@ -1618,7 +1642,7 @@ function buildStrengthCoreFieldsHTML(id, isCore, meta, prefillSets) {
   const setsHTML = sets.map((s, i) => buildSetRowHTML(id, i + 1, s, meta, isCore)).join('');
 
   const metricToggle = isCore ? `
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px" id="core-metric-toggle-${id}">
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px" id="core-metric-toggle-${id}">
       ${buildCoreMetricToggleHTML(id, meta)}
     </div>
   ` : '';
@@ -1626,7 +1650,7 @@ function buildStrengthCoreFieldsHTML(id, isCore, meta, prefillSets) {
   return `
     ${metricToggle}
     <div id="sets-container-${id}">${setsHTML}</div>
-    <button class="btn btn-ghost btn-full btn-sm" onclick="addSet(${id})">+ Set</button>
+    <button class="btn btn-ghost btn-full btn-sm" onclick="addSet(${id})" style="padding:5px;font-size:10px;margin-top:2px">+ Set</button>
   `;
 }
 
@@ -3733,6 +3757,161 @@ function showSaveToVaultBanner(exerciseName, container) {
 // VAULT SEED — pre-loaded exercises
 // ============================================================
 const VAULT_SEED = [{"id":"1777824098817","name":"Flat Bench Press","muscles":["chest"],"equipment":["barbell"],"notes":"","addedAt":"2026-05-03T16:01:38.817Z"},{"id":"1777824107283","name":"Incline Bench Press","muscles":["chest"],"equipment":["barbell"],"notes":"","addedAt":"2026-05-03T16:01:47.283Z"},{"id":"1777824139684","name":"Chest Flys","muscles":["chest"],"equipment":["cable"],"notes":"","addedAt":"2026-05-03T16:02:19.684Z"},{"id":"1777824163998","name":"Bench Chest Flys","muscles":["chest"],"equipment":["dumbbell"],"notes":"","addedAt":"2026-05-03T16:02:43.998Z"},{"id":"1777839119161","name":"Incline Chest Flys","muscles":["chest"],"equipment":["dumbbell"],"notes":"","addedAt":"2026-05-03T20:11:59.161Z"},{"id":"1777839163411","name":"Pull Up","muscles":["back"],"equipment":["bodyweight"],"notes":"","addedAt":"2026-05-03T20:12:43.411Z"},{"id":"1777839186065","name":"Cable Row","muscles":["back"],"equipment":["machine"],"notes":"","addedAt":"2026-05-03T20:13:06.065Z"},{"id":"1777839245044","name":"Single Arm Row","muscles":["back"],"equipment":["dumbbell"],"notes":"","addedAt":"2026-05-03T20:14:05.044Z"},{"id":"1777839273960","name":"Incline Row","muscles":["back"],"equipment":["dumbbell"],"notes":"","addedAt":"2026-05-03T20:14:33.960Z"},{"id":"1777839773207","name":"Squat to Press","muscles":["shoulders","legs"],"equipment":["barbell"],"notes":"","addedAt":"2026-05-03T20:22:53.207Z"},{"id":"1777839791239","name":"Back Squat","muscles":["legs"],"equipment":["barbell"],"notes":"","addedAt":"2026-05-03T20:23:11.239Z"},{"id":"1777839806606","name":"Front Squat","muscles":["legs"],"equipment":["barbell"],"notes":"","addedAt":"2026-05-03T20:23:26.606Z"},{"id":"1777839819606","name":"Deadlift","muscles":["back","legs"],"equipment":["barbell"],"notes":"","addedAt":"2026-05-03T20:23:39.606Z"},{"id":"1777839835791","name":"Leg Extension","muscles":["legs"],"equipment":["machine"],"notes":"","addedAt":"2026-05-03T20:23:55.791Z"},{"id":"1777839922761","name":"Split Squat Press","muscles":["shoulders","legs"],"equipment":["dumbbell"],"notes":"","addedAt":"2026-05-03T20:25:22.761Z"},{"id":"1777839975407","name":"Straight leg plate sit up","muscles":["core"],"equipment":["dumbbell"],"notes":"","addedAt":"2026-05-03T20:26:15.407Z"},{"id":"1777840026457","name":"Hanging Leg Lifts","muscles":["core"],"equipment":["bodyweight"],"notes":"","addedAt":"2026-05-03T20:27:06.457Z"},{"id":"1777840051590","name":"Dips","muscles":["triceps"],"equipment":["bodyweight"],"notes":"","addedAt":"2026-05-03T20:27:31.590Z"},{"id":"1777840071842","name":"Russian Twists","muscles":["core"],"equipment":["dumbbell"],"notes":"","addedAt":"2026-05-03T20:27:51.842Z"},{"id":"1777840115391","name":"Farmer's Walks","muscles":["legs","core"],"equipment":["kettlebell"],"notes":"","addedAt":"2026-05-03T20:28:35.391Z"},{"id":"1777840154391","name":"Waiter Carries","muscles":["legs","core"],"equipment":["kettlebell"],"notes":"","addedAt":"2026-05-03T20:29:14.391Z"},{"id":"1777840188190","name":"Shrugs","muscles":["shoulders"],"equipment":["dumbbell"],"notes":"","addedAt":"2026-05-03T20:29:48.190Z"},{"id":"1777840240023","name":"21's","muscles":["biceps"],"equipment":["barbell"],"notes":"","addedAt":"2026-05-03T20:30:40.023Z"},{"id":"1777840267424","name":"Incline Curls","muscles":["biceps"],"equipment":["dumbbell"],"notes":"","addedAt":"2026-05-03T20:31:07.424Z"},{"id":"1777840279423","name":"Decline Curls","muscles":["biceps"],"equipment":["dumbbell"],"notes":"","addedAt":"2026-05-03T20:31:19.423Z"},{"id":"1777840308306","name":"Preacher Curls","muscles":["biceps"],"equipment":["barbell"],"notes":"","addedAt":"2026-05-03T20:31:48.306Z"},{"id":"1777840328905","name":"Kettlebell Swings","muscles":["legs"],"equipment":["kettlebell"],"notes":"","addedAt":"2026-05-03T20:32:08.905Z"},{"id":"1777840362406","name":"Treadmill","muscles":["cardio"],"equipment":["machine"],"notes":"","addedAt":"2026-05-03T20:32:42.406Z"},{"id":"1777840413023","name":"Skullcrushers","muscles":["triceps"],"equipment":["barbell"],"notes":"","addedAt":"2026-05-03T20:33:33.023Z"},{"id":"1777840448283","name":"Dumbell Pullover","muscles":["back","core"],"equipment":["dumbbell"],"notes":"","addedAt":"2026-05-03T20:34:08.283Z"},{"id":"1777840462979","name":"Lateral Raises","muscles":["shoulders"],"equipment":["dumbbell"],"notes":"","addedAt":"2026-05-03T20:34:22.979Z"}];
+
+
+// ============================================================
+// DRAG-TO-REORDER EXERCISE BLOCKS
+// ============================================================
+let dragSrcEl = null;
+let dragTouchStartY = 0;
+let dragTouchEl = null;
+let dragTouchClone = null;
+let dragTouchTargetContainer = null;
+
+function initDragReorder(container) {
+  if (!container) return;
+
+  // Desktop drag events — attached to each top-level draggable child
+  function attachDrag(el) {
+    el.setAttribute('draggable', 'true');
+
+    el.addEventListener('dragstart', e => {
+      dragSrcEl = el;
+      el.classList.add('ex-block-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    el.addEventListener('dragend', () => {
+      el.classList.remove('ex-block-dragging');
+      container.querySelectorAll('.ex-block-drag-over').forEach(n => n.classList.remove('ex-block-drag-over'));
+      dragSrcEl = null;
+    });
+
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (el !== dragSrcEl) el.classList.add('ex-block-drag-over');
+    });
+
+    el.addEventListener('dragleave', () => {
+      el.classList.remove('ex-block-drag-over');
+    });
+
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      el.classList.remove('ex-block-drag-over');
+      if (dragSrcEl && dragSrcEl !== el) {
+        const allChildren = Array.from(container.children);
+        const srcIdx = allChildren.indexOf(dragSrcEl);
+        const tgtIdx = allChildren.indexOf(el);
+        if (srcIdx < tgtIdx) container.insertBefore(dragSrcEl, el.nextSibling);
+        else container.insertBefore(dragSrcEl, el);
+      }
+    });
+  }
+
+  // Touch drag for iPhone — long press to activate
+  function attachTouch(el) {
+    let pressTimer = null;
+
+    el.addEventListener('touchstart', e => {
+      pressTimer = setTimeout(() => {
+        dragTouchEl = el;
+        dragTouchTargetContainer = container;
+        const touch = e.touches[0];
+        dragTouchStartY = touch.clientY;
+
+        // Visual feedback
+        el.classList.add('ex-block-dragging');
+
+        // Create floating clone
+        dragTouchClone = el.cloneNode(true);
+        dragTouchClone.style.cssText = `
+          position:fixed; left:${el.getBoundingClientRect().left}px;
+          top:${el.getBoundingClientRect().top}px;
+          width:${el.offsetWidth}px; opacity:0.85; z-index:9999;
+          pointer-events:none; border:1px solid var(--accent);
+          border-radius:10px; background:var(--surface);
+          transition:none; box-shadow:0 8px 24px rgba(0,0,0,0.5);
+        `;
+        document.body.appendChild(dragTouchClone);
+
+        // Haptic feedback if available
+        if (navigator.vibrate) navigator.vibrate(30);
+      }, 400);
+    }, { passive: true });
+
+    el.addEventListener('touchmove', e => {
+      if (!dragTouchEl || dragTouchEl !== el) { clearTimeout(pressTimer); return; }
+      e.preventDefault();
+      const touch = e.touches[0];
+      const dy = touch.clientY - dragTouchStartY;
+
+      // Move clone
+      if (dragTouchClone) {
+        const rect = el.getBoundingClientRect();
+        dragTouchClone.style.top = (rect.top + dy) + 'px';
+      }
+
+      // Find element under touch
+      dragTouchClone.style.display = 'none';
+      const elUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+      dragTouchClone.style.display = '';
+      if (!elUnder) return;
+
+      const targetBlock = elUnder.closest('[id^="ex-block-"], .superset-group');
+      if (targetBlock && targetBlock !== dragTouchEl && container.contains(targetBlock)) {
+        container.querySelectorAll('.ex-block-drag-over').forEach(n => n.classList.remove('ex-block-drag-over'));
+        targetBlock.classList.add('ex-block-drag-over');
+      }
+    }, { passive: false });
+
+    el.addEventListener('touchend', e => {
+      clearTimeout(pressTimer);
+      if (!dragTouchEl || dragTouchEl !== el) return;
+
+      // Remove clone
+      if (dragTouchClone) { dragTouchClone.remove(); dragTouchClone = null; }
+      el.classList.remove('ex-block-dragging');
+
+      // Find drop target
+      const touch = e.changedTouches[0];
+      const elUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (elUnder) {
+        const targetBlock = elUnder.closest('[id^="ex-block-"], .superset-group');
+        if (targetBlock && targetBlock !== dragTouchEl && container.contains(targetBlock)) {
+          const allChildren = Array.from(container.children);
+          const srcIdx = allChildren.indexOf(dragTouchEl);
+          const tgtIdx = allChildren.indexOf(targetBlock);
+          if (srcIdx < tgtIdx) container.insertBefore(dragTouchEl, targetBlock.nextSibling);
+          else container.insertBefore(dragTouchEl, targetBlock);
+        }
+      }
+
+      container.querySelectorAll('.ex-block-drag-over').forEach(n => n.classList.remove('ex-block-drag-over'));
+      dragTouchEl = null;
+    });
+
+    el.addEventListener('touchcancel', () => {
+      clearTimeout(pressTimer);
+      if (dragTouchClone) { dragTouchClone.remove(); dragTouchClone = null; }
+      if (dragTouchEl) { dragTouchEl.classList.remove('ex-block-dragging'); dragTouchEl = null; }
+      container.querySelectorAll('.ex-block-drag-over').forEach(n => n.classList.remove('ex-block-drag-over'));
+    });
+  }
+
+  // Observe container for new children
+  const observer = new MutationObserver(mutations => {
+    mutations.forEach(m => {
+      m.addedNodes.forEach(node => {
+        if (node.nodeType === 1) { attachDrag(node); attachTouch(node); }
+      });
+    });
+  });
+  observer.observe(container, { childList: true });
+
+  // Attach to existing children
+  Array.from(container.children).forEach(el => { attachDrag(el); attachTouch(el); });
+}
 
 // ============================================================
 // INIT
