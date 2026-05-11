@@ -1557,25 +1557,104 @@ function addSupersetBlock(nameA, nameB, setsA, setsB) {
   wrapper.setAttribute('data-ex-b', idB);
   const bodyA = buildExerciseBlockHTML(idA, nameA, exTypeA, setsA);
   const bodyB = buildExerciseBlockHTML(idB, nameB, exTypeB, setsB);
-  wrapper.innerHTML =
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
-      '<div class="superset-label">' +
-        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>' +
-        'Superset' +
-      '</div>' +
-      '<button class="btn btn-ghost btn-sm" onclick="removeSuperset(\''+ssId+'\')" style="padding:4px 8px;font-size:11px;color:var(--text3)">✕ Remove</button>' +
-    '</div>' +
-    '<div style="margin-bottom:6px">' +
-      '<div class="superset-slot-label">SS-A</div>' +
-      '<div class="card" id="ex-block-'+idA+'" style="margin-bottom:0">' + bodyA + '</div>' +
-    '</div>' +
-    '<div class="superset-divider">↕ repeat</div>' +
-    '<div>' +
-      '<div class="superset-slot-label">SS-B</div>' +
-      '<div class="card" id="ex-block-'+idB+'" style="margin-bottom:0">' + bodyB + '</div>' +
-    '</div>';
+  // Build superset using DOM to avoid string escaping issues
+  const ssHeader = document.createElement('div');
+  ssHeader.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px';
+  const ssLabel = document.createElement('div');
+  ssLabel.className = 'superset-label';
+  ssLabel.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Superset';
+  const ssBtns = document.createElement('div');
+  ssBtns.style.cssText = 'display:flex;gap:6px';
+  const swapBtn = document.createElement('button');
+  swapBtn.innerHTML = '&#8645; Swap';
+  swapBtn.style.cssText = 'background:none;border:1px solid rgba(255,107,53,0.35);border-radius:6px;color:var(--accent2);font-family:"DM Mono",monospace;font-size:10px;padding:4px 10px;cursor:pointer;letter-spacing:0.06em';
+  swapBtn.onclick = function() { swapSuperset(ssId); };
+  const removeBtn = document.createElement('button');
+  removeBtn.textContent = '\u2715';
+  removeBtn.className = 'btn btn-ghost btn-sm';
+  removeBtn.style.cssText = 'padding:4px 8px;font-size:11px;color:var(--text3)';
+  removeBtn.onclick = function() { removeSuperset(ssId); };
+  ssBtns.appendChild(swapBtn);
+  ssBtns.appendChild(removeBtn);
+  ssHeader.appendChild(ssLabel);
+  ssHeader.appendChild(ssBtns);
+
+  const slotA = document.createElement('div');
+  slotA.style.cssText = 'margin-bottom:6px';
+  slotA.id = 'ss-slot-a-' + ssId;
+  const slotLabelA = document.createElement('div');
+  slotLabelA.className = 'superset-slot-label';
+  slotLabelA.textContent = 'SS-A';
+  const cardA = document.createElement('div');
+  cardA.className = 'card';
+  cardA.id = 'ex-block-' + idA;
+  cardA.style.marginBottom = '0';
+  cardA.innerHTML = bodyA;
+  slotA.appendChild(slotLabelA);
+  slotA.appendChild(cardA);
+
+  const dividerEl = document.createElement('div');
+  dividerEl.className = 'superset-divider';
+  dividerEl.textContent = '\u2195 repeat';
+
+  const slotB = document.createElement('div');
+  slotB.id = 'ss-slot-b-' + ssId;
+  const slotLabelB = document.createElement('div');
+  slotLabelB.className = 'superset-slot-label';
+  slotLabelB.textContent = 'SS-B';
+  const cardB = document.createElement('div');
+  cardB.className = 'card';
+  cardB.id = 'ex-block-' + idB;
+  cardB.style.marginBottom = '0';
+  cardB.innerHTML = bodyB;
+  slotB.appendChild(slotLabelB);
+  slotB.appendChild(cardB);
+
+  wrapper.appendChild(ssHeader);
+  wrapper.appendChild(slotA);
+  wrapper.appendChild(dividerEl);
+  wrapper.appendChild(slotB);
   container.appendChild(wrapper);
   setTimeout(() => renderSupersetJoinButtons(), 20);
+}
+
+
+function swapSuperset(ssId) {
+  const wrapper = document.getElementById('superset-' + ssId);
+  if (!wrapper) return;
+
+  const idA = wrapper.getAttribute('data-ex-a');
+  const idB = wrapper.getAttribute('data-ex-b');
+  const slotA = document.getElementById('ss-slot-a-' + ssId);
+  const slotB = document.getElementById('ss-slot-b-' + ssId);
+  const cardA = document.getElementById('ex-block-' + idA);
+  const cardB = document.getElementById('ex-block-' + idB);
+  if (!slotA || !slotB || !cardA || !cardB) return;
+
+  // Swap the card elements between slots
+  slotA.appendChild(cardB);
+  slotB.appendChild(cardA);
+
+  // Update card IDs and slot labels to reflect new positions
+  cardA.id = 'ex-block-' + idB;
+  cardB.id = 'ex-block-' + idA;
+
+  // Update data attributes on wrapper
+  wrapper.setAttribute('data-ex-a', idB);
+  wrapper.setAttribute('data-ex-b', idA);
+
+  // Update slot label text
+  const labelA = slotA.querySelector('.superset-slot-label');
+  const labelB = slotB.querySelector('.superset-slot-label');
+  if (labelA) labelA.textContent = 'SS-A';
+  if (labelB) labelB.textContent = 'SS-B';
+
+  // Swap blockMetaState keys
+  const tmpMeta = blockMetaState[idA];
+  blockMetaState[idA] = blockMetaState[idB];
+  blockMetaState[idB] = tmpMeta;
+
+  showToast('Swapped SS-A and SS-B');
 }
 
 function removeSuperset(ssId) {
