@@ -1551,6 +1551,7 @@ function addExerciseBlock(name = '', prefillSets = null) {
   div.style.marginBottom = '12px';
   div.innerHTML = buildExerciseBlockHTML(id, name, exType, prefillSets);
   container.appendChild(div);
+  initDragReorder(container);
   setTimeout(() => renderSupersetJoinButtons(), 20);
 }
 // ---- SUPERSET ----
@@ -1634,6 +1635,7 @@ function addSupersetBlock(nameA, nameB, setsA, setsB) {
   wrapper.appendChild(dividerEl);
   wrapper.appendChild(slotB);
   container.appendChild(wrapper);
+  initDragReorder(container);
   setTimeout(() => renderSupersetJoinButtons(), 20);
 }
 
@@ -4446,6 +4448,10 @@ function initDragReorder(container) {
 
   // Desktop drag events — attached to each top-level draggable child
   function attachDrag(el) {
+    // Skip join buttons and already-draggable elements
+    if (el.classList.contains('ss-join-btn-wrap')) return;
+    if (el.getAttribute('data-drag-attached')) return;
+    el.setAttribute('data-drag-attached', '1');
     el.setAttribute('draggable', 'true');
 
     el.addEventListener('dragstart', e => {
@@ -4484,6 +4490,9 @@ function initDragReorder(container) {
 
   // Touch drag for iPhone — long press to activate
   function attachTouch(el) {
+    if (el.classList.contains('ss-join-btn-wrap')) return;
+    if (el.getAttribute('data-touch-attached')) return;
+    el.setAttribute('data-touch-attached', '1');
     let pressTimer = null;
 
     el.addEventListener('touchstart', e => {
