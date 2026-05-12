@@ -4198,8 +4198,44 @@ function selectFromVaultPicker(id) {
   if (vaultPickerCallback) {
     vaultPickerCallback(ex.name);
   } else {
-    // Default: add to the log form
-    addExerciseBlock(ex.name);
+    // Check for an empty superset slot first — fill SS-A then SS-B
+    const container = document.getElementById('exercises-container');
+    let filledSlot = false;
+
+    if (container) {
+      const supersets = container.querySelectorAll('.superset-group');
+      for (const ss of supersets) {
+        const idA = ss.getAttribute('data-ex-a');
+        const idB = ss.getAttribute('data-ex-b');
+
+        // Check SS-A
+        const nameA = document.getElementById('ex-name-' + idA)?.value?.trim();
+        if (!nameA) {
+          const nameEl = document.getElementById('ex-name-' + idA);
+          if (nameEl) {
+            nameEl.value = ex.name;
+            onExNameChange(idA, ex.name);
+            filledSlot = true;
+            break;
+          }
+        }
+
+        // Check SS-B
+        const nameB = document.getElementById('ex-name-' + idB)?.value?.trim();
+        if (!nameB) {
+          const nameEl = document.getElementById('ex-name-' + idB);
+          if (nameEl) {
+            nameEl.value = ex.name;
+            onExNameChange(idB, ex.name);
+            filledSlot = true;
+            break;
+          }
+        }
+      }
+    }
+
+    // No empty superset slot — add as standalone block
+    if (!filledSlot) addExerciseBlock(ex.name);
   }
   closeVaultPicker();
 }
