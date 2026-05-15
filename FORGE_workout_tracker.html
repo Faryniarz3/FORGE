@@ -1176,6 +1176,8 @@ select.input { appearance: none; }
   </div>
   <div class="vault-filter-bar" id="vault-filter-bar">
     <button class="vault-filter-pill active" data-filter="all" onclick="setVaultFilter('all',this)">All</button>
+    <button class="vault-filter-pill active" data-filter="all" onclick="setVaultFilter('all',this)">All</button>
+    <button class="vault-filter-pill" data-filter="full body" onclick="setVaultFilter('full body',this)">Full Body</button>
     <button class="vault-filter-pill" data-filter="chest" onclick="setVaultFilter('chest',this)">Chest</button>
     <button class="vault-filter-pill" data-filter="back" onclick="setVaultFilter('back',this)">Back</button>
     <button class="vault-filter-pill" data-filter="shoulders" onclick="setVaultFilter('shoulders',this)">Shoulders</button>
@@ -1184,8 +1186,6 @@ select.input { appearance: none; }
     <button class="vault-filter-pill" data-filter="legs" onclick="setVaultFilter('legs',this)">Legs</button>
     <button class="vault-filter-pill" data-filter="core" onclick="setVaultFilter('core',this)">Core</button>
     <button class="vault-filter-pill" data-filter="cardio" onclick="setVaultFilter('cardio',this)">Cardio</button>
-    <button class="vault-filter-pill" data-filter="full body" onclick="setVaultFilter('full body',this)">Full Body</button>
-    <button class="vault-filter-pill" data-filter="full body" onclick="setVaultFilter('full body',this)">Full Body</button>
   </div>
 
   <div class="section" style="padding-top:0">
@@ -1210,6 +1210,7 @@ select.input { appearance: none; }
     <div class="input-group">
       <label class="input-label">Muscle Groups (select all that apply)</label>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px" id="muscle-group-selector">
+        <button class="muscle-tag" data-group="full body" onclick="toggleMuscleTag(this)">Full Body</button>
         <button class="muscle-tag" data-group="chest" onclick="toggleMuscleTag(this)">Chest</button>
         <button class="muscle-tag" data-group="back" onclick="toggleMuscleTag(this)">Back</button>
         <button class="muscle-tag" data-group="shoulders" onclick="toggleMuscleTag(this)">Shoulders</button>
@@ -1218,8 +1219,6 @@ select.input { appearance: none; }
         <button class="muscle-tag" data-group="legs" onclick="toggleMuscleTag(this)">Legs</button>
         <button class="muscle-tag" data-group="core" onclick="toggleMuscleTag(this)">Core</button>
         <button class="muscle-tag" data-group="cardio" onclick="toggleMuscleTag(this)">Cardio</button>
-        <button class="muscle-tag" data-group="full body" onclick="toggleMuscleTag(this)">Full Body</button>
-        <button class="muscle-tag" data-group="full body" onclick="toggleMuscleTag(this)">Full Body</button>
       </div>
     </div>
 
@@ -1268,6 +1267,7 @@ select.input { appearance: none; }
     <input type="text" class="input" id="vault-picker-search" placeholder="Search..." oninput="renderVaultPicker()" style="margin-bottom:10px">
     <div class="vault-filter-bar" style="padding:0 0 12px">
       <button class="vault-filter-pill active" data-filter="all" onclick="setVaultPickerFilter('all',this)">All</button>
+      <button class="vault-filter-pill" data-filter="full body" onclick="setVaultPickerFilter('full body',this)">Full Body</button>
       <button class="vault-filter-pill" data-filter="chest" onclick="setVaultPickerFilter('chest',this)">Chest</button>
       <button class="vault-filter-pill" data-filter="back" onclick="setVaultPickerFilter('back',this)">Back</button>
       <button class="vault-filter-pill" data-filter="shoulders" onclick="setVaultPickerFilter('shoulders',this)">Shoulders</button>
@@ -1276,8 +1276,6 @@ select.input { appearance: none; }
       <button class="vault-filter-pill" data-filter="legs" onclick="setVaultPickerFilter('legs',this)">Legs</button>
       <button class="vault-filter-pill" data-filter="core" onclick="setVaultPickerFilter('core',this)">Core</button>
       <button class="vault-filter-pill" data-filter="cardio" onclick="setVaultPickerFilter('cardio',this)">Cardio</button>
-      <button class="vault-filter-pill" data-filter="full body" onclick="setVaultPickerFilter('full body',this)">Full Body</button>
-      <button class="vault-filter-pill" data-filter="full body" onclick="setVaultPickerFilter('full body',this)">Full Body</button>
     </div>
   </div>
   <div class="vault-picker-body" id="vault-picker-body"></div>
