@@ -741,7 +741,8 @@ select.input { appearance: none; }
 .muscle-tag[data-group="triceps"].selected   { background: rgba(255,213,79,0.15); color: #ffd54f; border-color: #ffd54f; }
 .muscle-tag[data-group="legs"].selected     { background: rgba(129,199,132,0.15); color: #81c784; border-color: #81c784; }
 .muscle-tag[data-group="core"].selected     { background: rgba(232,255,71,0.15); color: #e8ff47; border-color: #e8ff47; }
-.muscle-tag[data-group="cardio"].selected    { background: rgba(71,200,255,0.15); color: #47c8ff; border-color: #47c8ff; }
+.muscle-tag[data-group="cardio"].selected     { background: rgba(71,200,255,0.15); color: #47c8ff; border-color: #47c8ff; }
+.muscle-tag[data-group="full body"].selected  { background: rgba(255,255,255,0.1); color: #fff; border-color: #fff; }
 
 .equip-tag {
   display: inline-flex;
@@ -1183,6 +1184,8 @@ select.input { appearance: none; }
     <button class="vault-filter-pill" data-filter="legs" onclick="setVaultFilter('legs',this)">Legs</button>
     <button class="vault-filter-pill" data-filter="core" onclick="setVaultFilter('core',this)">Core</button>
     <button class="vault-filter-pill" data-filter="cardio" onclick="setVaultFilter('cardio',this)">Cardio</button>
+    <button class="vault-filter-pill" data-filter="full body" onclick="setVaultFilter('full body',this)">Full Body</button>
+    <button class="vault-filter-pill" data-filter="full body" onclick="setVaultFilter('full body',this)">Full Body</button>
   </div>
 
   <div class="section" style="padding-top:0">
@@ -1215,6 +1218,8 @@ select.input { appearance: none; }
         <button class="muscle-tag" data-group="legs" onclick="toggleMuscleTag(this)">Legs</button>
         <button class="muscle-tag" data-group="core" onclick="toggleMuscleTag(this)">Core</button>
         <button class="muscle-tag" data-group="cardio" onclick="toggleMuscleTag(this)">Cardio</button>
+        <button class="muscle-tag" data-group="full body" onclick="toggleMuscleTag(this)">Full Body</button>
+        <button class="muscle-tag" data-group="full body" onclick="toggleMuscleTag(this)">Full Body</button>
       </div>
     </div>
 
@@ -1271,6 +1276,8 @@ select.input { appearance: none; }
       <button class="vault-filter-pill" data-filter="legs" onclick="setVaultPickerFilter('legs',this)">Legs</button>
       <button class="vault-filter-pill" data-filter="core" onclick="setVaultPickerFilter('core',this)">Core</button>
       <button class="vault-filter-pill" data-filter="cardio" onclick="setVaultPickerFilter('cardio',this)">Cardio</button>
+      <button class="vault-filter-pill" data-filter="full body" onclick="setVaultPickerFilter('full body',this)">Full Body</button>
+      <button class="vault-filter-pill" data-filter="full body" onclick="setVaultPickerFilter('full body',this)">Full Body</button>
     </div>
   </div>
   <div class="vault-picker-body" id="vault-picker-body"></div>
@@ -3974,13 +3981,13 @@ function showToast(msg) {
 // ============================================================
 // VAULT
 // ============================================================
-const MUSCLE_GROUPS = ['chest','back','shoulders','biceps','triceps','legs','core','cardio'];
+const MUSCLE_GROUPS = ['chest','back','shoulders','biceps','triceps','legs','core','cardio','full body'];
 const EQUIPMENT_LIST = ['barbell','dumbbell','cable','machine','bodyweight','kettlebell','bands','other'];
 
 const MUSCLE_COLORS = {
   chest: '#ff6b35', back: '#47c8ff', shoulders: '#ba68c8',
   biceps: '#ffb74d', triceps: '#ffd54f', legs: '#81c784',
-  core: '#e8ff47', cardio: '#47c8ff'
+  core: '#e8ff47', cardio: '#47c8ff', 'full body': '#ffffff'
 };
 
 function getVault() { return DB.get('vault', []); }
@@ -4292,7 +4299,7 @@ function openQuickAddExercise() {
 
   const muscles = ['chest','back','shoulders','biceps','triceps','legs','core','cardio'];
   const equipment = ['barbell','dumbbell','cable','machine','bodyweight','kettlebell','bands','other'];
-  const muscleColors = {chest:'#ff6b35',back:'#47c8ff',shoulders:'#ba68c8',biceps:'#ffb74d',triceps:'#ffd54f',legs:'#81c784',core:'#e8ff47',cardio:'#47c8ff'};
+  const muscleColors = {chest:'#ff6b35',back:'#47c8ff',shoulders:'#ba68c8',biceps:'#ffb74d',triceps:'#ffd54f',legs:'#81c784',core:'#e8ff47',cardio:'#47c8ff','full body':'#fff'};
 
   const muscleHTML = muscles.map(m =>
     '<button class="muscle-tag" data-group="' + m + '" onclick="toggleMuscleTag(this)" style="font-size:10px;padding:4px 8px">' +
