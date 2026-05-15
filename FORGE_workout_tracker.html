@@ -1994,7 +1994,7 @@ function removeExerciseBlock(id) {
   setTimeout(() => renderSupersetJoinButtons(), 20);
 }
 
-function collectExercises() {
+function collectExercises(keepEmpty = false) {
   const container = document.getElementById('exercises-container');
 
   // Build superset map: exId -> { ssId, slot }
@@ -2036,9 +2036,10 @@ function collectExercises() {
         if (meta.metrics?.includes('weight') && !meta.bodyweight) { const v = document.getElementById('w-' + id + '-' + setNum)?.value; if (v !== undefined) set.weight = parseFloat(v) || 0; }
         if (meta.metrics?.includes('time_sec')) { const v = document.getElementById('t-' + id + '-' + setNum)?.value; if (v !== undefined) set.time_sec = parseInt(v) || 0; }
         return set;
-      }).filter(s => s.reps > 0 || s.time_sec > 0);
-      if (!sets.length && !ss) return null;
-      const entry = { name, exType: exType === 'core' ? 'core' : 'strength', sets, metrics: meta.metrics, bodyweight: meta.bodyweight };
+      }).filter(s => keepEmpty || s.reps > 0 || s.time_sec > 0 || s.bodyweight);
+      if (!sets.length && !ss && !keepEmpty) return null;
+      // For planned sessions with no sets yet, include empty sets array
+      const entry = { name, exType: exType === 'core' ? 'core' : 'strength', sets: sets.length ? sets : (keepEmpty ? [] : sets), metrics: meta.metrics, bodyweight: meta.bodyweight };
       if (ss) { entry.superset = ss.ssId; entry.supersetSlot = ss.slot; }
       return entry;
     }
@@ -2058,8 +2059,10 @@ function collectExercises() {
 // ============================================================
 function saveUnifiedSession(status = 'completed', existingId = null) {
   const name = document.getElementById('strength-session-name').value.trim() || 'Session';
-  const exercises = collectExercises();
-  if (!exercises.length) { alert('Add at least one exercise.'); return; }
+  const isPlanned = status === 'planned';
+  const exercises = collectExercises(isPlanned);
+  if (!exercises.length && !isPlanned) { alert('Add at least one exercise.'); return; }
+  if (!exercises.length && isPlanned && !name.trim()) { alert('Enter a session name to plan.'); return; }
 
   const state = getState();
   const now = new Date().toISOString();
