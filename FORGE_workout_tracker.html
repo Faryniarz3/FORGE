@@ -1154,7 +1154,7 @@ select.input { appearance: none; }
         </div>
         <div>
           <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">REST (SEC)</div>
-          <input type="number" id="ls-setup-rest" value="30" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:18px;text-align:center;box-sizing:border-box;font-family:Bebas Neue,sans-serif">
+          <input type="number" id="ls-setup-rest" value="45" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:18px;text-align:center;box-sizing:border-box;font-family:Bebas Neue,sans-serif">
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
@@ -4678,7 +4678,7 @@ let liveState = {
   currentSetNum: 1,
   selectedSession: null,
   selectedRIR: null,
-  restSec: 30,
+  restSec: 45,
   restInterval: null,
   selectedEx: null,
 };
@@ -4894,7 +4894,7 @@ function liveLockIn() {
   const w = parseInt(document.getElementById('ls-setup-w').value)||0;
   const r = parseInt(document.getElementById('ls-setup-r').value)||0;
   const ts = parseInt(document.getElementById('ls-setup-sets').value)||3;
-  const rest = parseInt(document.getElementById('ls-setup-rest').value)||30;
+  const rest = parseInt(document.getElementById('ls-setup-rest').value)||45;
   if (!w || !r) { alert('Enter weight and reps to begin'); return; }
   liveState.exercises.push({name:liveState.selectedEx, targetSets:ts, rest:rest, reps:r+'', sets:[]});
   liveState.currentExIdx = liveState.exercises.length - 1;
