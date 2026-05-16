@@ -5007,7 +5007,7 @@ function liveBuildRIRGrid() {
 
 function liveSelectRIR(idx) {
   liveState.selectedRIR = idx;
-  document.querySelectorAll('[id^="ls-rir-"]').forEach((b,i) => {
+  document.querySelectorAll('#ls-rir-grid button[id^="ls-rir-"]').forEach((b,i) => {
     b.style.background = i===idx ? 'rgba(232,255,71,0.1)' : 'var(--surface)';
     b.style.border = i===idx ? '1px solid rgba(232,255,71,0.4)' : '1px solid var(--border)';
   });
