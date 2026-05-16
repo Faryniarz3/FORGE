@@ -1047,7 +1047,12 @@ select.input { appearance: none; }
     <div id="ls-live" style="display:none;flex:1;flex-direction:column">
       <div style="padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
-          <div id="ls-ex-name" style="font-family:Bebas Neue,sans-serif;font-size:22px;letter-spacing:0.06em;color:var(--text)"></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="ls-ex-name" style="font-family:Bebas Neue,sans-serif;font-size:22px;letter-spacing:0.06em;color:var(--text)"></div>
+            <button onclick="openExerciseHistory(document.getElementById('ls-ex-name').textContent)" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px" title="View history">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </button>
+          </div>
           <div id="ls-set-badge" style="font-family:DM Mono,monospace;font-size:10px;color:var(--accent);background:rgba(232,255,71,0.1);padding:3px 8px;border-radius:4px"></div>
         </div>
         <div id="ls-target" style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)"></div>
@@ -1933,6 +1938,9 @@ function buildExerciseBlockHTML(id, name, exType, prefillSets) {
       <input type="text" class="input" style="flex:1;padding:7px 10px;font-size:13px" placeholder="Exercise name" value="${name}"
         id="ex-name-${id}" oninput="onExNameChange(${id},this.value)">
       ${typeTag ? `<div id="ex-type-tag-${id}">${typeTag}</div>` : `<div id="ex-type-tag-${id}"></div>`}
+      <button onclick="openExerciseHistory(document.getElementById('ex-name-${id}')?.value)" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 5px" title="View history">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </button>
       <button class="btn btn-ghost btn-sm" onclick="removeExerciseBlock(${id})" style="padding:4px 8px;font-size:13px">✕</button>
     </div>
     ${isCardio ? buildCardioFieldsHTML(id, exType, meta) : buildStrengthCoreFieldsHTML(id, isCore, meta, prefillSets)}
@@ -4347,6 +4355,10 @@ function viewVaultExercise(id) {
     ${ex.notes ? `<div style="color:var(--text2);font-size:13px;line-height:1.5;margin-bottom:16px">${ex.notes}</div>` : ''}
     <div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3);margin-bottom:16px">Added ${new Date(ex.addedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
     <hr class="divider">
+    <button class="btn btn-ghost btn-full" onclick="openExerciseHistory('${ex.name}')" style="margin-bottom:8px;border-color:rgba(71,200,255,0.3);color:var(--accent3);display:flex;align-items:center;justify-content:center;gap:6px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      View History
+    </button>
     <div style="display:flex;gap:8px">
       <button class="btn btn-secondary" style="flex:1" onclick="openEditExerciseModal('${ex.id}')">Edit</button>
       <button class="btn btn-danger btn-sm" onclick="deleteVaultExercise('${ex.id}')">Remove</button>
@@ -5159,6 +5171,107 @@ function liveReset() {
   liveInit();
 }
 
+
+// ============================================================
+// EXERCISE HISTORY DRAWER
+// ============================================================
+function openExerciseHistory(exerciseName) {
+  if (!exerciseName || !exerciseName.trim()) {
+    showToast('Enter an exercise name first');
+    return;
+  }
+
+  const state = getState();
+  const name = exerciseName.trim().toLowerCase();
+
+  // Only completed sessions
+  const sessions = state.sessions
+    .filter(s => s.status === 'completed' || (!s.status && s.type === 'unified'))
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // Find sessions containing this exercise
+  const history = [];
+  sessions.forEach(session => {
+    const matches = (session.exercises || []).filter(ex =>
+      ex.name && ex.name.toLowerCase() === name &&
+      (ex.exType === 'strength' || ex.exType === 'core') &&
+      ex.sets && ex.sets.length > 0
+    );
+    if (matches.length) {
+      history.push({ session, exercises: matches });
+    }
+  });
+
+  const titleEl = document.getElementById('ehd-title');
+  const contentEl = document.getElementById('ehd-content');
+  if (titleEl) titleEl.textContent = exerciseName;
+
+  if (!contentEl) return;
+
+  if (!history.length) {
+    contentEl.innerHTML = '<div class="empty-state" style="padding:20px 0">' +
+      '<div class="empty-icon">📊</div>' +
+      '<div class="empty-title">No history yet</div>' +
+      '<div class="empty-text">Complete a workout with this exercise to see history here</div>' +
+      '</div>';
+  } else {
+    // Find all-time PR
+    let prWeight = 0, prReps = 0;
+    history.forEach(h => h.exercises.forEach(ex =>
+      ex.sets.forEach(s => {
+        if ((s.weight || 0) > prWeight) { prWeight = s.weight; prReps = s.reps; }
+      })
+    ));
+
+    contentEl.innerHTML = history.slice(0, 5).map((h, idx) => {
+      const d = new Date(h.session.date);
+      const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const ex = h.exercises[0];
+      const sets = ex.sets || [];
+      const vol = sets.reduce((sum, s) => sum + (s.weight||0) * (s.reps||0), 0);
+      const bestSet = sets.reduce((best, s) => (s.weight||0) > (best.weight||0) ? s : best, sets[0]);
+      const isRecent = idx === 0;
+
+      return '<div style="background:var(--surface2);border:1px solid ' + (isRecent ? 'rgba(232,255,71,0.25)' : 'var(--border)') + ';border-radius:10px;padding:14px;margin-bottom:10px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">' +
+        '<div style="font-family:DM Mono,monospace;font-size:11px;color:' + (isRecent ? 'var(--accent)' : 'var(--text2)') + '">' + dateStr + (isRecent ? '  <span style="font-size:9px;background:rgba(232,255,71,0.12);padding:2px 6px;border-radius:3px">LAST</span>' : '') + '</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">' + sets.length + ' sets · ' + vol.toLocaleString() + ' lbs</div>' +
+        '</div>' +
+        sets.map((s, i) => {
+          const isPR = s.weight === prWeight && s.reps >= prReps;
+          return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">' +
+            '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">SET ' + (i+1) + '</div>' +
+            '<div style="font-family:Bebas Neue,sans-serif;font-size:16px;color:var(--text);letter-spacing:0.05em">' +
+            (s.bodyweight ? 'BW' : (s.weight || 0) + ' lbs') + ' × ' + (s.reps || 0) +
+            '</div>' +
+            (isPR ? '<span class="pr-badge">PR</span>' : '<div style="width:28px"></div>') +
+            (s.rir ? '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--accent)">' + s.rir + '</div>' : '<div style="width:36px"></div>') +
+            '</div>';
+        }).join('') +
+        '</div>';
+    }).join('') +
+    (history.length > 5 ? '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;padding:8px 0">Showing last 5 of ' + history.length + ' sessions</div>' : '');
+  }
+
+  const drawer = document.getElementById('exercise-history-drawer');
+  if (drawer) drawer.style.display = 'flex';
+}
+
+function closeExerciseHistory() {
+  const drawer = document.getElementById('exercise-history-drawer');
+  if (drawer) drawer.style.display = 'none';
+}
+
+// Close on overlay click
+document.addEventListener('DOMContentLoaded', () => {
+  const drawer = document.getElementById('exercise-history-drawer');
+  if (drawer) {
+    drawer.addEventListener('click', e => {
+      if (e.target === drawer) closeExerciseHistory();
+    });
+  }
+});
+
 // ============================================================
 // DRAG-TO-REORDER EXERCISE BLOCKS
 // ============================================================
@@ -5346,5 +5459,18 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('dash-date').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 });
 </script>
+
+<!-- EXERCISE HISTORY DRAWER (z-index 500) -->
+<div id="exercise-history-drawer" style="position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(10px);z-index:500;display:none;align-items:flex-end;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px 20px calc(20px + var(--safe-bottom));width:100%;max-height:85vh;overflow-y:auto;animation:slideUp 0.3s ease;max-width:500px">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div id="ehd-title" style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.06em;color:var(--text)"></div>
+      <button onclick="closeExerciseHistory()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:4px">✕</button>
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:0.08em;margin-bottom:16px">COMPLETED SESSION HISTORY</div>
+    <div id="ehd-content"></div>
+  </div>
+</div>
 </body>
 </html>
