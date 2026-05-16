@@ -1109,6 +1109,9 @@ select.input { appearance: none; }
 
     <!-- SCREEN: ADD EXERCISE -->
     <div id="ls-add" style="display:none;flex:1;flex-direction:column">
+      <!-- Completed exercises summary -->
+      <div id="ls-completed-log" style="display:none;padding:14px 20px 0;overflow-y:auto;max-height:280px"></div>
+      <!-- Empty state / next prompt -->
       <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center">
         <div style="width:56px;height:56px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg>
@@ -5045,15 +5048,39 @@ function liveGenerateNext() {
       liveState.currentSetNum = 1;
       document.getElementById('ls-add-title').textContent = 'EXERCISE COMPLETE';
       document.getElementById('ls-add-hint').textContent = 'Add your next exercise or finish the session';
+      liveRenderCompletedLog();
       liveShowScreen('ls-add');
     }, 200);
   }
+}
+
+function liveRenderCompletedLog() {
+  const el = document.getElementById('ls-completed-log');
+  if (!el) return;
+  const completed = liveState.exercises.filter(ex => ex.sets.length > 0);
+  if (!completed.length) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px">COMPLETED</div>' +
+    completed.map(ex => {
+      const vol = ex.sets.reduce((sum,s) => sum + s.weight * s.reps, 0);
+      const bestWeight = Math.max(...ex.sets.map(s => s.weight));
+      const setsSummary = ex.sets.map(s => s.weight + 'x' + s.reps).join('  ');
+      return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">' +
+        '<div style="font-weight:500;font-size:13px;color:var(--text)">' + ex.name + '</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--success);background:rgba(71,255,138,0.1);padding:2px 7px;border-radius:4px">' + ex.sets.length + ' sets</div>' +
+        '</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text2);margin-bottom:4px">' + setsSummary + '</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">Best: ' + bestWeight + ' lbs  ·  Vol: ' + vol.toLocaleString() + ' lbs</div>' +
+        '</div>';
+    }).join('');
 }
 
 function liveNextExercise() {
   liveState.currentSetNum = 1;
   document.getElementById('ls-add-title').textContent = 'EXERCISE COMPLETE';
   document.getElementById('ls-add-hint').textContent = 'Add your next exercise or finish the session';
+  liveRenderCompletedLog();
   liveShowScreen('ls-add');
 }
 
