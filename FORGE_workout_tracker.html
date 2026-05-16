@@ -881,6 +881,10 @@ select.input { appearance: none; }
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
     Vault
   </button>
+  <button class="nav-btn" onclick="showPage('live')" id="nav-live">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    Live
+  </button>
   <button class="nav-btn" onclick="showPage('settings')" id="nav-settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     Settings
@@ -1002,6 +1006,209 @@ select.input { appearance: none; }
   </div>
 </div>
 
+
+<!-- ===== LIVE WORKOUT PAGE ===== -->
+<div id="page-live" class="page">
+
+  <!-- LIVE SCREENS WRAPPER -->
+  <div id="live-app" style="display:flex;flex-direction:column;min-height:calc(100vh - 60px)">
+
+    <!-- SCREEN: START -->
+    <div id="ls-start" style="flex:1;display:flex;flex-direction:column">
+      <div class="header">
+        <div class="logo">LIVE</div>
+      </div>
+      <div style="padding:18px 20px;flex:1;display:flex;flex-direction:column">
+        <div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);margin-bottom:20px">Load a saved session or start fresh</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px">
+          <button onclick="liveSetStartMode('planned')" id="live-tab-planned" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 8px;cursor:pointer;text-align:center;transition:all 0.15s">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5" id="live-icon-planned"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3);margin-top:6px;letter-spacing:0.06em" id="live-lbl-planned">PLANNED</div>
+          </button>
+          <button onclick="liveSetStartMode('program')" id="live-tab-program" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 8px;cursor:pointer;text-align:center;transition:all 0.15s">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5" id="live-icon-program"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            <div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3);margin-top:6px;letter-spacing:0.06em" id="live-lbl-program">PROGRAM</div>
+          </button>
+        </div>
+        <div id="live-start-list" style="flex:1;overflow-y:auto;margin-bottom:14px"></div>
+        <div id="live-start-preview" style="display:none;margin-bottom:14px"></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button id="live-launch-loaded" onclick="liveLaunchLoaded()" style="display:none;width:100%;background:var(--accent);border:none;border-radius:10px;padding:13px;font-family:DM Mono,monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000;align-items:center;justify-content:center;gap:6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> START SESSION
+          </button>
+          <button onclick="liveLaunchBlank()" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.08em;cursor:pointer;color:var(--text3);display:flex;align-items:center;justify-content:center;gap:6px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Start Blank
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN: LIVE SET -->
+    <div id="ls-live" style="display:none;flex:1;flex-direction:column">
+      <div style="padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+          <div id="ls-ex-name" style="font-family:Bebas Neue,sans-serif;font-size:22px;letter-spacing:0.06em;color:var(--text)"></div>
+          <div id="ls-set-badge" style="font-family:DM Mono,monospace;font-size:10px;color:var(--accent);background:rgba(232,255,71,0.1);padding:3px 8px;border-radius:4px"></div>
+        </div>
+        <div id="ls-target" style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)"></div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:14px 20px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">
+          <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px">CURRENT SET</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text2);margin-bottom:4px">WEIGHT (LBS)</div>
+              <input type="number" id="ls-w" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:20px;text-align:center;box-sizing:border-box;font-family:Bebas Neue,sans-serif">
+            </div>
+            <div>
+              <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text2);margin-bottom:4px">REPS</div>
+              <input type="number" id="ls-r" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:20px;text-align:center;box-sizing:border-box;font-family:Bebas Neue,sans-serif">
+            </div>
+          </div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">
+          <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px">SET HISTORY</div>
+          <div id="ls-history"><div style="color:var(--text3);font-family:DM Mono,monospace;font-size:11px;text-align:center;padding:4px 0">No sets yet</div></div>
+        </div>
+        <div>
+          <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px">UP NEXT</div>
+          <div id="ls-upcoming"></div>
+        </div>
+      </div>
+      <div id="ls-rest-bar" style="display:none;background:var(--surface);border-top:1px solid var(--border);padding:8px 20px;flex-direction:row;align-items:center;gap:10px;flex-shrink:0">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">REST</div>
+        <div id="ls-rest-count" style="font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--accent);letter-spacing:0.05em;min-width:32px"></div>
+        <div style="flex:1;background:var(--surface2);border-radius:4px;height:4px;overflow:hidden">
+          <div id="ls-rest-fill" style="height:100%;background:var(--accent);border-radius:4px;transition:width 1s linear"></div>
+        </div>
+        <button onclick="liveEditRest()" style="background:none;border:1px solid var(--border);border-radius:5px;color:var(--text3);font-family:DM Mono,monospace;font-size:10px;padding:3px 8px;cursor:pointer">Edit</button>
+      </div>
+      <div style="padding:10px 20px 14px;border-top:1px solid var(--border);flex-shrink:0">
+        <button onclick="liveCompleteSet()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:13px;font-family:DM Mono,monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000;display:flex;align-items:center;justify-content:center;gap:6px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> COMPLETE SET
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREEN: RIR -->
+    <div id="ls-rir" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:20px">
+      <div style="width:100%;max-width:340px">
+        <div style="font-family:Bebas Neue,sans-serif;font-size:24px;letter-spacing:0.08em;color:var(--text);margin-bottom:2px;text-align:center">Reps In Reserve</div>
+        <div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;margin-bottom:18px">How many more reps could you have done?</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px" id="ls-rir-grid"></div>
+        <div id="ls-rir-suggestion" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;min-height:60px;display:flex;align-items:center;justify-content:center">
+          <div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center">Select RIR to see next set suggestion</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button onclick="liveNextExercise()" style="background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.06em;cursor:pointer;color:var(--text3)">Next Exercise</button>
+          <button id="ls-gen-btn" onclick="liveGenerateNext()" disabled style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.06em;cursor:pointer;color:var(--text3)">Generate Set</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN: ADD EXERCISE -->
+    <div id="ls-add" style="display:none;flex:1;flex-direction:column">
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center">
+        <div style="width:56px;height:56px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+        <div id="ls-add-title" style="font-family:Bebas Neue,sans-serif;font-size:18px;color:var(--text3);letter-spacing:0.08em;margin-bottom:6px">ADD YOUR FIRST EXERCISE</div>
+        <div id="ls-add-hint" style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3)">Tap below to begin</div>
+      </div>
+      <div style="padding:10px 20px 14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px">
+        <button onclick="liveShowVaultPicker()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:13px;font-family:DM Mono,monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000;display:flex;align-items:center;justify-content:center;gap:6px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg> ADD EXERCISE
+        </button>
+        <button onclick="liveGoToSummary()" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.08em;cursor:pointer;color:var(--text3)">Finish Session →</button>
+      </div>
+    </div>
+
+    <!-- SCREEN: VAULT PICKER -->
+    <div id="ls-vault" style="display:none;flex:1;flex-direction:column;padding:18px 20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <button onclick="liveBackFromVault()" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        </button>
+        <div style="font-family:Bebas Neue,sans-serif;font-size:18px;letter-spacing:0.08em;color:var(--accent)">Select Exercise</div>
+      </div>
+      <input type="text" id="ls-vault-search" placeholder="Search..." oninput="liveFilterVault(this.value)" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;margin-bottom:12px;box-sizing:border-box">
+      <div id="ls-vault-results" style="flex:1;overflow-y:auto"></div>
+    </div>
+
+    <!-- SCREEN: EXERCISE SETUP -->
+    <div id="ls-setup" style="display:none;flex:1;flex-direction:column;padding:18px 20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <button onclick="liveShowVaultPicker()" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        </button>
+        <div id="ls-setup-name" style="font-family:Bebas Neue,sans-serif;font-size:20px;letter-spacing:0.06em;color:var(--text)"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">TARGET SETS</div>
+          <input type="number" id="ls-setup-sets" value="3" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:18px;text-align:center;box-sizing:border-box;font-family:Bebas Neue,sans-serif">
+        </div>
+        <div>
+          <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">REST (SEC)</div>
+          <input type="number" id="ls-setup-rest" value="30" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:18px;text-align:center;box-sizing:border-box;font-family:Bebas Neue,sans-serif">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div>
+          <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">WEIGHT (LBS)</div>
+          <input type="number" id="ls-setup-w" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:18px;text-align:center;box-sizing:border-box;font-family:Bebas Neue,sans-serif">
+        </div>
+        <div>
+          <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">REPS</div>
+          <input type="number" id="ls-setup-r" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:18px;text-align:center;box-sizing:border-box;font-family:Bebas Neue,sans-serif">
+        </div>
+      </div>
+      <div style="color:var(--text3);font-size:12px;font-family:DM Mono,monospace;margin-bottom:16px;text-align:center;line-height:1.6">Enter Set 1 weight & reps, then lock in to begin</div>
+      <button onclick="liveLockIn()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:13px;font-family:DM Mono,monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000;display:flex;align-items:center;justify-content:center;gap:6px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> LOCK IN & START
+      </button>
+    </div>
+
+    <!-- SCREEN: SUMMARY -->
+    <div id="ls-summary" style="display:none;flex:1;flex-direction:column">
+      <div style="flex:1;overflow-y:auto;padding:16px 20px">
+        <div style="font-family:Bebas Neue,sans-serif;font-size:22px;letter-spacing:0.06em;color:var(--text);margin-bottom:14px">Session Summary</div>
+        <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">WORKOUT NAME</div>
+        <input type="text" id="ls-summary-name" placeholder="e.g. Monday Push" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:15px;box-sizing:border-box;margin-bottom:10px">
+        <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">DATE</div>
+        <input type="date" id="ls-summary-date" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;box-sizing:border-box;margin-bottom:14px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+          <div class="stat-card"><div id="ls-stat-sets" class="stat-value">0</div><div class="stat-label">Total Sets</div></div>
+          <div class="stat-card"><div id="ls-stat-vol" class="stat-value">0</div><div class="stat-label">Volume (lbs)</div></div>
+        </div>
+        <div id="ls-summary-list"></div>
+      </div>
+      <div style="padding:10px 20px 14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;flex-shrink:0">
+        <button onclick="liveSaveSession()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:13px;font-family:DM Mono,monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000;display:flex;align-items:center;justify-content:center;gap:6px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> SAVE & LOG
+        </button>
+        <button onclick="liveDiscardSession()" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.08em;cursor:pointer;color:var(--text3)">Discard</button>
+      </div>
+    </div>
+
+    <!-- SCREEN: SAVED CONFIRMATION -->
+    <div id="ls-saved" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;text-align:center">
+      <div style="width:60px;height:60px;border-radius:50%;background:rgba(232,255,71,0.1);border:1px solid rgba(232,255,71,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 18px">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div style="font-family:Bebas Neue,sans-serif;font-size:26px;letter-spacing:0.08em;color:var(--text);margin-bottom:6px">Workout Saved!</div>
+      <div id="ls-saved-name" style="font-family:DM Mono,monospace;font-size:12px;color:var(--text3);margin-bottom:4px"></div>
+      <div id="ls-saved-stats" style="font-family:DM Mono,monospace;font-size:12px;color:var(--text3);margin-bottom:28px"></div>
+      <div style="display:flex;flex-direction:column;gap:8px;width:100%">
+        <button onclick="liveGoToLog()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:13px;font-family:DM Mono,monospace;font-size:12px;letter-spacing:0.08em;cursor:pointer;color:#000">View in Log</button>
+        <button onclick="liveReset()" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.08em;cursor:pointer;color:var(--text3)">Start New Session</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- ===== SETTINGS PAGE ===== -->
 <div id="page-settings" class="page">
   <div class="header">
@@ -1025,13 +1232,13 @@ select.input { appearance: none; }
 
     <!-- Active philosophy preview card -->
     <div id="philosophy-active-card" style="display:none;background:var(--surface2);border:1px solid rgba(232,255,71,0.2);border-radius:10px;padding:14px;margin-bottom:14px">
-      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:0.1em;margin-bottom:8px">ACTIVE PHILOSOPHY</div>
+      <div style="font-family:DM Mono,monospace;font-size:10px;color:var(--accent);letter-spacing:0.1em;margin-bottom:8px">ACTIVE PHILOSOPHY</div>
       <div id="philosophy-preview" style="font-size:13px;color:var(--text2);line-height:1.6"></div>
     </div>
 
     <!-- Methodology breakdown (shown after save) -->
     <div id="philosophy-breakdown" style="display:none;margin-bottom:14px">
-      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:0.08em;margin-bottom:10px">DETECTED SYSTEMS</div>
+      <div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3);letter-spacing:0.08em;margin-bottom:10px">DETECTED SYSTEMS</div>
       <div id="philosophy-tags" style="display:flex;flex-wrap:wrap;gap:6px"></div>
     </div>
 
@@ -1052,12 +1259,12 @@ select.input { appearance: none; }
       <button class="btn btn-primary" onclick="saveGitHubSettings()">Save & Sync Now</button>
       <button class="btn btn-secondary" onclick="pullFromGist()">Pull from Gist</button>
     </div>
-    <div id="sync-result" style="margin-top:12px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text2)"></div>
+    <div id="sync-result" style="margin-top:12px;font-family:DM Mono,monospace;font-size:12px;color:var(--text2)"></div>
   </div>
 
   <div class="section">
     <div class="section-title">App Info</div>
-    <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);line-height:1.8">
+    <div style="font-family:DM Mono,monospace;font-size:12px;color:var(--text2);line-height:1.8">
       <div>Version: 1.0.0</div>
       <div>Storage: Local + GitHub Gist</div>
       <div id="data-size-info">Data: Calculating...</div>
@@ -1106,7 +1313,7 @@ select.input { appearance: none; }
 
     <!-- Run program section (separate — timer-based) -->
     <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:14px">
-      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:0.08em;margin-bottom:8px">RUN PROGRAM</div>
+      <div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3);letter-spacing:0.08em;margin-bottom:8px">RUN PROGRAM</div>
       <div id="run-programs-list-select"></div>
       <div id="run-active-timer" style="display:none"></div>
     </div>
@@ -1188,7 +1395,7 @@ select.input { appearance: none; }
   </div>
 
   <div class="section" style="padding-top:0">
-    <div id="vault-count" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);margin-bottom:12px;letter-spacing:0.06em"></div>
+    <div id="vault-count" style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);margin-bottom:12px;letter-spacing:0.06em"></div>
     <div id="vault-list"></div>
   </div>
 </div>
@@ -1335,6 +1542,7 @@ function showPage(name) {
   if (name === 'log') renderLogList();
   if (name === 'programs') renderProgramsList();
   if (name === 'vault') renderVault();
+  if (name === 'live') liveInit();
   if (name === 'settings') loadSettingsPage();
 }
 
@@ -1774,14 +1982,14 @@ function buildCoreMetricToggleHTML(id, meta) {
   ];
   const bwActive = meta.bodyweight;
   return `
-    <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:0.06em;align-self:center">Metrics:</span>
+    <span style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3);letter-spacing:0.06em;align-self:center">Metrics:</span>
     ${options.map(o => `
       <button class="metric-toggle-btn ${meta.metrics.includes(o.key) ? 'active' : ''}" data-key="${o.key}"
         onclick="toggleCoreMetric(${id},'${o.key}',this)"
         style="padding:4px 10px;border-radius:5px;border:1px solid ${meta.metrics.includes(o.key) ? 'var(--accent)' : 'var(--border)'};
         background:${meta.metrics.includes(o.key) ? 'rgba(232,255,71,0.12)' : 'transparent'};
         color:${meta.metrics.includes(o.key) ? 'var(--accent)' : 'var(--text3)'};
-        font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:all 0.12s">
+        font-family:DM Mono,monospace;font-size:10px;cursor:pointer;transition:all 0.12s">
         ${o.label}
       </button>
     `).join('')}
@@ -1790,7 +1998,7 @@ function buildCoreMetricToggleHTML(id, meta) {
       style="padding:4px 10px;border-radius:5px;border:1px solid ${bwActive ? 'var(--success)' : 'var(--border)'};
       background:${bwActive ? 'rgba(71,255,138,0.12)' : 'transparent'};
       color:${bwActive ? 'var(--success)' : 'var(--text3)'};
-      font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:all 0.12s">
+      font-family:DM Mono,monospace;font-size:10px;cursor:pointer;transition:all 0.12s">
       BW
     </button>
   `;
@@ -1803,7 +2011,7 @@ function buildSetRowHTML(id, setNum, prefill = {}, meta, isCore) {
 
   const cols = [];
   if (metrics.includes('weight') && !bw) cols.push(`<input type="number" class="input" placeholder="lbs" value="${prefill.weight||''}" id="w-${id}-${setNum}" inputmode="decimal" style="text-align:center;padding:7px 4px" ${isFirst ? `onchange="autofillSets('${id}','weight',this.value)"` : ''}>`);
-  if (bw) cols.push(`<div style="display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:10px;color:var(--success);background:rgba(71,255,138,0.08);border:1px solid rgba(71,255,138,0.2);border-radius:7px;padding:7px 4px">BW</div>`);
+  if (bw) cols.push(`<div style="display:flex;align-items:center;justify-content:center;font-family:DM Mono,monospace;font-size:10px;color:var(--success);background:rgba(71,255,138,0.08);border:1px solid rgba(71,255,138,0.2);border-radius:7px;padding:7px 4px">BW</div>`);
   if (metrics.includes('reps')) cols.push(`<input type="number" class="input" placeholder="Reps" value="${prefill.reps||''}" id="r-${id}-${setNum}" inputmode="numeric" style="text-align:center;padding:7px 4px" ${isFirst ? `onchange="autofillSets('${id}','reps',this.value)"` : ''}>`);
   if (metrics.includes('time_sec')) cols.push(`<input type="number" class="input" placeholder="Sec" value="${prefill.time_sec||''}" id="t-${id}-${setNum}" inputmode="numeric" style="text-align:center;padding:7px 4px" ${isFirst ? `onchange="autofillSets('${id}','time_sec',this.value)"` : ''}>`);
 
@@ -1918,7 +2126,7 @@ function openMetricEditor(id) {
             style="padding:5px 16px;border-radius:20px;border:1px solid ${isOn ? 'var(--accent)' : 'var(--border)'};
             background:${isOn ? 'rgba(232,255,71,0.15)' : 'transparent'};
             color:${isOn ? 'var(--accent)' : 'var(--text3)'};
-            font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.12s"
+            font-family:DM Mono,monospace;font-size:11px;cursor:pointer;transition:all 0.12s"
             data-active="${isOn}">
             ${isOn ? 'ON' : 'OFF'}
           </button>
@@ -2215,7 +2423,7 @@ function renderLogList() {
     return `<div class="history-entry" onclick="viewSession('${s.id}')" style="${isPlanned ? 'opacity:0.85' : ''}">
       <div class="history-date" style="text-align:center">
         <div>${d.toLocaleDateString('en-US',{month:'short'})}</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;line-height:1">${d.getDate()}</div>
+        <div style="font-family:Bebas Neue,sans-serif;font-size:20px;line-height:1">${d.getDate()}</div>
       </div>
       <div class="history-content">
         <div class="history-title">
@@ -2278,7 +2486,7 @@ function viewSession(id) {
       const m = ex.metrics || {};
       const metricLines = Object.entries(m).map(([k,v]) => {
         const def = METRIC_DEFS[k];
-        return `<span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent3)">${def?.label||k}: <strong>${v}</strong></span>`;
+        return `<span style="font-family:DM Mono,monospace;font-size:12px;color:var(--accent3)">${def?.label||k}: <strong>${v}</strong></span>`;
       }).join(' &nbsp;·&nbsp; ');
       return `<div style="margin-bottom:8px">
         <div style="font-weight:500;margin-bottom:4px">${slotHTML}${ex.name} <span class="tag tag-cardio" style="font-size:9px">${ex.exType}</span></div>
@@ -2293,7 +2501,7 @@ function viewSession(id) {
           if(set.bodyweight)parts.push('BW');else if(set.weight)parts.push(set.weight+' lbs');
           if(set.reps)parts.push(set.reps+' reps');
           if(set.time_sec)parts.push(set.time_sec+'s');
-          return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:12px">
+          return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);font-family:DM Mono,monospace;font-size:12px">
             <span style="color:var(--text3);min-width:20px">${i+1}</span>
             <span>${parts.join(' · ')}</span>
             ${set.isPR?'<span class="pr-badge">PR</span>':''}
@@ -2612,7 +2820,7 @@ function renderBuildStep() {
         </select>
       </div>
       <hr class="divider">
-      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:0.08em;margin-bottom:10px">CHOOSE HOW TO BUILD</div>
+      <div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3);letter-spacing:0.08em;margin-bottom:10px">CHOOSE HOW TO BUILD</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px">
         <button class="btn btn-primary btn-full" onclick="initWeek1Builder()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
@@ -2691,7 +2899,7 @@ function renderBuildStep() {
         <div class="ai-dots"><span></span><span></span><span></span></div>
         Extrapolating 6-week program from your Week 1...
       </div>
-      <p style="color:var(--text3);font-size:12px;font-family:'DM Mono',monospace;margin-top:12px;line-height:1.6">
+      <p style="color:var(--text3);font-size:12px;font-family:DM Mono,monospace;margin-top:12px;line-height:1.6">
         Applying progressive overload · FUP rotation · Prilepin zones · Recovery week 6
       </p>
     `;
@@ -3249,10 +3457,10 @@ JSON structure:
     console.error(e);
     document.getElementById('build-program-steps').innerHTML = `
       <div style="background:rgba(255,71,71,0.1);border:1px solid var(--danger);border-radius:10px;padding:14px;margin-bottom:16px">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:0.08em;color:var(--danger);margin-bottom:6px">Generation Failed</div>
-        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);line-height:1.6">${e.message}</div>
+        <div style="font-family:Bebas Neue,sans-serif;font-size:16px;letter-spacing:0.08em;color:var(--danger);margin-bottom:6px">Generation Failed</div>
+        <div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text2);line-height:1.6">${e.message}</div>
       </div>
-      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);margin-bottom:16px;line-height:1.6">
+      <div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);margin-bottom:16px;line-height:1.6">
         Tips: Try fewer sessions per week or simplify Week 1 exercises.
       </div>
       <button class="btn btn-primary btn-full" onclick="generateProgramWithAI()">Retry</button>
@@ -3316,10 +3524,10 @@ function viewProgram(id) {
     <div class="modal-title">${p.name}</div>
     <div style="margin-bottom:14px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
       <span class="tag tag-strength">${p.split || 'Strength'}</span>
-      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${p.sessionsPerWeek}x/week · ${p.weeks} weeks</span>
+      <span style="font-family:DM Mono,monospace;font-size:11px;color:var(--text2)">${p.sessionsPerWeek}x/week · ${p.weeks} weeks</span>
       ${p.active ? '<span class="session-label">Active</span>' : ''}
     </div>
-    <div style="margin-bottom:4px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:0.08em">PHILOSOPHY</div>
+    <div style="margin-bottom:4px;font-family:DM Mono,monospace;font-size:10px;color:var(--text3);letter-spacing:0.08em">PHILOSOPHY</div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">${p.philosophy || 'General training'}</div>
     <div class="scroll-x" style="margin: 0 -20px;padding:0 20px">
       <div class="week-tabs" style="padding:0 0 16px;margin-bottom:0">${weekTabs}</div>
@@ -3366,9 +3574,9 @@ function showProgramWeek(progId, weekIdx) {
           const inVault = getVault().find(v => v.name.toLowerCase() === ex.name.toLowerCase());
           return `<div class="exercise-item">
             <div style="flex:1">
-              <div class="exercise-name">${ex.tier ? `<span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-right:6px">T${ex.tier}</span>` : ''}${ex.name} ${!inVault ? `<button style="background:none;border:1px solid rgba(232,255,71,0.3);border-radius:4px;color:var(--accent);font-size:9px;font-family:'DM Mono',monospace;padding:2px 6px;cursor:pointer;letter-spacing:0.05em" onclick="openAddExerciseModal('${ex.name.replace(/'/g,"\\'")}')">+ VAULT</button>` : ''}</div>
+              <div class="exercise-name">${ex.tier ? `<span style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);margin-right:6px">T${ex.tier}</span>` : ''}${ex.name} ${!inVault ? `<button style="background:none;border:1px solid rgba(232,255,71,0.3);border-radius:4px;color:var(--accent);font-size:9px;font-family:DM Mono,monospace;padding:2px 6px;cursor:pointer;letter-spacing:0.05em" onclick="openAddExerciseModal('${ex.name.replace(/'/g,"\\'")}')">+ VAULT</button>` : ''}</div>
               ${ex.note ? `<div style="font-size:12px;color:var(--text3)">${ex.note}</div>` : ''}
-              ${ex.intensity ? `<div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--accent2);margin-top:2px">${ex.intensity}</div>` : ''}
+              ${ex.intensity ? `<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--accent2);margin-top:2px">${ex.intensity}</div>` : ''}
             </div>
             <div class="exercise-scheme">${ex.sets} × ${ex.reps}</div>
           </div>`;
@@ -3445,10 +3653,10 @@ function openRunProgramBuilder(fromBuild = false) {
       <label class="input-label">Run Program Name</label>
       <input type="text" class="input" id="run-prog-name" placeholder="e.g. Tempo Tuesday">
     </div>
-    <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);margin-bottom:12px;letter-spacing:0.06em">BUILD INTERVAL BLOCKS (by minute)</div>
+    <div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text2);margin-bottom:12px;letter-spacing:0.06em">BUILD INTERVAL BLOCKS (by minute)</div>
     <div id="run-blocks-container"></div>
     <button class="btn btn-ghost btn-full btn-sm" onclick="addRunBlock()" style="margin-bottom:16px">+ Add Interval</button>
-    <div id="run-block-summary" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);margin-bottom:16px"></div>
+    <div id="run-block-summary" style="font-family:DM Mono,monospace;font-size:12px;color:var(--text3);margin-bottom:16px"></div>
     <button class="btn btn-accent2 btn-full" onclick="saveRunProgram()">Save Run Program</button>
     <button class="btn btn-ghost btn-full btn-sm" onclick="openBuildProgramModal()" style="margin-top:8px">← Back</button>
   `;
@@ -3466,8 +3674,8 @@ function addRunBlock(label='', intensity='moderate', duration=5) {
   div.id = idStr;
   div.innerHTML = `
     <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-      <input type="number" style="width:50px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px;color:var(--accent);font-family:'Bebas Neue',sans-serif;font-size:22px;text-align:center;outline:none" value="${duration}" min="1" oninput="updateRunSummary()">
-      <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)">MIN</div>
+      <input type="number" style="width:50px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px;color:var(--accent);font-family:Bebas Neue,sans-serif;font-size:22px;text-align:center;outline:none" value="${duration}" min="1" oninput="updateRunSummary()">
+      <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3)">MIN</div>
     </div>
     <div style="flex:1">
       <input type="text" class="input" style="margin-bottom:6px;padding:8px" placeholder="Label (e.g. Easy jog)" value="${label}">
@@ -3543,7 +3751,7 @@ function viewRunProgram(p) {
     <div class="modal-title">${p.name}</div>
     <div style="margin-bottom:16px;display:flex;gap:8px;align-items:center">
       <span class="tag tag-run">Run</span>
-      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${p.totalDuration} min total</span>
+      <span style="font-family:DM Mono,monospace;font-size:11px;color:var(--text2)">${p.totalDuration} min total</span>
     </div>
     ${p.intervals.map(iv => `
       <div class="interval-block">
@@ -3589,7 +3797,7 @@ function prepareRunSession(progId) {
   const el = document.getElementById('run-active-timer');
   el.style.display = 'block';
   el.innerHTML = `
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:0.08em;margin-bottom:12px">${p.name}</div>
+    <div style="font-family:Bebas Neue,sans-serif;font-size:16px;letter-spacing:0.08em;margin-bottom:12px">${p.name}</div>
     ${renderTimerUI(p)}
     <button class="btn btn-accent2 btn-full" onclick="startRunTimerInModal('${progId}')">Start</button>
   `;
@@ -3725,7 +3933,7 @@ function renderPRs() {
         <div class="history-date">${new Date(pr.date).toLocaleDateString('en-US',{month:'short',day:'numeric'}).replace(' ','\n')}</div>
         <div class="history-content">
           <div class="history-title">${pr.name} <span class="pr-badge">PR</span></div>
-          <div class="history-detail" style="font-family:'DM Mono',monospace;font-size:13px;color:var(--accent)">
+          <div class="history-detail" style="font-family:DM Mono,monospace;font-size:13px;color:var(--accent)">
             ${pr.weight} lbs × ${pr.reps} reps
           </div>
         </div>
@@ -3751,7 +3959,7 @@ function renderPRs() {
         <div class="history-date">${new Date(pr.date).toLocaleDateString('en-US',{month:'short',day:'numeric'}).replace(' ','\n')}</div>
         <div class="history-content">
           <div class="history-title">${pr.name} <span class="pr-badge pr-badge-cardio">PR</span></div>
-          <div class="history-detail" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent3)">
+          <div class="history-detail" style="font-family:DM Mono,monospace;font-size:12px;color:var(--accent3)">
             ${parts.join(' &nbsp;·&nbsp; ') || 'Logged'}
           </div>
         </div>
@@ -3969,7 +4177,7 @@ function showToast(msg) {
   if (existing) existing.remove();
   const toast = document.createElement('div');
   toast.id = 'toast';
-  toast.style.cssText = `position:fixed;bottom:calc(80px + var(--safe-bottom));left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.06em;padding:10px 20px;border-radius:20px;z-index:999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.5);animation:fadeIn 0.2s ease`;
+  toast.style.cssText = `position:fixed;bottom:calc(80px + var(--safe-bottom));left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);color:var(--text);font-family:DM Mono,monospace;font-size:12px;letter-spacing:0.06em;padding:10px 20px;border-radius:20px;z-index:999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.5);animation:fadeIn 0.2s ease`;
   toast.textContent = msg;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 2500);
@@ -4134,7 +4342,7 @@ function viewVaultExercise(id) {
         ${ex.equipment.map(e => equipTagHTML(e)).join('')}
       </div>` : ''}
     ${ex.notes ? `<div style="color:var(--text2);font-size:13px;line-height:1.5;margin-bottom:16px">${ex.notes}</div>` : ''}
-    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:16px">Added ${new Date(ex.addedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
+    <div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3);margin-bottom:16px">Added ${new Date(ex.addedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
     <hr class="divider">
     <div style="display:flex;gap:8px">
       <button class="btn btn-secondary" style="flex:1" onclick="openEditExerciseModal('${ex.id}')">Edit</button>
@@ -4381,7 +4589,7 @@ function renderSupersetJoinButtons() {
     wrap.innerHTML = `<button onclick="joinAsSuperset('${child.id}','${next.id}')"
       style="display:flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;
       border:1px solid rgba(255,107,53,0.3);background:rgba(255,107,53,0.08);
-      color:var(--accent2);font-family:'DM Mono',monospace;font-size:9px;
+      color:var(--accent2);font-family:DM Mono,monospace;font-size:9px;
       letter-spacing:0.08em;cursor:pointer;transition:all 0.15s"
       onmouseenter="this.style.background='rgba(255,107,53,0.18)'"
       onmouseleave="this.style.background='rgba(255,107,53,0.08)'">
@@ -4437,6 +4645,491 @@ function joinAsSuperset(blockAId, blockBId) {
   // Refresh join buttons
   setTimeout(() => renderSupersetJoinButtons(), 50);
   showToast('Superset created!');
+}
+
+
+// ============================================================
+// LIVE WORKOUT
+// ============================================================
+const LIVE_RIR_OPTS = [
+  {label:'0 RIR',   sub:'Absolute max',  color:'#ff4747'},
+  {label:'1-2 RIR', sub:'Near failure',  color:'#ff6b35'},
+  {label:'3-4 RIR', sub:'Hard',          color:'#ffb74d'},
+  {label:'5-6 RIR', sub:'Moderate',      color:'#e8ff47'},
+  {label:'7-8 RIR', sub:'Easy',          color:'#47ff8a'},
+  {label:'9+ RIR',  sub:'Very easy',     color:'#47c8ff'},
+];
+
+const LIVE_RIR_ALGO = [
+  {dw:-10, dr:0,  msg:'Drop 10 lbs — you hit your limit.'},
+  {dw:0,   dr:0,  msg:'Keep weight — you were close to failure.'},
+  {dw:5,   dr:0,  msg:'Add 5 lbs — good effort with room left.'},
+  {dw:10,  dr:0,  msg:'Add 10 lbs — solid tank remaining.'},
+  {dw:15,  dr:1,  msg:'Add 15 lbs + 1 rep — felt easy.'},
+  {dw:20,  dr:2,  msg:'Add 20 lbs + 2 reps — way too light.'},
+];
+
+let liveState = {
+  exercises: [],
+  currentExIdx: 0,
+  currentSetNum: 1,
+  selectedSession: null,
+  selectedRIR: null,
+  restSec: 30,
+  restInterval: null,
+  selectedEx: null,
+};
+
+function liveShowScreen(id) {
+  ['ls-start','ls-live','ls-rir','ls-add','ls-vault','ls-setup','ls-summary','ls-saved'].forEach(s => {
+    const el = document.getElementById(s);
+    if (el) { el.style.display = 'none'; }
+  });
+  const el = document.getElementById(id);
+  if (el) { el.style.display = 'flex'; el.style.flexDirection = 'column'; }
+}
+
+function liveInit() {
+  liveSetStartMode('planned');
+  liveShowScreen('ls-start');
+}
+
+// ── START SCREEN ──
+function liveSetStartMode(mode) {
+  ['planned','program'].forEach(m => {
+    const tab = document.getElementById('live-tab-'+m);
+    const icon = document.getElementById('live-icon-'+m);
+    const lbl = document.getElementById('live-lbl-'+m);
+    if (!tab) return;
+    if (m === mode) {
+      tab.style.background = 'rgba(232,255,71,0.08)';
+      tab.style.border = '1px solid rgba(232,255,71,0.3)';
+      if (icon) icon.setAttribute('stroke','var(--accent)');
+      if (lbl) lbl.style.color = 'var(--accent)';
+    } else {
+      tab.style.background = 'var(--surface)';
+      tab.style.border = '1px solid var(--border)';
+      if (icon) icon.setAttribute('stroke','var(--text3)');
+      if (lbl) lbl.style.color = 'var(--text3)';
+    }
+  });
+
+  liveState.selectedSession = null;
+  const preview = document.getElementById('live-start-preview');
+  const launchBtn = document.getElementById('live-launch-loaded');
+  if (preview) preview.style.display = 'none';
+  if (launchBtn) launchBtn.style.display = 'none';
+
+  const list = document.getElementById('live-start-list');
+  if (!list) return;
+
+  if (mode === 'planned') {
+    const state = getState();
+    const planned = state.sessions.filter(s => s.status === 'planned').sort((a,b) => new Date(b.date)-new Date(a.date));
+    if (!planned.length) {
+      list.innerHTML = '<div class="empty-state" style="padding:20px 0"><div class="empty-icon">📅</div><div class="empty-title">No planned workouts</div><div class="empty-text">Plan a workout in the Log tab first</div></div>';
+      return;
+    }
+    list.innerHTML = planned.map(p => {
+      const d = new Date(p.date);
+      const exCount = (p.exercises||[]).length;
+      return '<div onclick="liveSelectPlanned(\''+p.id+'\')" id="lss-'+p.id+'" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:8px;cursor:pointer;transition:all 0.15s">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">' +
+        '<div style="font-weight:500;font-size:14px;color:var(--text)">'+p.name+'</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:9px;color:#47c8ff;background:rgba(71,200,255,0.1);padding:2px 6px;border-radius:3px">PLANNED</div>' +
+        '</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">'+d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+' · '+exCount+' exercises</div>' +
+        '</div>';
+    }).join('');
+  } else {
+    const state = getState();
+    const programs = state.programs.filter(p => p.type === 'strength' && p.schedule);
+    if (!programs.length) {
+      list.innerHTML = '<div class="empty-state" style="padding:20px 0"><div class="empty-icon">📋</div><div class="empty-title">No programs</div><div class="empty-text">Build a program first</div></div>';
+      return;
+    }
+    list.innerHTML = programs.map(prog => {
+      const week = prog.schedule[(prog.currentWeek||1)-1];
+      const sessions = week ? week.sessions : [];
+      return '<div style="background:rgba(232,255,71,0.05);border:1px solid rgba(232,255,71,0.2);border-radius:10px;padding:12px;margin-bottom:10px">' +
+        '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--accent);margin-bottom:2px">WEEK '+(prog.currentWeek||1)+'</div>' +
+        '<div style="font-weight:500;font-size:14px;color:var(--text);margin-bottom:8px">'+prog.name+'</div>' +
+        sessions.map((s,i) => '<div onclick="liveSelectProgSession(\''+prog.id+'\','+i+')" id="lss-'+prog.id+'-'+i+'" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px;margin-bottom:6px;cursor:pointer">' +
+          '<div style="font-weight:500;font-size:13px;color:var(--text);margin-bottom:3px">'+s.label+'</div>' +
+          '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">'+s.exercises.length+' exercises</div>' +
+          '</div>').join('') +
+        '</div>';
+    }).join('');
+  }
+}
+
+function liveSelectPlanned(id) {
+  const state = getState();
+  const session = state.sessions.find(s => s.id === id);
+  if (!session) return;
+  document.querySelectorAll('[id^="lss-"]').forEach(el => { el.style.border = '1px solid var(--border)'; el.style.background = 'var(--surface)'; });
+  const el = document.getElementById('lss-'+id);
+  if (el) { el.style.border = '1px solid rgba(232,255,71,0.4)'; el.style.background = 'rgba(232,255,71,0.06)'; }
+  const exercises = (session.exercises || []).map(ex => ({
+    name: ex.name,
+    targetSets: ex.sets ? ex.sets.length || 3 : 3,
+    reps: ex.sets ? (ex.sets[0]?.reps || '—') : '—',
+    rest: 30,
+    sets: []
+  }));
+  liveState.selectedSession = { name: session.name, exercises };
+  liveShowPreview(liveState.selectedSession);
+}
+
+function liveSelectProgSession(progId, sessionIdx) {
+  const state = getState();
+  const prog = state.programs.find(p => p.id === progId);
+  if (!prog) return;
+  const weekIdx = (prog.currentWeek||1) - 1;
+  const session = prog.schedule[weekIdx]?.sessions[sessionIdx];
+  if (!session) return;
+  document.querySelectorAll('[id^="lss-"]').forEach(el => { el.style.border = '1px solid var(--border)'; el.style.background = 'var(--surface)'; });
+  const el = document.getElementById('lss-'+progId+'-'+sessionIdx);
+  if (el) { el.style.border = '1px solid rgba(232,255,71,0.4)'; el.style.background = 'rgba(232,255,71,0.06)'; }
+  const exercises = (session.exercises || []).map(ex => ({
+    name: ex.name,
+    targetSets: ex.sets || 3,
+    reps: ex.reps || '—',
+    rest: 30,
+    sets: []
+  }));
+  liveState.selectedSession = { name: session.label, exercises };
+  liveShowPreview(liveState.selectedSession);
+}
+
+function liveShowPreview(session) {
+  const el = document.getElementById('live-start-preview');
+  if (!el) return;
+  el.style.display = 'block';
+  el.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px">PREVIEW</div>' +
+    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px">' +
+    session.exercises.map((ex,i) =>
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--surface2)">' +
+      '<div style="display:flex;align-items:center;gap:8px">' +
+      '<div style="width:18px;height:18px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-family:DM Mono,monospace;font-size:9px;color:var(--text3)">'+(i+1)+'</div>' +
+      '<div style="font-size:13px;color:var(--text)">'+ex.name+'</div>' +
+      '</div>' +
+      '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">'+ex.targetSets+'×'+ex.reps+'</div>' +
+      '</div>'
+    ).join('') +
+    '</div>';
+  const btn = document.getElementById('live-launch-loaded');
+  if (btn) { btn.style.display = 'flex'; }
+}
+
+function liveLaunchLoaded() {
+  if (!liveState.selectedSession) return;
+  liveState.exercises = liveState.selectedSession.exercises.map(ex => Object.assign({sets:[]}, ex));
+  liveState.currentExIdx = 0;
+  liveState.currentSetNum = 1;
+  liveLoadExercise();
+  liveShowScreen('ls-live');
+}
+
+function liveLaunchBlank() {
+  liveState.exercises = [];
+  liveState.currentExIdx = 0;
+  liveState.currentSetNum = 1;
+  document.getElementById('ls-add-title').textContent = 'ADD YOUR FIRST EXERCISE';
+  document.getElementById('ls-add-hint').textContent = 'Tap below to begin';
+  liveShowScreen('ls-add');
+}
+
+// ── VAULT PICKER ──
+function liveShowVaultPicker() {
+  liveFilterVault('');
+  const search = document.getElementById('ls-vault-search');
+  if (search) search.value = '';
+  liveShowScreen('ls-vault');
+}
+
+function liveBackFromVault() {
+  if (liveState.exercises.length > 0) liveShowScreen('ls-add');
+  else liveShowScreen('ls-start');
+}
+
+function liveFilterVault(q) {
+  const vault = getVault();
+  const results = vault.filter(e => e.name.toLowerCase().includes(q.toLowerCase()));
+  const el = document.getElementById('ls-vault-results');
+  if (!el) return;
+  if (!results.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px 0"><div class="empty-title">No matches</div></div>';
+    return;
+  }
+  el.innerHTML = results.map(ex => {
+    const muscles = (ex.muscles||[]).map(m => {
+      const colors = {chest:'#ff6b35',back:'#47c8ff',shoulders:'#ba68c8',biceps:'#ffb74d',triceps:'#ffd54f',legs:'#81c784',core:'#e8ff47',cardio:'#47c8ff','full body':'#fff'};
+      return '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+(colors[m]||'#888')+';margin-right:2px"></span>';
+    }).join('');
+        const safeName = ex.name.replace(/'/g, "'");
+    return '<div onclick="livePickExercise(\'' + safeName + '\')" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">' +
+      '<div>' +
+      '<div style="font-size:14px;color:var(--text);margin-bottom:3px">'+ex.name+'</div>' +
+      '<div>'+muscles+'</div>' +
+      '</div>' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>' +
+      '</div>';
+  }).join('');
+}
+
+function livePickExercise(name) {
+  liveState.selectedEx = name;
+  const nameEl = document.getElementById('ls-setup-name');
+  if (nameEl) nameEl.textContent = name;
+  ['ls-setup-w','ls-setup-r'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  liveShowScreen('ls-setup');
+}
+
+// ── SETUP ──
+function liveLockIn() {
+  const w = parseInt(document.getElementById('ls-setup-w').value)||0;
+  const r = parseInt(document.getElementById('ls-setup-r').value)||0;
+  const ts = parseInt(document.getElementById('ls-setup-sets').value)||3;
+  const rest = parseInt(document.getElementById('ls-setup-rest').value)||30;
+  if (!w || !r) { alert('Enter weight and reps to begin'); return; }
+  liveState.exercises.push({name:liveState.selectedEx, targetSets:ts, rest:rest, reps:r+'', sets:[]});
+  liveState.currentExIdx = liveState.exercises.length - 1;
+  liveState.currentSetNum = 1;
+  liveState.restSec = rest;
+  liveLoadExercise();
+  document.getElementById('ls-w').value = w;
+  document.getElementById('ls-r').value = r;
+  liveShowScreen('ls-live');
+}
+
+// ── LIVE SET ──
+function liveLoadExercise() {
+  const ex = liveState.exercises[liveState.currentExIdx];
+  if (!ex) return;
+  const nameEl = document.getElementById('ls-ex-name');
+  const badgeEl = document.getElementById('ls-set-badge');
+  const targetEl = document.getElementById('ls-target');
+  if (nameEl) nameEl.textContent = ex.name;
+  if (badgeEl) badgeEl.textContent = 'SET '+liveState.currentSetNum+' OF '+ex.targetSets;
+  if (targetEl) targetEl.textContent = 'Target: '+ex.targetSets+' sets'+(ex.reps ? ' × '+ex.reps+' reps' : '');
+  liveState.restSec = ex.rest || 30;
+  liveRenderHistory();
+  liveRenderUpcoming();
+}
+
+function liveRenderHistory() {
+  const ex = liveState.exercises[liveState.currentExIdx];
+  const el = document.getElementById('ls-history');
+  if (!el) return;
+  if (!ex || !ex.sets.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-family:DM Mono,monospace;font-size:11px;text-align:center;padding:4px 0">No sets yet</div>';
+    return;
+  }
+  el.innerHTML = ex.sets.map(s =>
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--surface2)">' +
+    '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">SET '+s.set+'</div>' +
+    '<div style="font-family:Bebas Neue,sans-serif;font-size:15px;color:var(--text);letter-spacing:0.05em">'+s.weight+' lbs × '+s.reps+'</div>' +
+    '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--accent);background:rgba(232,255,71,0.08);padding:2px 6px;border-radius:3px">'+(s.rir||'—')+'</div>' +
+    '</div>'
+  ).join('');
+}
+
+function liveRenderUpcoming() {
+  const remaining = liveState.exercises.slice(liveState.currentExIdx + 1);
+  const el = document.getElementById('ls-upcoming');
+  if (!el) return;
+  if (!remaining.length) { el.innerHTML = '<div style="color:var(--text3);font-family:DM Mono,monospace;font-size:11px">No more exercises</div>'; return; }
+  el.innerHTML = remaining.map((ex,i) =>
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--surface2);opacity:'+Math.max(0.3,1-i*0.25)+'">' +
+    '<div style="font-size:13px;color:var(--text2)">'+ex.name+'</div>' +
+    '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">'+ex.targetSets+' sets</div>' +
+    '</div>'
+  ).join('');
+}
+
+function liveCompleteSet() {
+  const w = parseInt(document.getElementById('ls-w').value)||0;
+  const r = parseInt(document.getElementById('ls-r').value)||0;
+  if (!w || !r) { alert('Enter weight and reps'); return; }
+  const ex = liveState.exercises[liveState.currentExIdx];
+  ex.sets.push({set:liveState.currentSetNum, weight:w, reps:r, rir:null});
+  liveStartRest();
+  liveBuildRIRGrid();
+  liveState.selectedRIR = null;
+  const sug = document.getElementById('ls-rir-suggestion');
+  if (sug) sug.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center">Select RIR to see next set suggestion</div>';
+  const genBtn = document.getElementById('ls-gen-btn');
+  if (genBtn) { genBtn.disabled=true; genBtn.style.background='var(--surface)'; genBtn.style.borderColor='var(--border)'; genBtn.style.color='var(--text3)'; }
+  liveShowScreen('ls-rir');
+}
+
+function liveStartRest() {
+  let rem = liveState.restSec;
+  const bar = document.getElementById('ls-rest-bar');
+  if (!bar) return;
+  bar.style.display = 'flex';
+  const countEl = document.getElementById('ls-rest-count');
+  const fillEl = document.getElementById('ls-rest-fill');
+  if (countEl) countEl.textContent = rem;
+  if (fillEl) fillEl.style.width = '100%';
+  if (liveState.restInterval) clearInterval(liveState.restInterval);
+  liveState.restInterval = setInterval(() => {
+    rem--;
+    if (countEl) countEl.textContent = rem;
+    if (fillEl) fillEl.style.width = Math.round((rem / liveState.restSec) * 100) + '%';
+    if (rem <= 0) { clearInterval(liveState.restInterval); bar.style.display = 'none'; }
+  }, 1000);
+}
+
+function liveEditRest() {
+  const v = prompt('Set rest time (seconds):', liveState.restSec);
+  if (v && !isNaN(v)) {
+    liveState.restSec = parseInt(v);
+    liveState.exercises[liveState.currentExIdx].rest = liveState.restSec;
+  }
+}
+
+// ── RIR ──
+function liveBuildRIRGrid() {
+  const grid = document.getElementById('ls-rir-grid');
+  if (!grid) return;
+  grid.innerHTML = LIVE_RIR_OPTS.map((o,i) =>
+    '<button onclick="liveSelectRIR('+i+')" id="ls-rir-'+i+'" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 6px;cursor:pointer;text-align:center;transition:all 0.15s">' +
+    '<div style="font-family:DM Mono,monospace;font-size:12px;color:'+o.color+';font-weight:500">'+o.label+'</div>' +
+    '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);margin-top:2px">'+o.sub+'</div>' +
+    '</button>'
+  ).join('');
+}
+
+function liveSelectRIR(idx) {
+  liveState.selectedRIR = idx;
+  document.querySelectorAll('[id^="ls-rir-"]').forEach((b,i) => {
+    b.style.background = i===idx ? 'rgba(232,255,71,0.1)' : 'var(--surface)';
+    b.style.border = i===idx ? '1px solid rgba(232,255,71,0.4)' : '1px solid var(--border)';
+  });
+  const ex = liveState.exercises[liveState.currentExIdx];
+  const lastSet = ex.sets[ex.sets.length-1];
+  const algo = LIVE_RIR_ALGO[idx];
+  const nw = Math.max(0, lastSet.weight + algo.dw);
+  const nr = lastSet.reps + algo.dr;
+  lastSet.rir = LIVE_RIR_OPTS[idx].label;
+  const sug = document.getElementById('ls-rir-suggestion');
+  if (sug) sug.innerHTML = '<div style="text-align:center">' +
+    '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text2);margin-bottom:8px">'+algo.msg+'</div>' +
+    '<div style="font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--accent);letter-spacing:0.05em">'+nw+' lbs × '+nr+' reps</div>' +
+    '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3);margin-top:4px">suggested next set</div>' +
+    '</div>';
+  const btn = document.getElementById('ls-gen-btn');
+  if (btn) { btn.disabled=false; btn.style.background='rgba(232,255,71,0.1)'; btn.style.borderColor='rgba(232,255,71,0.4)'; btn.style.color='var(--accent)'; }
+}
+
+function liveGenerateNext() {
+  if (liveState.selectedRIR === null) return;
+  const ex = liveState.exercises[liveState.currentExIdx];
+  const lastSet = ex.sets[ex.sets.length-1];
+  const algo = LIVE_RIR_ALGO[liveState.selectedRIR];
+  const nw = Math.max(0, lastSet.weight + algo.dw);
+  const nr = lastSet.reps + algo.dr;
+  liveState.currentSetNum++;
+  const wEl = document.getElementById('ls-w');
+  const rEl = document.getElementById('ls-r');
+  if (wEl) wEl.value = nw;
+  if (rEl) rEl.value = nr;
+  const badgeEl = document.getElementById('ls-set-badge');
+  if (badgeEl) badgeEl.textContent = 'SET '+liveState.currentSetNum+' OF '+ex.targetSets;
+  liveRenderHistory();
+  liveShowScreen('ls-live');
+  if (liveState.currentSetNum > ex.targetSets) {
+    setTimeout(() => {
+      liveState.currentSetNum = 1;
+      document.getElementById('ls-add-title').textContent = 'EXERCISE COMPLETE';
+      document.getElementById('ls-add-hint').textContent = 'Add your next exercise or finish the session';
+      liveShowScreen('ls-add');
+    }, 200);
+  }
+}
+
+function liveNextExercise() {
+  liveState.currentSetNum = 1;
+  document.getElementById('ls-add-title').textContent = 'EXERCISE COMPLETE';
+  document.getElementById('ls-add-hint').textContent = 'Add your next exercise or finish the session';
+  liveShowScreen('ls-add');
+}
+
+// ── SUMMARY ──
+function liveGoToSummary() {
+  if (!liveState.exercises.length) { alert('No exercises logged yet.'); return; }
+  const dateEl = document.getElementById('ls-summary-date');
+  if (dateEl) dateEl.value = new Date().toISOString().slice(0,10);
+  const nameEl = document.getElementById('ls-summary-name');
+  if (nameEl) nameEl.value = liveState.selectedSession?.name || '';
+  let totalSets=0, totalVol=0;
+  liveState.exercises.forEach(ex => { ex.sets.forEach(s => { totalSets++; totalVol+=s.weight*s.reps; }); });
+  const setsEl = document.getElementById('ls-stat-sets');
+  const volEl = document.getElementById('ls-stat-vol');
+  if (setsEl) setsEl.textContent = totalSets;
+  if (volEl) volEl.textContent = totalVol.toLocaleString();
+  const listEl = document.getElementById('ls-summary-list');
+  if (listEl) listEl.innerHTML = liveState.exercises.map(ex =>
+    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">' +
+    '<div style="font-weight:500;font-size:14px;color:var(--text);margin-bottom:8px">'+ex.name+'</div>' +
+    ex.sets.map(s =>
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--surface2)">' +
+      '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">SET '+s.set+'</div>' +
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:14px;color:var(--text);letter-spacing:0.05em">'+s.weight+' lbs × '+s.reps+'</div>' +
+      '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--accent)">'+(s.rir||'—')+'</div>' +
+      '</div>'
+    ).join('') +
+    '</div>'
+  ).join('');
+  liveShowScreen('ls-summary');
+}
+
+function liveSaveSession() {
+  const name = (document.getElementById('ls-summary-name')?.value || '').trim() || 'Live Session';
+  const dateInput = document.getElementById('ls-summary-date')?.value;
+  const sessionDate = dateInput ? new Date(dateInput+'T12:00:00').toISOString() : new Date().toISOString();
+  const state = getState();
+  let totalSets=0, totalVol=0;
+  const exercises = liveState.exercises.map(ex => {
+    const sets = ex.sets.map(s => { totalSets++; totalVol+=s.weight*s.reps; return {reps:s.reps, weight:s.weight, rir:s.rir}; });
+    return {name:ex.name, exType:'strength', sets, metrics:['reps','weight']};
+  });
+  const session = {
+    id: Date.now().toString(),
+    type: 'unified',
+    status: 'completed',
+    name,
+    date: sessionDate,
+    completedAt: new Date().toISOString(),
+    exercises,
+    newPRs: 0,
+    source: 'live'
+  };
+  state.sessions.push(session);
+  saveState(state);
+  const savedNameEl = document.getElementById('ls-saved-name');
+  const savedStatsEl = document.getElementById('ls-saved-stats');
+  if (savedNameEl) savedNameEl.textContent = name + ' · ' + new Date(sessionDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  if (savedStatsEl) savedStatsEl.textContent = totalSets+' sets · '+totalVol.toLocaleString()+' lbs volume';
+  liveShowScreen('ls-saved');
+  showToast('Workout saved! 💪');
+}
+
+function liveDiscardSession() {
+  if (confirm('Discard this session? All data will be lost.')) {
+    liveReset();
+  }
+}
+
+function liveGoToLog() {
+  showPage('log');
+}
+
+function liveReset() {
+  liveState = {exercises:[],currentExIdx:0,currentSetNum:1,selectedSession:null,selectedRIR:null,restSec:30,restInterval:null,selectedEx:null};
+  liveInit();
 }
 
 // ============================================================
