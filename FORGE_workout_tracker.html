@@ -885,6 +885,10 @@ select.input { appearance: none; }
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
     PRs
   </button>
+  <button class="nav-btn" onclick="showPage('data')" id="nav-data">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Data
+  </button>
   <button class="nav-btn" onclick="showPage('settings')" id="nav-settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     Settings
@@ -1215,6 +1219,88 @@ select.input { appearance: none; }
     </div>
 
   </div>
+</div>
+
+
+<!-- ===== DATA PAGE ===== -->
+<div id="page-data" class="page">
+  <div class="header">
+    <div class="logo">DATA</div>
+    <div id="data-sync-status" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)"></div>
+  </div>
+
+  <!-- SECTION 1: CALENDAR -->
+  <div class="section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="section-title" style="margin-bottom:0">Workout Calendar</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button onclick="dataCalPrev()" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="data-cal-month" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text);letter-spacing:0.06em;min-width:90px;text-align:center"></div>
+        <button onclick="dataCalNext()" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Day labels -->
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px">
+          <div style="text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);padding:4px 0">S</div>
+    <div style="text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);padding:4px 0">M</div>
+    <div style="text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);padding:4px 0">T</div>
+    <div style="text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);padding:4px 0">W</div>
+    <div style="text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);padding:4px 0">T</div>
+    <div style="text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);padding:4px 0">F</div>
+    <div style="text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);padding:4px 0">S</div>
+    </div>
+
+    <!-- Calendar grid -->
+    <div id="data-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:14px"></div>
+
+    <!-- Selected day summary -->
+    <div id="data-day-summary" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div id="data-day-title" style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:0.06em;color:var(--text)"></div>
+        <button onclick="document.getElementById('data-day-summary').style.display='none'" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px">✕</button>
+      </div>
+      <div id="data-day-content"></div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: VOLUME BY MUSCLE GROUP -->
+  <div class="section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="section-title" style="margin-bottom:0">Volume by Muscle Group</div>
+    </div>
+    <!-- Toggle -->
+    <div style="display:flex;gap:6px;margin-bottom:16px">
+      <button class="week-tab active" id="vol-tab-week" onclick="setVolumeWindow('week',this)">Last Week</button>
+      <button class="week-tab" id="vol-tab-month" onclick="setVolumeWindow('month',this)">Last Month</button>
+      <button class="week-tab" id="vol-tab-3month" onclick="setVolumeWindow('3month',this)">3 Months</button>
+    </div>
+    <div id="data-volume-chart"></div>
+  </div>
+
+  <!-- SECTION 3: WEIGHT PROGRESSION -->
+  <div class="section">
+    <div class="section-title" style="margin-bottom:12px">Weight Progression</div>
+    <!-- Exercise picker -->
+    <div class="input-group" style="margin-bottom:14px">
+      <label class="input-label">Select Exercise</label>
+      <select class="input" id="data-ex-picker" onchange="renderWeightChart()">
+        <option value="">— Choose an exercise —</option>
+      </select>
+    </div>
+    <!-- Toggle -->
+    <div style="display:flex;gap:6px;margin-bottom:16px">
+      <button class="week-tab active" id="wt-tab-week" onclick="setWeightWindow('week',this)">Last Week</button>
+      <button class="week-tab" id="wt-tab-month" onclick="setWeightWindow('month',this)">Last Month</button>
+      <button class="week-tab" id="wt-tab-3month" onclick="setWeightWindow('3month',this)">3 Months</button>
+    </div>
+    <div id="data-weight-chart"></div>
+  </div>
+
 </div>
 
 <!-- ===== SETTINGS PAGE ===== -->
@@ -1551,6 +1637,7 @@ function showPage(name) {
   if (name === 'programs') renderProgramsList();
   if (name === 'vault') renderVault();
   if (name === 'live') liveInit();
+  if (name === 'data') renderDataPage();
   if (name === 'settings') loadSettingsPage();
 }
 
@@ -5271,6 +5358,360 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+
+// ============================================================
+// DATA TAB
+// ============================================================
+let dataCalYear = new Date().getFullYear();
+let dataCalMonth = new Date().getMonth();
+let volumeWindow = 'week';
+let weightWindow = 'week';
+
+function renderDataPage() {
+  renderDataCalendar();
+  renderVolumeChart();
+  populateExercisePicker();
+  renderWeightChart();
+}
+
+// ── HELPERS ──
+function getWindowStart(window) {
+  const now = new Date();
+  if (window === 'week')   { const d = new Date(now); d.setDate(now.getDate()-7); return d; }
+  if (window === 'month')  { const d = new Date(now); d.setMonth(now.getMonth()-1); return d; }
+  if (window === '3month') { const d = new Date(now); d.setMonth(now.getMonth()-3); return d; }
+  return new Date(0);
+}
+
+function getCompletedSessions() {
+  return getState().sessions.filter(s =>
+    s.status === 'completed' || (!s.status && s.exercises && s.exercises.length)
+  );
+}
+
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+}
+
+// ── CALENDAR ──
+function renderDataCalendar() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const el = document.getElementById('data-cal-month');
+  if (el) el.textContent = months[dataCalMonth] + ' ' + dataCalYear;
+
+  const sessions = getCompletedSessions();
+  // Build a set of date strings that have workouts
+  const workoutDays = new Set();
+  sessions.forEach(s => {
+    const d = new Date(s.date);
+    workoutDays.add(d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate());
+  });
+
+  const grid = document.getElementById('data-cal-grid');
+  if (!grid) return;
+
+  const firstDay = new Date(dataCalYear, dataCalMonth, 1).getDay();
+  const daysInMonth = new Date(dataCalYear, dataCalMonth+1, 0).getDate();
+  const today = new Date();
+
+  let html = '';
+  // Empty cells before first day
+  for (let i = 0; i < firstDay; i++) {
+    html += '<div></div>';
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = dataCalYear+'-'+(dataCalMonth+1)+'-'+d;
+    const hasWorkout = workoutDays.has(key);
+    const isToday = d === today.getDate() && dataCalMonth === today.getMonth() && dataCalYear === today.getFullYear();
+
+    html += '<div onclick="dataSelectDay('+d+')" style="' +
+      'aspect-ratio:1;display:flex;align-items:center;justify-content:center;' +
+      'border-radius:50%;cursor:pointer;font-family:DM Mono,monospace;font-size:12px;' +
+      'position:relative;transition:all 0.15s;' +
+      (isToday ? 'border:1px solid var(--accent);' : '') +
+      (hasWorkout ? 'background:var(--accent);color:#000;font-weight:600;' : 'color:var(--text2);') +
+      '">' + d +
+      '</div>';
+  }
+  grid.innerHTML = html;
+}
+
+function dataCalPrev() {
+  dataCalMonth--;
+  if (dataCalMonth < 0) { dataCalMonth = 11; dataCalYear--; }
+  renderDataCalendar();
+  document.getElementById('data-day-summary').style.display = 'none';
+}
+
+function dataCalNext() {
+  dataCalMonth++;
+  if (dataCalMonth > 11) { dataCalMonth = 0; dataCalYear++; }
+  renderDataCalendar();
+  document.getElementById('data-day-summary').style.display = 'none';
+}
+
+function dataSelectDay(day) {
+  const sessions = getCompletedSessions().filter(s => {
+    const d = new Date(s.date);
+    return d.getDate() === day && d.getMonth() === dataCalMonth && d.getFullYear() === dataCalYear;
+  });
+
+  const summaryEl = document.getElementById('data-day-summary');
+  const titleEl = document.getElementById('data-day-title');
+  const contentEl = document.getElementById('data-day-content');
+  if (!summaryEl || !titleEl || !contentEl) return;
+
+  if (!sessions.length) {
+    summaryEl.style.display = 'none';
+    return;
+  }
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  titleEl.textContent = months[dataCalMonth] + ' ' + day + ', ' + dataCalYear;
+
+  contentEl.innerHTML = sessions.map(s => {
+    const exes = (s.exercises || []).filter(e => e.exType === 'strength' || e.exType === 'core');
+    const cardioExes = (s.exercises || []).filter(e => ['treadmill','peloton','row'].includes(e.exType));
+    const vol = exes.reduce((sum,ex) => sum + (ex.sets||[]).reduce((ss,set) => ss + (set.weight||0)*(set.reps||0), 0), 0);
+    const totalSets = exes.reduce((sum,ex) => sum + (ex.sets||[]).length, 0);
+
+    return '<div style="margin-bottom:12px">' +
+      '<div style="font-weight:500;font-size:14px;color:var(--text);margin-bottom:8px">' + s.name + '</div>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px">' +
+      (totalSets ? '<span style="font-family:DM Mono,monospace;font-size:11px;color:var(--text2)">' + totalSets + ' sets</span>' : '') +
+      (vol ? '<span style="font-family:DM Mono,monospace;font-size:11px;color:var(--accent)">' + vol.toLocaleString() + ' lbs</span>' : '') +
+      '</div>' +
+      exes.map(ex => {
+        const best = ex.sets ? ex.sets.reduce((b,s) => (s.weight||0) > (b.weight||0) ? s : b, ex.sets[0]||{}) : {};
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--surface2)">' +
+          '<div style="font-size:13px;color:var(--text2)">' + ex.name + '</div>' +
+          '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3)">' +
+          (best.weight ? best.weight + ' lbs × ' + best.reps : ex.sets ? ex.sets.length + ' sets' : '') +
+          '</div></div>';
+      }).join('') +
+      cardioExes.map(ex => {
+        const metrics = Object.entries(ex.metrics||{}).map(([k,v]) => {
+          const def = METRIC_DEFS[k];
+          return (def ? def.label : k) + ': ' + v;
+        }).join(' · ');
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--surface2)">' +
+          '<div style="font-size:13px;color:var(--text2)">' + ex.name + '</div>' +
+          '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--accent3)">' + metrics + '</div></div>';
+      }).join('') +
+      '</div>';
+  }).join('<hr class="divider">');
+
+  summaryEl.style.display = 'block';
+  // Scroll to summary
+  setTimeout(() => summaryEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+}
+
+// ── VOLUME BY MUSCLE GROUP ──
+function setVolumeWindow(w, btn) {
+  volumeWindow = w;
+  document.querySelectorAll('[id^="vol-tab-"]').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderVolumeChart();
+}
+
+function renderVolumeChart() {
+  const el = document.getElementById('data-volume-chart');
+  if (!el) return;
+
+  const cutoff = getWindowStart(volumeWindow);
+  const sessions = getCompletedSessions().filter(s => new Date(s.date) >= cutoff);
+
+  // Tally volume by muscle group
+  const vault = getVault();
+  const muscleVol = {};
+  const MUSCLES = ['chest','back','shoulders','biceps','triceps','legs','core','full body','cardio'];
+  MUSCLES.forEach(m => muscleVol[m] = 0);
+
+  sessions.forEach(s => {
+    (s.exercises||[]).forEach(ex => {
+      if (ex.exType !== 'strength' && ex.exType !== 'core') return;
+      const vaultEx = vault.find(v => v.name.toLowerCase() === (ex.name||'').toLowerCase());
+      const muscles = vaultEx?.muscles || [];
+      const vol = (ex.sets||[]).reduce((sum,set) => sum + (set.weight||0)*(set.reps||0), 0);
+      if (muscles.length) {
+        muscles.forEach(m => { if (muscleVol[m] !== undefined) muscleVol[m] += vol / muscles.length; });
+      }
+    });
+  });
+
+  const maxVol = Math.max(...Object.values(muscleVol), 1);
+  const colors = {
+    chest:'#ff6b35', back:'#47c8ff', shoulders:'#ba68c8',
+    biceps:'#ffb74d', triceps:'#ffd54f', legs:'#81c784',
+    core:'#e8ff47', 'full body':'#fff', cardio:'#47c8ff'
+  };
+
+  const hasData = Object.values(muscleVol).some(v => v > 0);
+  if (!hasData) {
+    el.innerHTML = '<div class="empty-state" style="padding:16px 0"><div class="empty-text">No completed workouts in this window</div></div>';
+    return;
+  }
+
+  el.innerHTML = MUSCLES.filter(m => muscleVol[m] > 0).sort((a,b) => muscleVol[b]-muscleVol[a]).map(m => {
+    const pct = Math.round((muscleVol[m] / maxVol) * 100);
+    const vol = Math.round(muscleVol[m]).toLocaleString();
+    return '<div style="margin-bottom:10px">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">' +
+      '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text2);text-transform:capitalize">' + m + '</div>' +
+      '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3)">' + vol + ' lbs</div>' +
+      '</div>' +
+      '<div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden">' +
+      '<div style="height:100%;background:' + (colors[m]||'var(--accent)') + ';border-radius:4px;width:' + pct + '%;transition:width 0.5s ease"></div>' +
+      '</div></div>';
+  }).join('');
+}
+
+// ── WEIGHT PROGRESSION ──
+function populateExercisePicker() {
+  const picker = document.getElementById('data-ex-picker');
+  if (!picker) return;
+
+  const sessions = getCompletedSessions();
+  const exerciseNames = new Set();
+  sessions.forEach(s => {
+    (s.exercises||[]).forEach(ex => {
+      if ((ex.exType === 'strength' || ex.exType === 'core') && ex.name) {
+        exerciseNames.add(ex.name);
+      }
+    });
+  });
+
+  // Also add vault exercises
+  getVault().forEach(v => exerciseNames.add(v.name));
+
+  const sorted = [...exerciseNames].sort();
+  const current = picker.value;
+  picker.innerHTML = '<option value="">— Choose an exercise —</option>' +
+    sorted.map(n => '<option value="' + n + '" ' + (n === current ? 'selected' : '') + '>' + n + '</option>').join('');
+}
+
+function setWeightWindow(w, btn) {
+  weightWindow = w;
+  document.querySelectorAll('[id^="wt-tab-"]').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderWeightChart();
+}
+
+function renderWeightChart() {
+  const el = document.getElementById('data-weight-chart');
+  if (!el) return;
+
+  const exerciseName = document.getElementById('data-ex-picker')?.value;
+  if (!exerciseName) {
+    el.innerHTML = '<div class="empty-state" style="padding:16px 0"><div class="empty-text">Select an exercise to see progression</div></div>';
+    return;
+  }
+
+  const cutoff = getWindowStart(weightWindow);
+  const sessions = getCompletedSessions()
+    .filter(s => new Date(s.date) >= cutoff)
+    .sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  // Collect data points: date -> best weight for that session
+  const dataPoints = [];
+  sessions.forEach(s => {
+    const matches = (s.exercises||[]).filter(ex =>
+      ex.name === exerciseName &&
+      (ex.exType === 'strength' || ex.exType === 'core') &&
+      ex.sets && ex.sets.length
+    );
+    if (!matches.length) return;
+    const bestWeight = Math.max(...matches.flatMap(ex => ex.sets.map(set => set.weight||0)));
+    const totalVol = matches.reduce((sum,ex) => sum + ex.sets.reduce((ss,set) => ss + (set.weight||0)*(set.reps||0), 0), 0);
+    if (bestWeight > 0) dataPoints.push({ date: s.date, weight: bestWeight, vol: totalVol, name: s.name });
+  });
+
+  if (!dataPoints.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:16px 0"><div class="empty-text">No data for ' + exerciseName + ' in this window</div></div>';
+    return;
+  }
+
+  const maxWeight = Math.max(...dataPoints.map(d => d.weight));
+  const minWeight = Math.min(...dataPoints.map(d => d.weight));
+  const range = maxWeight - minWeight || 1;
+
+  // SVG line chart
+  const W = 320, H = 120, PAD = 36;
+  const n = dataPoints.length;
+  const xStep = n > 1 ? (W - PAD*2) / (n-1) : 0;
+
+  const points = dataPoints.map((d,i) => {
+    const x = PAD + i * xStep;
+    const y = PAD + (1 - (d.weight - minWeight) / range) * (H - PAD*2);
+    return {x, y, d};
+  });
+
+  const polyline = points.map(p => p.x+','+p.y).join(' ');
+  const areaPath = 'M'+PAD+','+(H-PAD)+' ' + points.map(p => 'L'+p.x+','+p.y).join(' ') + ' L'+(PAD+(n-1)*xStep)+','+(H-PAD)+' Z';
+
+  // Y axis labels
+  const yLabels = [minWeight, Math.round((minWeight+maxWeight)/2), maxWeight];
+
+  const svg = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;overflow:visible">' +
+    // Grid lines
+    [0,0.5,1].map(t => {
+      const y = PAD + (1-t) * (H-PAD*2);
+      return '<line x1="'+PAD+'" y1="'+y+'" x2="'+(W-8)+'" y2="'+y+'" stroke="var(--border)" stroke-width="1" stroke-dasharray="3,3"/>';
+    }).join('') +
+    // Y labels
+    yLabels.map((v,i) => {
+      const y = PAD + (1 - (v-minWeight)/range) * (H-PAD*2);
+      return '<text x="'+(PAD-4)+'" y="'+(y+4)+'" text-anchor="end" font-family="DM Mono,monospace" font-size="8" fill="var(--text3)">'+v+'</text>';
+    }).join('') +
+    // Area fill
+    '<path d="'+areaPath+'" fill="rgba(232,255,71,0.06)"/>' +
+    // Line
+    '<polyline points="'+polyline+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+    // Data points
+    points.map(p =>
+      '<circle cx="'+p.x+'" cy="'+p.y+'" r="3" fill="var(--accent)" stroke="var(--bg)" stroke-width="1.5"/>'
+    ).join('') +
+    // X labels (show first, middle, last)
+    [0, Math.floor((n-1)/2), n-1].filter((v,i,a) => a.indexOf(v)===i && v < n).map(i => {
+      const p = points[i];
+      const label = fmtDate(dataPoints[i].date);
+      return '<text x="'+p.x+'" y="'+(H-4)+'" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="var(--text3)">'+label+'</text>';
+    }).join('') +
+    '</svg>';
+
+  // Stats row
+  const first = dataPoints[0].weight;
+  const last = dataPoints[dataPoints.length-1].weight;
+  const delta = last - first;
+  const deltaStr = (delta >= 0 ? '+' : '') + delta + ' lbs';
+  const deltaColor = delta > 0 ? 'var(--success)' : delta < 0 ? 'var(--danger)' : 'var(--text3)';
+
+  el.innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">' +
+    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">' +
+    '<div style="font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--accent);letter-spacing:0.05em">' + maxWeight + '</div>' +
+    '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);margin-top:2px">BEST (LBS)</div></div>' +
+    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">' +
+    '<div style="font-family:Bebas Neue,sans-serif;font-size:22px;color:'+deltaColor+';letter-spacing:0.05em">' + deltaStr + '</div>' +
+    '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);margin-top:2px">CHANGE</div></div>' +
+    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">' +
+    '<div style="font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--text);letter-spacing:0.05em">' + n + '</div>' +
+    '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);margin-top:2px">SESSIONS</div></div>' +
+    '</div>' +
+    svg +
+    // Session list below chart
+    '<div style="margin-top:14px">' +
+    dataPoints.slice().reverse().slice(0,5).map(dp =>
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--surface2)">' +
+      '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3)">' + fmtDate(dp.date) + '</div>' +
+      '<div style="font-size:13px;color:var(--text2)">' + dp.name + '</div>' +
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:16px;color:var(--accent);letter-spacing:0.05em">' + dp.weight + ' lbs</div>' +
+      '</div>'
+    ).join('') +
+    '</div>';
+}
 
 // ============================================================
 // DRAG-TO-REORDER EXERCISE BLOCKS
