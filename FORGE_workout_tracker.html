@@ -908,6 +908,7 @@ select.input { appearance: none; }
     </div>
   </div>
 
+  <!-- THIS WEEK STATS -->
   <div class="section">
     <div class="section-title">This Week</div>
     <div class="stat-grid">
@@ -917,7 +918,7 @@ select.input { appearance: none; }
       </div>
       <div class="stat-card">
         <div class="stat-value" id="dash-volume">0</div>
-        <div class="stat-label">Total Volume (lbs)</div>
+        <div class="stat-label">Volume (lbs)</div>
       </div>
       <div class="stat-card">
         <div class="stat-value" id="dash-cardio">0</div>
@@ -925,22 +926,41 @@ select.input { appearance: none; }
       </div>
       <div class="stat-card">
         <div class="stat-value" id="dash-prs">0</div>
-        <div class="stat-label">PRs This Week</div>
+        <div class="stat-label">PRs</div>
       </div>
     </div>
   </div>
 
+  <!-- CALENDAR -->
   <div class="section">
-    <div class="section-title">Recent Activity</div>
-    <div id="dash-recent">
-      <div class="empty-state">
-        <div class="empty-icon">🏋️</div>
-        <div class="empty-title">No sessions yet</div>
-        <div class="empty-text">Log your first workout to get started</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="section-title" style="margin-bottom:0">Calendar</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="dashCalPrev()" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:2px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="dash-cal-month" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text);letter-spacing:0.06em;min-width:88px;text-align:center"></div>
+        <button onclick="dashCalNext()" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:2px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
       </div>
     </div>
+    <!-- Day labels -->
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px">
+      <div style="text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);padding:2px 0">S</div>
+      <div style="text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);padding:2px 0">M</div>
+      <div style="text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);padding:2px 0">T</div>
+      <div style="text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);padding:2px 0">W</div>
+      <div style="text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);padding:2px 0">T</div>
+      <div style="text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);padding:2px 0">F</div>
+      <div style="text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);padding:2px 0">S</div>
+    </div>
+    <div id="dash-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:12px"></div>
+    <!-- Selected day card -->
+    <div id="dash-day-card" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px"></div>
   </div>
 
+  <!-- ACTIVE PROGRAM -->
   <div class="section">
     <div class="section-title">Active Program</div>
     <div id="dash-program">
@@ -951,6 +971,36 @@ select.input { appearance: none; }
       </div>
     </div>
   </div>
+
+  <!-- VOLUME BY MUSCLE GROUP (compact) -->
+  <div class="section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="section-title" style="margin-bottom:0">Volume by Muscle</div>
+      <div style="display:flex;gap:4px">
+        <button class="week-tab active" id="dash-vol-tab-week" onclick="setDashVolumeWindow('week',this)" style="padding:4px 8px;font-size:9px">Wk</button>
+        <button class="week-tab" id="dash-vol-tab-month" onclick="setDashVolumeWindow('month',this)" style="padding:4px 8px;font-size:9px">Mo</button>
+        <button class="week-tab" id="dash-vol-tab-3month" onclick="setDashVolumeWindow('3month',this)" style="padding:4px 8px;font-size:9px">3Mo</button>
+      </div>
+    </div>
+    <div id="dash-volume-chart"></div>
+  </div>
+
+  <!-- WEIGHT PROGRESSION (compact) -->
+  <div class="section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="section-title" style="margin-bottom:0">Weight Progression</div>
+      <div style="display:flex;gap:4px">
+        <button class="week-tab active" id="dash-wt-tab-week" onclick="setDashWeightWindow('week',this)" style="padding:4px 8px;font-size:9px">Wk</button>
+        <button class="week-tab" id="dash-wt-tab-month" onclick="setDashWeightWindow('month',this)" style="padding:4px 8px;font-size:9px">Mo</button>
+        <button class="week-tab" id="dash-wt-tab-3month" onclick="setDashWeightWindow('3month',this)" style="padding:4px 8px;font-size:9px">3Mo</button>
+      </div>
+    </div>
+    <select class="input" id="dash-ex-picker" onchange="renderDashWeightChart()" style="margin-bottom:12px;padding:8px 10px;font-size:13px">
+      <option value="">— Select exercise —</option>
+    </select>
+    <div id="dash-weight-chart"></div>
+  </div>
+
 </div>
 
 <!-- ===== LOG PAGE ===== -->
@@ -1673,40 +1723,27 @@ function renderDashboard() {
 
   // Week stats
   const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay()); weekStart.setHours(0,0,0,0);
-  const weekSessions = state.sessions.filter(s => new Date(s.date) >= weekStart);
-  const volume = weekSessions.filter(s => s.type === 'strength').reduce((sum, s) =>
-    sum + s.exercises.reduce((es, ex) => es + ex.sets.reduce((ss, set) => ss + (parseFloat(set.weight)||0) * (parseInt(set.reps)||0), 0), 0), 0);
-  const cardioMin = weekSessions.filter(s => s.type === 'cardio' || s.type === 'run').reduce((sum, s) => sum + (s.duration || 0), 0);
+  const weekSessions = state.sessions.filter(s => new Date(s.date) >= weekStart && s.status !== 'planned');
+  const volume = weekSessions.reduce((sum, s) =>
+    sum + (s.exercises||[]).filter(e => e.exType === 'strength' || e.exType === 'core')
+      .reduce((es, ex) => es + (ex.sets||[]).reduce((ss, set) => ss + (parseFloat(set.weight)||0) * (parseInt(set.reps)||0), 0), 0), 0);
+  const cardioMin = weekSessions.reduce((sum, s) =>
+    sum + (s.exercises||[]).filter(e => ['treadmill','peloton','row'].includes(e.exType))
+      .reduce((cs, ex) => cs + (ex.metrics?.duration_min || 0), 0), 0);
   const weekPRs = weekSessions.reduce((sum, s) => sum + (s.newPRs || 0), 0);
 
   document.getElementById('dash-sessions').textContent = weekSessions.length;
   document.getElementById('dash-volume').textContent = Math.round(volume).toLocaleString();
-  document.getElementById('dash-cardio').textContent = cardioMin;
+  document.getElementById('dash-cardio').textContent = Math.round(cardioMin);
   document.getElementById('dash-prs').textContent = weekPRs;
 
-  // Recent
-  const recent = [...state.sessions].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
-  const recentEl = document.getElementById('dash-recent');
-  if (!recent.length) {
-    recentEl.innerHTML = '<div class="empty-state"><div class="empty-icon">🏋️</div><div class="empty-title">No sessions yet</div></div>';
-  } else {
-    recentEl.innerHTML = recent.map(s => {
-      const d = new Date(s.date);
-      const exes = s.exercises || [];
-      const hasCardio = exes.some(e => ['treadmill','peloton','row'].includes(e.exType));
-      const hasStrength = exes.some(e => e.exType === 'strength' || e.exType === 'core');
-      const tagClass = s.type === 'run' ? 'tag-run' : hasCardio && !hasStrength ? 'tag-cardio' : 'tag-strength';
-      const tagLabel = s.type === 'run' ? 'Run' : hasCardio && hasStrength ? 'Mixed' : hasCardio ? 'Cardio' : 'Lift';
-      const detail = exes.length ? `${exes.length} exercise${exes.length>1?'s':''}` : s.duration ? `${s.duration} min` : '';
-      return `<div class="history-entry" onclick="viewSession('${s.id}')">
-        <div class="history-date">${d.toLocaleDateString('en-US',{month:'short',day:'numeric'}).replace(' ','\n')}</div>
-        <div class="history-content">
-          <div class="history-title">${s.name} ${s.newPRs ? '<span class="pr-badge">'+s.newPRs+' PR</span>' : ''}</div>
-          <div class="history-detail"><span class="tag ${tagClass}">${tagLabel}</span> &nbsp;${detail}</div>
-        </div>
-      </div>`;
-    }).join('');
-  }
+  // Calendar
+  renderDashCalendar();
+
+  // Data charts
+  renderDashVolumeChart();
+  populateDashExercisePicker();
+  renderDashWeightChart();
 
   // Active program
   const activeProgram = state.programs.find(p => p.active);
@@ -5711,6 +5748,256 @@ function renderWeightChart() {
       '</div>'
     ).join('') +
     '</div>';
+}
+
+
+// ============================================================
+// DASHBOARD CALENDAR + CHARTS
+// ============================================================
+let dashCalYear = new Date().getFullYear();
+let dashCalMonth = new Date().getMonth();
+let dashVolumeWindow = 'week';
+let dashWeightWindow = 'week';
+
+function renderDashCalendar() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const monthEl = document.getElementById('dash-cal-month');
+  if (monthEl) monthEl.textContent = months[dashCalMonth] + ' ' + dashCalYear;
+
+  const state = getState();
+  // Map date key -> sessions
+  const dayMap = {};
+  state.sessions.forEach(s => {
+    const d = new Date(s.date);
+    const key = d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+    if (!dayMap[key]) dayMap[key] = [];
+    dayMap[key].push(s);
+  });
+
+  const grid = document.getElementById('dash-cal-grid');
+  if (!grid) return;
+
+  const firstDay = new Date(dashCalYear, dashCalMonth, 1).getDay();
+  const daysInMonth = new Date(dashCalYear, dashCalMonth+1, 0).getDate();
+  const today = new Date();
+
+  let html = '';
+  for (let i = 0; i < firstDay; i++) html += '<div></div>';
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = dashCalYear+'-'+(dashCalMonth+1)+'-'+d;
+    const sessions = dayMap[key] || [];
+    const completed = sessions.filter(s => s.status === 'completed' || (!s.status && s.exercises && s.exercises.length));
+    const planned = sessions.filter(s => s.status === 'planned');
+    const isToday = d === today.getDate() && dashCalMonth === today.getMonth() && dashCalYear === today.getFullYear();
+    const hasCompleted = completed.length > 0;
+    const hasPlanned = planned.length > 0;
+    const hasAny = sessions.length > 0;
+
+    let bg = 'transparent', color = 'var(--text3)', border = isToday ? '1px solid var(--accent)' : '1px solid transparent', fontWeight = 'normal';
+    if (hasCompleted) { bg = 'var(--accent)'; color = '#000'; fontWeight = '600'; border = 'none'; }
+    else if (hasPlanned) { bg = 'rgba(71,200,255,0.15)'; color = '#47c8ff'; border = '1px solid rgba(71,200,255,0.4)'; }
+    else if (isToday) { border = '1px solid var(--accent)'; color = 'var(--accent)'; }
+
+    html += '<div onclick="dashSelectDay('+d+')" style="' +
+      'aspect-ratio:1;display:flex;align-items:center;justify-content:center;' +
+      'border-radius:50%;cursor:pointer;font-family:DM Mono,monospace;font-size:12px;' +
+      'background:'+bg+';color:'+color+';border:'+border+';font-weight:'+fontWeight+';' +
+      'transition:all 0.15s;position:relative' +
+      '">' + d +
+      (hasCompleted && hasPlanned ? '<span style="position:absolute;bottom:1px;right:1px;width:5px;height:5px;border-radius:50%;background:#47c8ff"></span>' : '') +
+      '</div>';
+  }
+  grid.innerHTML = html;
+}
+
+function dashCalPrev() {
+  dashCalMonth--;
+  if (dashCalMonth < 0) { dashCalMonth = 11; dashCalYear--; }
+  renderDashCalendar();
+  document.getElementById('dash-day-card').style.display = 'none';
+}
+
+function dashCalNext() {
+  dashCalMonth++;
+  if (dashCalMonth > 11) { dashCalMonth = 0; dashCalYear++; }
+  renderDashCalendar();
+  document.getElementById('dash-day-card').style.display = 'none';
+}
+
+function dashSelectDay(day) {
+  const state = getState();
+  const sessions = state.sessions.filter(s => {
+    const d = new Date(s.date);
+    return d.getDate() === day && d.getMonth() === dashCalMonth && d.getFullYear() === dashCalYear;
+  });
+
+  const card = document.getElementById('dash-day-card');
+  if (!card) return;
+  if (!sessions.length) { card.style.display = 'none'; return; }
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dateLabel = months[dashCalMonth] + ' ' + day + ', ' + dashCalYear;
+
+  card.style.display = 'block';
+  card.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">' +
+    '<div style="font-family:Bebas Neue,sans-serif;font-size:16px;letter-spacing:0.06em;color:var(--text)">' + dateLabel + '</div>' +
+    '<button onclick="document.getElementById(\'dash-day-card\').style.display=\'none\'" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px">✕</button>' +
+    '</div>' +
+    sessions.map(s => {
+      const isPlanned = s.status === 'planned';
+      const exes = (s.exercises||[]).filter(e => e.exType === 'strength' || e.exType === 'core');
+      const vol = exes.reduce((sum,ex) => sum + (ex.sets||[]).reduce((ss,set) => ss + (set.weight||0)*(set.reps||0), 0), 0);
+      const totalSets = exes.reduce((sum,ex) => sum + (ex.sets||[]).length, 0);
+
+      const clickHandler = isPlanned ? 'editSession(\''+s.id+'\',\'complete\')' : 'viewSession(\''+s.id+'\')'; 
+      return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer" onclick="'+clickHandler+'">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">' +
+        '<div style="font-weight:500;font-size:14px;color:var(--text)">' + s.name + '</div>' +
+        (isPlanned ?
+          '<span style="font-family:DM Mono,monospace;font-size:9px;background:rgba(71,200,255,0.15);color:#47c8ff;border:1px solid rgba(71,200,255,0.3);border-radius:3px;padding:2px 6px">PLANNED</span>' :
+          '<span style="font-family:DM Mono,monospace;font-size:9px;background:rgba(71,255,138,0.1);color:var(--success);border:1px solid rgba(71,255,138,0.25);border-radius:3px;padding:2px 6px">DONE</span>') +
+        '</div>' +
+        '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+        (totalSets ? '<span style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3)">' + totalSets + ' sets</span>' : '') +
+        (vol ? '<span style="font-family:DM Mono,monospace;font-size:11px;color:var(--accent)">' + vol.toLocaleString() + ' lbs</span>' : '') +
+        (exes.length ? '<span style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3)">' + exes.map(e => e.name).slice(0,3).join(', ') + (exes.length > 3 ? '...' : '') + '</span>' : '') +
+        '</div>' +
+        (isPlanned ? '<div style="margin-top:8px"><button class="btn btn-primary btn-sm btn-full" onclick="event.stopPropagation();editSession(\''+s.id+'\',\'complete\')" style="font-size:11px;padding:7px">Start Workout →</button></div>' : '') +
+        '</div>';
+    }).join('');
+
+  setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+}
+
+// ── DASHBOARD VOLUME CHART ──
+function setDashVolumeWindow(w, btn) {
+  dashVolumeWindow = w;
+  document.querySelectorAll('[id^="dash-vol-tab-"]').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderDashVolumeChart();
+}
+
+function renderDashVolumeChart() {
+  const el = document.getElementById('dash-volume-chart');
+  if (!el) return;
+
+  const cutoff = getWindowStart(dashVolumeWindow);
+  const sessions = getState().sessions.filter(s =>
+    new Date(s.date) >= cutoff && s.status !== 'planned'
+  );
+
+  const vault = getVault();
+  const muscleVol = {};
+  const MUSCLES = ['chest','back','shoulders','biceps','triceps','legs','core','full body'];
+  MUSCLES.forEach(m => muscleVol[m] = 0);
+
+  sessions.forEach(s => {
+    (s.exercises||[]).forEach(ex => {
+      if (ex.exType !== 'strength' && ex.exType !== 'core') return;
+      const vaultEx = vault.find(v => v.name.toLowerCase() === (ex.name||'').toLowerCase());
+      const muscles = vaultEx?.muscles?.filter(m => MUSCLES.includes(m)) || [];
+      const vol = (ex.sets||[]).reduce((sum,set) => sum + (set.weight||0)*(set.reps||0), 0);
+      if (muscles.length) muscles.forEach(m => { muscleVol[m] += vol / muscles.length; });
+    });
+  });
+
+  const maxVol = Math.max(...Object.values(muscleVol), 1);
+  const colors = {chest:'#ff6b35',back:'#47c8ff',shoulders:'#ba68c8',biceps:'#ffb74d',triceps:'#ffd54f',legs:'#81c784',core:'#e8ff47','full body':'#aaa'};
+  const active = MUSCLES.filter(m => muscleVol[m] > 0).sort((a,b) => muscleVol[b]-muscleVol[a]);
+
+  if (!active.length) {
+    el.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;padding:12px 0">No data in this window</div>';
+    return;
+  }
+
+  el.innerHTML = active.map(m => {
+    const pct = Math.round((muscleVol[m] / maxVol) * 100);
+    return '<div style="margin-bottom:8px">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">' +
+      '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text2);text-transform:capitalize">' + m + '</div>' +
+      '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">' + Math.round(muscleVol[m]).toLocaleString() + ' lbs</div>' +
+      '</div>' +
+      '<div style="background:var(--surface2);border-radius:3px;height:6px;overflow:hidden">' +
+      '<div style="height:100%;background:' + (colors[m]||'var(--accent)') + ';border-radius:3px;width:' + pct + '%;transition:width 0.5s ease"></div>' +
+      '</div></div>';
+  }).join('');
+}
+
+// ── DASHBOARD WEIGHT CHART ──
+function populateDashExercisePicker() {
+  const picker = document.getElementById('dash-ex-picker');
+  if (!picker) return;
+  const sessions = getState().sessions.filter(s => s.status !== 'planned');
+  const names = new Set();
+  sessions.forEach(s => (s.exercises||[]).forEach(ex => { if ((ex.exType==='strength'||ex.exType==='core') && ex.name) names.add(ex.name); }));
+  getVault().forEach(v => names.add(v.name));
+  const current = picker.value;
+  picker.innerHTML = '<option value="">— Select exercise —</option>' +
+    [...names].sort().map(n => '<option value="'+n+'"'+(n===current?' selected':'')+'>'+n+'</option>').join('');
+}
+
+function setDashWeightWindow(w, btn) {
+  dashWeightWindow = w;
+  document.querySelectorAll('[id^="dash-wt-tab-"]').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderDashWeightChart();
+}
+
+function renderDashWeightChart() {
+  const el = document.getElementById('dash-weight-chart');
+  if (!el) return;
+  const exerciseName = document.getElementById('dash-ex-picker')?.value;
+  if (!exerciseName) { el.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;padding:12px 0">Select an exercise above</div>'; return; }
+
+  const cutoff = getWindowStart(dashWeightWindow);
+  const sessions = getState().sessions
+    .filter(s => new Date(s.date) >= cutoff && s.status !== 'planned')
+    .sort((a,b) => new Date(a.date)-new Date(b.date));
+
+  const dataPoints = [];
+  sessions.forEach(s => {
+    const matches = (s.exercises||[]).filter(ex => ex.name === exerciseName && (ex.exType==='strength'||ex.exType==='core') && ex.sets?.length);
+    if (!matches.length) return;
+    const best = Math.max(...matches.flatMap(ex => ex.sets.map(set => set.weight||0)));
+    if (best > 0) dataPoints.push({date:s.date, weight:best, name:s.name});
+  });
+
+  if (!dataPoints.length) { el.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;padding:12px 0">No data for this exercise in this window</div>'; return; }
+
+  const maxW = Math.max(...dataPoints.map(d=>d.weight));
+  const minW = Math.min(...dataPoints.map(d=>d.weight));
+  const range = maxW - minW || 1;
+  const n = dataPoints.length;
+  const W=300, H=100, PAD=30;
+  const xStep = n>1 ? (W-PAD*2)/(n-1) : 0;
+  const pts = dataPoints.map((d,i) => ({x:PAD+i*xStep, y:PAD+(1-(d.weight-minW)/range)*(H-PAD*2), d}));
+  const polyline = pts.map(p=>p.x+','+p.y).join(' ');
+  const area = 'M'+PAD+','+(H-PAD)+' '+pts.map(p=>'L'+p.x+','+p.y).join(' ')+' L'+(PAD+(n-1)*xStep)+','+(H-PAD)+' Z';
+
+  const delta = dataPoints[n-1].weight - dataPoints[0].weight;
+  const deltaColor = delta>0?'var(--success)':delta<0?'var(--danger)':'var(--text3)';
+
+  el.innerHTML =
+    '<div style="display:flex;gap:8px;margin-bottom:12px">' +
+    '<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">' +
+    '<div style="font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--accent);letter-spacing:0.05em">'+maxW+'</div>' +
+    '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3)">BEST LBS</div></div>' +
+    '<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">' +
+    '<div style="font-family:Bebas Neue,sans-serif;font-size:20px;color:'+deltaColor+';letter-spacing:0.05em">'+(delta>=0?'+':'')+delta+'</div>' +
+    '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3)">CHANGE</div></div>' +
+    '<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">' +
+    '<div style="font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--text);letter-spacing:0.05em">'+n+'</div>' +
+    '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3)">SESSIONS</div></div>' +
+    '</div>' +
+    '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;overflow:visible">' +
+    [0,0.5,1].map(t=>{const y=PAD+(1-t)*(H-PAD*2);return '<line x1="'+PAD+'" y1="'+y+'" x2="'+(W-8)+'" y2="'+y+'" stroke="var(--border)" stroke-width="1" stroke-dasharray="3,3"/>';}).join('') +
+    [minW,Math.round((minW+maxW)/2),maxW].map((v,i)=>{const y=PAD+(1-(v-minW)/range)*(H-PAD*2);return '<text x="'+(PAD-3)+'" y="'+(y+4)+'" text-anchor="end" font-family="DM Mono,monospace" font-size="7" fill="var(--text3)">'+v+'</text>';}).join('') +
+    '<path d="'+area+'" fill="rgba(232,255,71,0.06)"/>' +
+    '<polyline points="'+polyline+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+    pts.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="3" fill="var(--accent)" stroke="var(--bg)" stroke-width="1.5"/>').join('') +
+    [0,Math.floor((n-1)/2),n-1].filter((v,i,a)=>a.indexOf(v)===i&&v<n).map(i=>{const p=pts[i];return '<text x="'+p.x+'" y="'+(H-2)+'" text-anchor="middle" font-family="DM Mono,monospace" font-size="7" fill="var(--text3)">'+fmtDate(dataPoints[i].date)+'</text>';}).join('') +
+    '</svg>';
 }
 
 // ============================================================
