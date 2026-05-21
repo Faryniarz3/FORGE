@@ -6018,6 +6018,175 @@ function renderDashWeightChart() {
     '</svg>';
 }
 
+
+// ============================================================
+// SESSION 1: ID-BASED MERGE SYNC
+// ============================================================
+// mergeState(local, remote) — pure function, no side effects
+// Returns a single merged state object. Newest always wins.
+// Nothing is ever deleted unless absent from BOTH sides.
+
+function mergeState(local, remote) {
+  return {
+    sessions:  mergeSessions(local.sessions  || [], remote.sessions  || []),
+    programs:  mergePrograms(local.programs  || [], remote.programs  || []),
+    prs:       mergePRs(local.prs  || {strength:{},cardio:{}}, remote.prs || {strength:{},cardio:{}}),
+    vault:     mergeVault(local.vault || [], remote.vault || []),
+  };
+}
+
+// ── Sessions ──
+// Each session has a unique id. On conflict, newest date wins.
+// Planned sessions: if one side has completed and other has planned,
+// completed always wins regardless of date.
+function mergeSessions(local, remote) {
+  const map = {};
+
+  // Index local sessions
+  local.forEach(s => { map[s.id] = s; });
+
+  // Merge remote sessions
+  remote.forEach(r => {
+    const l = map[r.id];
+    if (!l) {
+      // Only on remote — add it
+      map[r.id] = r;
+    } else {
+      // Exists on both — resolve conflict
+      map[r.id] = resolveSessionConflict(l, r);
+    }
+  });
+
+  return Object.values(map).sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+function resolveSessionConflict(local, remote) {
+  // Completed always beats planned
+  const localCompleted = local.status === 'completed' || (!local.status && local.exercises && local.exercises.length);
+  const remoteCompleted = remote.status === 'completed' || (!remote.status && remote.exercises && remote.exercises.length);
+
+  if (localCompleted && !remoteCompleted) return local;
+  if (remoteCompleted && !localCompleted) return remote;
+
+  // Both same status — newest updatedAt wins, fall back to date
+  const localTime = new Date(local.updatedAt || local.completedAt || local.date || 0).getTime();
+  const remoteTime = new Date(remote.updatedAt || remote.completedAt || remote.date || 0).getTime();
+  return localTime >= remoteTime ? local : remote;
+}
+
+// ── Programs ──
+// Each program has a unique id. Newest updatedAt or createdAt wins.
+// Active status: if either side has it active, keep it active.
+function mergePrograms(local, remote) {
+  const map = {};
+
+  local.forEach(p => { map[p.id] = p; });
+
+  remote.forEach(r => {
+    const l = map[r.id];
+    if (!l) {
+      map[r.id] = r;
+    } else {
+      const localTime = new Date(l.updatedAt || l.createdAt || 0).getTime();
+      const remoteTime = new Date(r.updatedAt || r.createdAt || 0).getTime();
+      const winner = localTime >= remoteTime ? l : r;
+      // Preserve active flag if either side had it
+      winner.active = l.active || r.active;
+      map[r.id] = winner;
+    }
+  });
+
+  return Object.values(map);
+}
+
+// ── PRs ──
+// Always keep the highest value per exercise.
+// Structure: { strength: { "Bench Press": { weight, reps, date } }, cardio: {...} }
+function mergePRs(local, remote) {
+  const merged = {
+    strength: Object.assign({}, local.strength || {}),
+    cardio:   Object.assign({}, local.cardio   || {})
+  };
+
+  // Merge strength PRs
+  Object.entries(remote.strength || {}).forEach(([name, remotePR]) => {
+    const localPR = merged.strength[name];
+    if (!localPR) {
+      merged.strength[name] = remotePR;
+    } else {
+      // Keep highest weight; on tie keep most reps
+      if ((remotePR.weight || 0) > (localPR.weight || 0)) {
+        merged.strength[name] = remotePR;
+      } else if ((remotePR.weight || 0) === (localPR.weight || 0) && (remotePR.reps || 0) > (localPR.reps || 0)) {
+        merged.strength[name] = remotePR;
+      }
+    }
+  });
+
+  // Merge cardio PRs
+  Object.entries(remote.cardio || {}).forEach(([type, remoteCardio]) => {
+    const localCardio = merged.cardio[type];
+    if (!localCardio) {
+      merged.cardio[type] = remoteCardio;
+    } else {
+      // Merge each cardio metric — keep best value
+      merged.cardio[type] = Object.assign({}, remoteCardio, localCardio);
+      // For distance: keep higher; for time: keep lower (faster)
+      Object.keys(remoteCardio).forEach(metric => {
+        const lv = localCardio[metric];
+        const rv = remoteCardio[metric];
+        if (lv !== undefined && rv !== undefined) {
+          // time metrics (contain 'time' or 'pace') — lower is better
+          if (metric.includes('time') || metric.includes('pace')) {
+            merged.cardio[type][metric] = Math.min(lv, rv);
+          } else {
+            // distance/other — higher is better
+            merged.cardio[type][metric] = Math.max(lv, rv);
+          }
+        }
+      });
+    }
+  });
+
+  return merged;
+}
+
+// ── Vault ──
+// Union of both sides by id. Local edits win on conflict.
+// New exercises on either side are always added.
+function mergeVault(local, remote) {
+  const map = {};
+
+  // Index by id
+  remote.forEach(ex => { map[ex.id] = ex; });
+
+  // Local always overwrites remote on conflict
+  local.forEach(ex => { map[ex.id] = ex; });
+
+  return Object.values(map).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+}
+
+// ── Merge summary ──
+// Returns a human-readable summary of what changed for the toast
+function getMergeSummary(local, merged) {
+  const newSessions = merged.sessions.filter(s =>
+    !local.sessions.find(l => l.id === s.id)
+  ).length;
+  const newPrograms = merged.programs.filter(p =>
+    !local.programs.find(l => l.id === p.id)
+  ).length;
+  const newExercises = merged.vault.filter(v =>
+    !local.vault.find(l => l.id === v.id)
+  ).length;
+
+  const parts = [];
+  if (newSessions) parts.push(newSessions + ' new session' + (newSessions > 1 ? 's' : ''));
+  if (newPrograms) parts.push(newPrograms + ' new program' + (newPrograms > 1 ? 's' : ''));
+  if (newExercises) parts.push(newExercises + ' new exercise' + (newExercises > 1 ? 's' : ''));
+
+  return parts.length ? 'Merged: ' + parts.join(', ') : 'Already in sync';
+}
+
 // ============================================================
 // DRAG-TO-REORDER EXERCISE BLOCKS
 // ============================================================
