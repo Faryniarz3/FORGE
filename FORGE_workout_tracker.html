@@ -2327,6 +2327,7 @@ function saveUnifiedSession(status = 'completed', existingId = null) {
     status, // 'planned' | 'completed'
     name,
     date: sessionDate,
+    updatedAt: now,
     completedAt: status === 'completed' ? now : null,
     exercises,
     newPRs: 0
@@ -2992,7 +2993,8 @@ function initBlankProgram() {
     schedule: blankWeeks,
     active: false,
     currentWeek: 1,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
 
   state.programs.push(program);
@@ -4146,32 +4148,60 @@ async function syncNowOnly() {
   const settings = DB.get('settings', {});
   if (!settings.ghToken || !settings.gistId) { alert('Save your token and Gist ID first.'); return; }
   const resultEl = document.getElementById('sync-result');
-  if (resultEl) resultEl.textContent = 'Pushing to Gist...';
-  setSyncStatus('syncing', 'Pushing...');
+  if (resultEl) resultEl.textContent = 'Syncing...';
+  setSyncStatus('syncing', 'Syncing...');
   try {
-    const state = getState();
+    // Step 1: Pull current Gist data
+    const res = await fetch('https://api.github.com/gists/' + settings.gistId, {
+      headers: { Authorization: 'token ' + settings.ghToken }
+    });
+    if (!res.ok) throw new Error('GitHub API: ' + res.status);
+    const gist = await res.json();
+    const remoteContent = gist.files['forge_data.json']?.content;
+    const remote = remoteContent ? JSON.parse(remoteContent) : {};
+
+    // Step 2: Build local state
+    const local = {
+      sessions: getState().sessions,
+      programs: getState().programs,
+      prs: getState().prs,
+      vault: getVault()
+    };
+
+    // Step 3: Merge — local + remote, newest wins per ID
+    const merged = mergeState(local, remote);
+    const summary = getMergeSummary(local, merged);
+
+    // Step 4: Save merged result to localStorage
+    DB.set('sessions', merged.sessions);
+    DB.set('programs', merged.programs);
+    DB.set('prs', merged.prs);
+    DB.set('vault', merged.vault);
+
+    // Step 5: Push merged result back to Gist
     const payload = {
-      sessions: state.sessions,
-      programs: state.programs,
-      prs: state.prs,
-      vault: getVault(),
+      sessions: merged.sessions,
+      programs: merged.programs,
+      prs: merged.prs,
+      vault: merged.vault,
       philosophy: DB.get('philosophy', ''),
       lastSync: new Date().toISOString()
     };
-    const body = JSON.stringify({ files: { 'forge_data.json': { content: JSON.stringify(payload) } } });
-    const res = await fetch('https://api.github.com/gists/' + settings.gistId, {
+    const pushRes = await fetch('https://api.github.com/gists/' + settings.gistId, {
       method: 'PATCH',
       headers: { Authorization: 'token ' + settings.ghToken, 'Content-Type': 'application/json' },
-      body
+      body: JSON.stringify({ files: { 'forge_data.json': { content: JSON.stringify(payload) } } })
     });
-    if (!res.ok) throw new Error('GitHub API: ' + res.status);
+    if (!pushRes.ok) throw new Error('Push failed: ' + pushRes.status);
+
     setSyncStatus('synced', 'Synced ' + new Date().toLocaleTimeString());
-    if (resultEl) resultEl.textContent = '✓ Pushed to Gist at ' + new Date().toLocaleTimeString();
-    showToast('Pushed to GitHub!');
+    if (resultEl) resultEl.textContent = '✓ ' + summary + ' — ' + new Date().toLocaleTimeString();
+    showToast(summary);
+    renderDashboard();
   } catch(e) {
-    setSyncStatus('error', 'Push failed');
+    setSyncStatus('error', 'Sync failed');
     if (resultEl) resultEl.textContent = '✗ Error: ' + e.message;
-    showToast('Push failed: ' + e.message);
+    showToast('Sync failed: ' + e.message);
   }
 }
 
@@ -4189,20 +4219,32 @@ async function pullFromGist() {
     });
     if (!res.ok) throw new Error('GitHub API: ' + res.status);
     const gist = await res.json();
-    const content = gist.files['forge_data.json']?.content;
-    if (!content) throw new Error('No forge_data.json in Gist');
-    const data = JSON.parse(content);
+    const remoteContent = gist.files['forge_data.json']?.content;
+    if (!remoteContent) throw new Error('No forge_data.json in Gist');
+    const remote = JSON.parse(remoteContent);
 
-    DB.set('sessions', data.sessions || []);
-    DB.set('programs', data.programs || []);
-    DB.set('prs', data.prs || { strength: {}, cardio: {} });
-    DB.set('vault', data.vault || []);
-    if (data.philosophy) DB.set('philosophy', data.philosophy);
+    // Merge remote into local — never overwrite, always combine
+    const local = {
+      sessions: getState().sessions,
+      programs: getState().programs,
+      prs: getState().prs,
+      vault: getVault()
+    };
+
+    const merged = mergeState(local, remote);
+    const summary = getMergeSummary(local, merged);
+
+    // Save merged result
+    DB.set('sessions', merged.sessions);
+    DB.set('programs', merged.programs);
+    DB.set('prs', merged.prs);
+    DB.set('vault', merged.vault);
+    if (remote.philosophy) DB.set('philosophy', remote.philosophy);
 
     setSyncStatus('synced', 'Pulled ' + new Date().toLocaleTimeString());
-    if (resultEl) resultEl.textContent = '✓ Pulled from Gist. Last sync: ' + (data.lastSync ? new Date(data.lastSync).toLocaleString() : 'unknown');
+    if (resultEl) resultEl.textContent = '✓ ' + summary + ' — ' + new Date().toLocaleTimeString();
     renderDashboard();
-    showToast('Data pulled from GitHub!');
+    showToast(summary);
   } catch (e) {
     setSyncStatus('error', 'Pull failed');
     if (resultEl) resultEl.textContent = '✗ Error: ' + e.message;
