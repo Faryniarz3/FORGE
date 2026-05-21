@@ -1389,6 +1389,86 @@ select.input { appearance: none; }
     <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:4px" id="food-water-goal">Goal: 128 oz (1 gallon)</div>
   </div>
 
+  <!-- TODAY'S MEALS -->
+  <div class="section">
+    <div class="section-title">Today's Meals</div>
+    <div id="food-meals-container"></div>
+  </div>
+
+</div>
+
+<!-- FOOD LOG MODAL -->
+<div id="modal-food-log" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="food-log-modal-title">Add Food</div>
+    <div id="food-log-modal-body"></div>
+  </div>
+</div>
+
+<!-- FOOD VAULT MODAL -->
+<div id="modal-food-vault" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="modal-title" style="margin-bottom:0">Food Vault</div>
+      <button onclick="openAddFoodItem()" class="btn btn-primary btn-sm">+ New Food</button>
+    </div>
+    <input type="text" class="input" id="food-vault-search" placeholder="Search foods..." oninput="renderFoodVaultList(this.value)" style="margin-bottom:12px">
+    <div id="food-vault-list"></div>
+    <button onclick="closeModal('modal-food-vault')" class="btn btn-ghost btn-full btn-sm" style="margin-top:12px">Done</button>
+  </div>
+</div>
+
+<!-- ADD/EDIT FOOD ITEM MODAL -->
+<div id="modal-food-item" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="food-item-modal-title">New Food</div>
+    <div class="input-group">
+      <label class="input-label">Food Name</label>
+      <input type="text" class="input" id="fi-name" placeholder="e.g. Grilled Chicken Breast">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Serving Size</label>
+      <input type="text" class="input" id="fi-serving" placeholder="e.g. 4 oz, 1 cup, 1 scoop">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="input-group" style="margin-bottom:0">
+        <label class="input-label">Calories</label>
+        <input type="number" class="input" id="fi-cal" placeholder="0" style="text-align:center">
+      </div>
+      <div class="input-group" style="margin-bottom:0">
+        <label class="input-label">Protein (g)</label>
+        <input type="number" class="input" id="fi-protein" placeholder="0" style="text-align:center">
+      </div>
+      <div class="input-group" style="margin-bottom:0">
+        <label class="input-label">Carbs (g)</label>
+        <input type="number" class="input" id="fi-carbs" placeholder="0" style="text-align:center">
+      </div>
+      <div class="input-group" style="margin-bottom:0">
+        <label class="input-label">Fat (g)</label>
+        <input type="number" class="input" id="fi-fat" placeholder="0" style="text-align:center">
+      </div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Category</label>
+      <select class="input" id="fi-category">
+        <option value="protein">Protein</option>
+        <option value="vegetable">Vegetable</option>
+        <option value="carb">Carb</option>
+        <option value="fat">Fat</option>
+        <option value="dairy">Dairy</option>
+        <option value="supplement">Supplement</option>
+        <option value="snack">Snack</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="saveFoodItem()" class="btn btn-primary" style="flex:1">Save</button>
+      <button onclick="closeModal('modal-food-item')" class="btn btn-ghost" style="flex:1">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <!-- ===== SETTINGS PAGE ===== -->
@@ -6706,11 +6786,399 @@ function renderDashPRsCompact() {
     '</div>';
 }
 
+
+// ============================================================
+// FOOD TAB — PHASE 2: FOOD VAULT + MEAL LOGGING
+// ============================================================
+
+// ── FOOD VAULT SEED — pre-loaded with your known foods ──
+const FOOD_VAULT_SEED = [
+  // Proteins
+  {id:'fv001',name:'Grilled Chicken Breast',serving:'4 oz',calories:187,protein:35,carbs:0,fat:4,category:'protein'},
+  {id:'fv002',name:'93/7 Ground Beef',serving:'4 oz raw',calories:196,protein:22,carbs:0,fat:11,category:'protein'},
+  {id:'fv003',name:'Braised Chuck Roast',serving:'4 oz',calories:240,protein:26,carbs:0,fat:15,category:'protein'},
+  {id:'fv004',name:'Braised Pork Shoulder',serving:'4 oz',calories:230,protein:25,carbs:0,fat:14,category:'protein'},
+  {id:'fv005',name:'Shrimp',serving:'4 oz',calories:112,protein:24,carbs:1,fat:1,category:'protein'},
+  {id:'fv006',name:'Whole Eggs',serving:'2 eggs',calories:140,protein:12,carbs:1,fat:10,category:'protein'},
+  {id:'fv007',name:'Egg Whites',serving:'3 whites',calories:51,protein:11,carbs:1,fat:0,category:'protein'},
+  {id:'fv008',name:'Rotisserie Chicken',serving:'4 oz',calories:200,protein:30,carbs:0,fat:9,category:'protein'},
+  {id:'fv009',name:'Ground Turkey 93/7',serving:'4 oz raw',calories:170,protein:22,carbs:0,fat:9,category:'protein'},
+  {id:'fv010',name:'Sirloin Steak',serving:'4 oz',calories:220,protein:26,carbs:0,fat:13,category:'protein'},
+  {id:'fv011',name:'Pork Tenderloin',serving:'4 oz',calories:136,protein:24,carbs:0,fat:4,category:'protein'},
+  // Dairy / Supplements
+  {id:'fv020',name:'Oikos Vanilla Greek Yogurt',serving:'2/3 cup (150g)',calories:100,protein:15,carbs:10,fat:0,category:'dairy'},
+  {id:'fv021',name:'Chocolate Whey Protein',serving:'1 scoop (30g)',calories:120,protein:25,carbs:3,fat:2,category:'supplement'},
+  {id:'fv022',name:'Cottage Cheese',serving:'1/2 cup',calories:90,protein:14,carbs:5,fat:1,category:'dairy'},
+  // Vegetables
+  {id:'fv030',name:'Broccoli',serving:'1 cup',calories:55,protein:4,carbs:11,fat:1,category:'vegetable'},
+  {id:'fv031',name:'Green Beans',serving:'1 cup',calories:44,protein:2,carbs:10,fat:0,category:'vegetable'},
+  {id:'fv032',name:'Bell Peppers',serving:'1 medium',calories:37,protein:1,carbs:9,fat:0,category:'vegetable'},
+  {id:'fv033',name:'Onion',serving:'1/2 cup',calories:32,protein:1,carbs:7,fat:0,category:'vegetable'},
+  {id:'fv034',name:'Spinach',serving:'2 cups',calories:14,protein:2,carbs:2,fat:0,category:'vegetable'},
+  {id:'fv035',name:'Asparagus',serving:'6 spears',calories:27,protein:3,carbs:5,fat:0,category:'vegetable'},
+  {id:'fv036',name:'Zucchini',serving:'1 medium',calories:33,protein:2,carbs:6,fat:0,category:'vegetable'},
+  // Carbs
+  {id:'fv040',name:'Low Carb Pasta',serving:'2 oz dry',calories:170,protein:12,carbs:22,fat:2,category:'carb'},
+  {id:'fv041',name:'Frozen Blueberries',serving:'1/2 cup',calories:42,protein:1,carbs:10,fat:0,category:'carb'},
+  {id:'fv042',name:'Sweet Potato',serving:'1 medium',calories:103,protein:2,carbs:24,fat:0,category:'carb'},
+  {id:'fv043',name:'White Rice',serving:'1/3 cup dry',calories:228,protein:4,carbs:50,fat:0,category:'carb'},
+  // Fats / Snacks
+  {id:'fv050',name:'Peanut Butter',serving:'1 tbsp',calories:94,protein:4,carbs:3,fat:8,category:'fat'},
+  {id:'fv051',name:'Olive Oil',serving:'1 tbsp',calories:119,protein:0,carbs:0,fat:14,category:'fat'},
+  // Drinks
+  {id:'fv060',name:'Celsius Energy Drink',serving:'1 can',calories:10,protein:0,carbs:2,fat:0,category:'other'},
+  {id:'fv061',name:'Black Coffee',serving:'1 cup',calories:2,protein:0,carbs:0,fat:0,category:'other'},
+  {id:'fv062',name:'Protein Shake (Water)',serving:'1 scoop + water',calories:120,protein:25,carbs:3,fat:2,category:'supplement'},
+];
+
+// ── Food Vault DB ──
+function getFoodVault() {
+  const stored = DB.get('foodVault', null);
+  if (!stored || !stored.length) {
+    DB.set('foodVault', FOOD_VAULT_SEED);
+    return FOOD_VAULT_SEED;
+  }
+  // Merge seed items that aren't already there
+  const ids = new Set(stored.map(f => f.id));
+  const merged = [...stored];
+  FOOD_VAULT_SEED.forEach(seed => {
+    if (!ids.has(seed.id)) merged.push(seed);
+  });
+  return merged;
+}
+
+function saveFoodVault(vault) {
+  DB.set('foodVault', vault);
+}
+
+let editingFoodItemId = null;
+let currentLogMeal = null;
+
+// ── Food Vault modal ──
+function openFoodVault() {
+  renderFoodVaultList('');
+  const search = document.getElementById('food-vault-search');
+  if (search) search.value = '';
+  openModal('modal-food-vault');
+}
+
+function renderFoodVaultList(query) {
+  const vault = getFoodVault();
+  const q = (query || '').toLowerCase();
+  const filtered = vault.filter(f => f.name.toLowerCase().includes(q));
+
+  const catColors = {
+    protein:'#ff6b35',vegetable:'#81c784',carb:'#47c8ff',
+    fat:'#ffb74d',dairy:'#ba68c8',supplement:'#e8ff47',
+    snack:'#ffd54f',other:'#888'
+  };
+
+  const el = document.getElementById('food-vault-list');
+  if (!el) return;
+
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:16px 0"><div class="empty-text">No foods found</div></div>';
+    return;
+  }
+
+  // Group by category
+  const cats = {};
+  filtered.forEach(f => {
+    const c = f.category || 'other';
+    if (!cats[c]) cats[c] = [];
+    cats[c].push(f);
+  });
+
+  el.innerHTML = Object.entries(cats).map(([cat, foods]) =>
+    '<div style="margin-bottom:14px">' +
+    '<div style="font-family:DM Mono,monospace;font-size:9px;color:' + (catColors[cat]||'#888') + ';letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">' + cat + '</div>' +
+    foods.map(f =>
+      '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:5px">' +
+      '<div style="flex:1;cursor:pointer" onclick="logFoodFromVault('' + f.id + '')">' +
+      '<div style="font-size:13px;color:var(--text);margin-bottom:2px">' + f.name + '</div>' +
+      '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">' + f.serving + '  ·  ' + f.calories + ' cal  ·  ' + f.protein + 'g P</div>' +
+      '</div>' +
+      '<button onclick="openEditFoodItem('' + f.id + '')" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 8px;font-size:12px">✎</button>' +
+      '</div>'
+    ).join('') +
+    '</div>'
+  ).join('');
+}
+
+// ── Add/Edit food item ──
+function openAddFoodItem() {
+  editingFoodItemId = null;
+  document.getElementById('food-item-modal-title').textContent = 'New Food';
+  ['fi-name','fi-serving','fi-cal','fi-protein','fi-carbs','fi-fat'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('fi-category').value = 'protein';
+  openModal('modal-food-item');
+}
+
+function openEditFoodItem(id) {
+  const vault = getFoodVault();
+  const food = vault.find(f => f.id === id);
+  if (!food) return;
+  editingFoodItemId = id;
+  document.getElementById('food-item-modal-title').textContent = 'Edit Food';
+  document.getElementById('fi-name').value = food.name;
+  document.getElementById('fi-serving').value = food.serving;
+  document.getElementById('fi-cal').value = food.calories;
+  document.getElementById('fi-protein').value = food.protein;
+  document.getElementById('fi-carbs').value = food.carbs;
+  document.getElementById('fi-fat').value = food.fat;
+  document.getElementById('fi-category').value = food.category || 'other';
+  openModal('modal-food-item');
+}
+
+function saveFoodItem() {
+  const name = document.getElementById('fi-name').value.trim();
+  if (!name) { alert('Enter a food name'); return; }
+  const item = {
+    id: editingFoodItemId || ('fu' + Date.now()),
+    name,
+    serving: document.getElementById('fi-serving').value.trim() || '1 serving',
+    calories: parseFloat(document.getElementById('fi-cal').value) || 0,
+    protein:  parseFloat(document.getElementById('fi-protein').value) || 0,
+    carbs:    parseFloat(document.getElementById('fi-carbs').value) || 0,
+    fat:      parseFloat(document.getElementById('fi-fat').value) || 0,
+    category: document.getElementById('fi-category').value || 'other',
+  };
+  const vault = getFoodVault();
+  if (editingFoodItemId) {
+    const idx = vault.findIndex(f => f.id === editingFoodItemId);
+    if (idx > -1) vault[idx] = item;
+  } else {
+    vault.push(item);
+  }
+  saveFoodVault(vault);
+  closeModal('modal-food-item');
+  renderFoodVaultList(document.getElementById('food-vault-search')?.value || '');
+  showToast(editingFoodItemId ? 'Food updated' : name + ' added to vault');
+}
+
+// ── Meal logging ──
+const MEALS = ['breakfast','lunch','dinner','snacks'];
+const MEAL_LABELS = {breakfast:'Breakfast',lunch:'Lunch',dinner:'Dinner',snacks:'Snacks'};
+const MEAL_ICONS  = {breakfast:'☀️',lunch:'🕐',dinner:'🍽️',snacks:'🍎'};
+
+function renderFoodMeals() {
+  const container = document.getElementById('food-meals-container');
+  if (!container) return;
+  const log = getTodayFoodLog();
+  container.innerHTML = MEALS.map(meal => {
+    const items = log.meals[meal] || [];
+    const mealCals = items.reduce((s,i) => s+i.calories, 0);
+    const mealProt = items.reduce((s,i) => s+i.protein, 0);
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer" onclick="toggleMealExpand('' + meal + '')">' +
+      '<div style="display:flex;align-items:center;gap:8px">' +
+      '<span style="font-size:16px">' + MEAL_ICONS[meal] + '</span>' +
+      '<div>' +
+      '<div style="font-weight:500;font-size:14px;color:var(--text)">' + MEAL_LABELS[meal] + '</div>' +
+      '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">' +
+      (items.length ? mealCals + ' cal  ·  ' + mealProt + 'g protein  ·  ' + items.length + ' item' + (items.length>1?'s':'') : 'Nothing logged yet') +
+      '</div></div></div>' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" id="meal-chevron-' + meal + '"><polyline points="6 9 12 15 18 9"/></svg>' +
+      '</div>' +
+      '<div id="meal-expand-' + meal + '" style="display:none;padding:0 14px 12px">' +
+      (items.length ? items.map((item,i) =>
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid var(--surface2)">' +
+        '<div style="flex:1">' +
+        '<div style="font-size:13px;color:var(--text)">' + item.name + '</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">' + item.servingQty + ' · ' + item.calories + ' cal · ' + item.protein + 'g P · ' + item.carbs + 'g C · ' + item.fat + 'g F</div>' +
+        '</div>' +
+        '<button onclick="removeFoodLogItem('' + meal + '',' + i + ')" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 8px;font-size:14px">×</button>' +
+        '</div>'
+      ).join('') : '') +
+      '<button onclick="openFoodLogModal('' + meal + '')" style="width:100%;background:none;border:1px dashed var(--border);border-radius:8px;padding:9px;font-family:DM Mono,monospace;font-size:11px;color:var(--text3);cursor:pointer;margin-top:6px;letter-spacing:0.06em">+ Add Food</button>' +
+      '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function toggleMealExpand(meal) {
+  const expand = document.getElementById('meal-expand-' + meal);
+  const chevron = document.getElementById('meal-chevron-' + meal);
+  if (!expand) return;
+  const isOpen = expand.style.display !== 'none';
+  expand.style.display = isOpen ? 'none' : 'block';
+  if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+// ── Food log modal ──
+function openFoodLogModal(meal) {
+  currentLogMeal = meal;
+  closeModal('modal-food-vault');
+  const title = document.getElementById('food-log-modal-title');
+  const body  = document.getElementById('food-log-modal-body');
+  if (title) title.textContent = 'Add to ' + MEAL_LABELS[meal];
+
+  const vault = getFoodVault();
+  const catColors = {protein:'#ff6b35',vegetable:'#81c784',carb:'#47c8ff',fat:'#ffb74d',dairy:'#ba68c8',supplement:'#e8ff47',snack:'#ffd54f',other:'#888'};
+
+  if (body) body.innerHTML =
+    '<input type="text" class="input" placeholder="Search your food vault..." oninput="filterFoodLogVault(this.value)" style="margin-bottom:12px" id="food-log-search">' +
+    '<div id="food-log-vault-list"></div>' +
+    '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">' +
+    '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3);margin-bottom:8px;letter-spacing:0.08em">OR ADD MANUALLY</div>' +
+    '<button onclick="openManualFoodEntry()" class="btn btn-ghost btn-full btn-sm">+ Manual Entry</button>' +
+    '</div>' +
+    '<button onclick="closeModal('modal-food-log')" class="btn btn-ghost btn-full btn-sm" style="margin-top:8px">Cancel</button>';
+
+  filterFoodLogVault('');
+  openModal('modal-food-log');
+}
+
+function filterFoodLogVault(query) {
+  const vault = getFoodVault();
+  const q = (query || '').toLowerCase();
+  const filtered = vault.filter(f => f.name.toLowerCase().includes(q)).slice(0,20);
+  const el = document.getElementById('food-log-vault-list');
+  if (!el) return;
+  el.innerHTML = filtered.map(f =>
+    '<div onclick="selectFoodToLog('' + f.id + '')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--surface2);cursor:pointer">' +
+    '<div>' +
+    '<div style="font-size:13px;color:var(--text)">' + f.name + '</div>' +
+    '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">' + f.serving + '  ·  ' + f.calories + ' cal  ·  ' + f.protein + 'g P</div>' +
+    '</div>' +
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>' +
+    '</div>'
+  ).join('');
+}
+
+function selectFoodToLog(foodId) {
+  const vault = getFoodVault();
+  const food = vault.find(f => f.id === foodId);
+  if (!food) return;
+
+  const body = document.getElementById('food-log-modal-body');
+  if (body) body.innerHTML =
+    '<div style="background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:14px">' +
+    '<div style="font-weight:500;font-size:15px;color:var(--text);margin-bottom:4px">' + food.name + '</div>' +
+    '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3)">Per ' + food.serving + ':  ' + food.calories + ' cal  ·  ' + food.protein + 'g P  ·  ' + food.carbs + 'g C  ·  ' + food.fat + 'g F</div>' +
+    '</div>' +
+    '<div class="input-group">' +
+    '<label class="input-label">Servings</label>' +
+    '<input type="number" class="input" id="food-log-qty" value="1" min="0.25" step="0.25" oninput="updateFoodLogPreview('' + foodId + '')" style="text-align:center;font-size:20px;font-family:Bebas Neue,sans-serif">' +
+    '</div>' +
+    '<div id="food-log-preview" style="background:rgba(232,255,71,0.06);border:1px solid rgba(232,255,71,0.2);border-radius:8px;padding:12px;margin-bottom:14px">' +
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center">' +
+    '<div><div style="font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--accent)" id="flp-cal">' + food.calories + '</div><div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3)">CAL</div></div>' +
+    '<div><div style="font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--text)" id="flp-p">' + food.protein + '</div><div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3)">PRO</div></div>' +
+    '<div><div style="font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--text)" id="flp-c">' + food.carbs + '</div><div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3)">CARB</div></div>' +
+    '<div><div style="font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--text)" id="flp-f">' + food.fat + '</div><div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3)">FAT</div></div>' +
+    '</div></div>' +
+    '<div style="display:flex;gap:8px">' +
+    '<button onclick="logFoodItem('' + foodId + '')" class="btn btn-primary" style="flex:1">Add to ' + MEAL_LABELS[currentLogMeal] + '</button>' +
+    '<button onclick="openFoodLogModal('' + currentLogMeal + '')" class="btn btn-ghost" style="flex:1">Back</button>' +
+    '</div>';
+}
+
+function updateFoodLogPreview(foodId) {
+  const vault = getFoodVault();
+  const food = vault.find(f => f.id === foodId);
+  if (!food) return;
+  const qty = parseFloat(document.getElementById('food-log-qty')?.value) || 1;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = Math.round(val); };
+  set('flp-cal', food.calories * qty);
+  set('flp-p',   food.protein  * qty);
+  set('flp-c',   food.carbs    * qty);
+  set('flp-f',   food.fat      * qty);
+}
+
+function logFoodFromVault(foodId) {
+  if (!currentLogMeal) currentLogMeal = 'snacks';
+  selectFoodToLog(foodId);
+}
+
+function logFoodItem(foodId) {
+  const vault = getFoodVault();
+  const food = vault.find(f => f.id === foodId);
+  if (!food || !currentLogMeal) return;
+  const qty = parseFloat(document.getElementById('food-log-qty')?.value) || 1;
+  const entry = {
+    id: Date.now().toString(),
+    foodId,
+    name: food.name,
+    servingQty: Math.round(qty * 10) / 10 + ' × ' + food.serving,
+    calories: Math.round(food.calories * qty),
+    protein:  Math.round(food.protein  * qty),
+    carbs:    Math.round(food.carbs    * qty),
+    fat:      Math.round(food.fat      * qty),
+    loggedAt: new Date().toISOString()
+  };
+  saveFoodLogEntry(currentLogMeal, entry);
+  closeModal('modal-food-log');
+  showToast(food.name + ' added to ' + MEAL_LABELS[currentLogMeal]);
+}
+
+function openManualFoodEntry() {
+  const body = document.getElementById('food-log-modal-body');
+  if (!body) return;
+  body.innerHTML =
+    '<div class="input-group"><label class="input-label">Food Name</label><input type="text" class="input" id="mfe-name" placeholder="e.g. Dig Inn Chicken Bowl"></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">' +
+    '<div class="input-group" style="margin-bottom:0"><label class="input-label">Calories</label><input type="number" class="input" id="mfe-cal" placeholder="0" style="text-align:center"></div>' +
+    '<div class="input-group" style="margin-bottom:0"><label class="input-label">Protein (g)</label><input type="number" class="input" id="mfe-p" placeholder="0" style="text-align:center"></div>' +
+    '<div class="input-group" style="margin-bottom:0"><label class="input-label">Carbs (g)</label><input type="number" class="input" id="mfe-c" placeholder="0" style="text-align:center"></div>' +
+    '<div class="input-group" style="margin-bottom:0"><label class="input-label">Fat (g)</label><input type="number" class="input" id="mfe-f" placeholder="0" style="text-align:center"></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px">' +
+    '<button onclick="logManualEntry()" class="btn btn-primary" style="flex:1">Add</button>' +
+    '<button onclick="openFoodLogModal('' + currentLogMeal + '')" class="btn btn-ghost" style="flex:1">Back</button>' +
+    '</div>';
+}
+
+function logManualEntry() {
+  const name = document.getElementById('mfe-name')?.value.trim() || 'Custom Food';
+  const entry = {
+    id: Date.now().toString(),
+    foodId: null,
+    name,
+    servingQty: '1 serving',
+    calories: parseFloat(document.getElementById('mfe-cal')?.value) || 0,
+    protein:  parseFloat(document.getElementById('mfe-p')?.value) || 0,
+    carbs:    parseFloat(document.getElementById('mfe-c')?.value) || 0,
+    fat:      parseFloat(document.getElementById('mfe-f')?.value) || 0,
+    loggedAt: new Date().toISOString()
+  };
+  saveFoodLogEntry(currentLogMeal, entry);
+  closeModal('modal-food-log');
+  showToast(name + ' logged');
+}
+
+function saveFoodLogEntry(meal, entry) {
+  const today = new Date().toISOString().slice(0,10);
+  const logs = DB.get('foodLogs', {});
+  if (!logs[today]) logs[today] = { meals:{breakfast:[],lunch:[],dinner:[],snacks:[]}, water:0 };
+  if (!logs[today].meals[meal]) logs[today].meals[meal] = [];
+  logs[today].meals[meal].push(entry);
+  DB.set('foodLogs', logs);
+  renderFoodMeals();
+  renderFoodDailySummary();
+}
+
+function removeFoodLogItem(meal, idx) {
+  const today = new Date().toISOString().slice(0,10);
+  const logs = DB.get('foodLogs', {});
+  if (logs[today]?.meals[meal]) {
+    logs[today].meals[meal].splice(idx, 1);
+    DB.set('foodLogs', logs);
+    renderFoodMeals();
+    renderFoodDailySummary();
+  }
+}
+
 // ── Main food page render ──
 function renderFoodPage() {
   renderFoodProfile();
   renderFoodDailySummary();
   renderWater();
+  renderFoodMeals();
+  getFoodVault(); // ensure seed is loaded
 }
 
 // ============================================================
