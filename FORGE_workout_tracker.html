@@ -1064,218 +1064,185 @@ select.input { appearance: none; }
 
 
 <!-- ===== LIVE WORKOUT PAGE ===== -->
-<div id="page-live" class="page" style="padding-bottom:0">
+<div id="page-live" class="page">
+  <div class="header">
+    <div class="logo">LIVE</div>
+    <button id="live-end-btn" onclick="liveGoToSummary()" style="display:none;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text3);font-family:'DM Mono',monospace;font-size:10px;padding:5px 10px;cursor:pointer">End Session</button>
+  </div>
 
-  <!-- LIVE SCREENS WRAPPER -->
-  <div id="live-app" style="display:flex;flex-direction:column;min-height:calc(100vh - 60px)">
-
-    <!-- SCREEN: START -->
-    <div id="ls-start" style="flex:1;display:flex;flex-direction:column">
-      <div class="header">
-        <div class="logo">LIVE</div>
+  <!-- START SCREEN -->
+  <div id="ls-start">
+    <div style="padding:0 20px 16px">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);margin-bottom:16px">Load a saved session or start fresh</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+        <button onclick="liveSetStartMode('planned')" id="live-tab-planned" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 8px;cursor:pointer;text-align:center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5" id="live-icon-planned"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:6px;letter-spacing:0.06em" id="live-lbl-planned">PLANNED</div>
+        </button>
+        <button onclick="liveSetStartMode('program')" id="live-tab-program" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 8px;cursor:pointer;text-align:center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5" id="live-icon-program"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:6px;letter-spacing:0.06em" id="live-lbl-program">PROGRAM</div>
+        </button>
       </div>
-      <div style="padding:18px 20px;flex:1;display:flex;flex-direction:column">
-        <div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);margin-bottom:20px">Load a saved session or start fresh</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px">
-          <button onclick="liveSetStartMode('planned')" id="live-tab-planned" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 8px;cursor:pointer;text-align:center;transition:all 0.15s">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5" id="live-icon-planned"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3);margin-top:6px;letter-spacing:0.06em" id="live-lbl-planned">PLANNED</div>
-          </button>
-          <button onclick="liveSetStartMode('program')" id="live-tab-program" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 8px;cursor:pointer;text-align:center;transition:all 0.15s">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5" id="live-icon-program"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-            <div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3);margin-top:6px;letter-spacing:0.06em" id="live-lbl-program">PROGRAM</div>
-          </button>
-        </div>
-        <div id="live-start-list" style="flex:1;overflow-y:auto;margin-bottom:14px"></div>
-        <div id="live-start-preview" style="display:none;margin-bottom:14px"></div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <button id="live-launch-loaded" onclick="liveLaunchLoaded()" style="display:none;width:100%;background:var(--accent);border:none;border-radius:10px;padding:13px;font-family:DM Mono,monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000;align-items:center;justify-content:center;gap:6px">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> START SESSION
-          </button>
-          <button onclick="liveLaunchBlank()" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.08em;cursor:pointer;color:var(--text3);display:flex;align-items:center;justify-content:center;gap:6px">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Start Blank
-          </button>
-        </div>
+      <div id="live-start-list" style="margin-bottom:14px"></div>
+      <div id="live-start-preview" style="display:none;margin-bottom:14px"></div>
+      <button id="live-launch-loaded" onclick="liveLaunchLoaded()" style="display:none;width:100%;background:var(--accent);border:none;border-radius:10px;padding:13px;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000;margin-bottom:8px">▶ START SESSION</button>
+      <button onclick="liveLaunchBlank()" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:13px;font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;color:var(--text3)">+ Start Blank</button>
+    </div>
+  </div>
+
+  <!-- ADD EXERCISE SCREEN -->
+  <div id="ls-add" style="display:none">
+    <div id="ls-completed-log" style="display:none;padding:0 20px 14px"></div>
+    <div style="padding:40px 20px;text-align:center">
+      <div style="width:56px;height:56px;border-radius:50%;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+      <div id="ls-add-title" style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text3);letter-spacing:0.08em;margin-bottom:6px">ADD YOUR FIRST EXERCISE</div>
+      <div id="ls-add-hint" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">Tap below to begin</div>
+    </div>
+    <div style="padding:0 20px 20px;display:flex;flex-direction:column;gap:8px">
+      <button onclick="liveShowVaultPicker()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:14px;font-family:'DM Mono',monospace;font-size:14px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000">+ ADD EXERCISE FROM VAULT</button>
+      <button onclick="liveGoToSummary()" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:13px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;cursor:pointer;color:var(--text3)">Finish Session →</button>
+    </div>
+  </div>
+
+  <!-- VAULT PICKER SCREEN -->
+  <div id="ls-vault" style="display:none;padding:0 20px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button onclick="liveBackFromVault()" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:0;font-size:20px">←</button>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.08em;color:var(--accent)">Select Exercise</div>
+    </div>
+    <input type="text" id="ls-vault-search" placeholder="Search..." oninput="liveFilterVault(this.value)" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;margin-bottom:12px;box-sizing:border-box">
+    <div id="ls-vault-results"></div>
+  </div>
+
+  <!-- EXERCISE SETUP SCREEN -->
+  <div id="ls-setup" style="display:none;padding:0 20px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <button onclick="liveShowVaultPicker()" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:0;font-size:20px">←</button>
+      <div id="ls-setup-name" style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.06em;color:var(--text)"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">TARGET SETS</div>
+        <input type="number" id="ls-setup-sets" value="3" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:18px;text-align:center;box-sizing:border-box">
+      </div>
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">REST (SEC)</div>
+        <input type="number" id="ls-setup-rest" value="45" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:18px;text-align:center;box-sizing:border-box">
       </div>
     </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">WEIGHT (LBS)</div>
+        <input type="number" id="ls-setup-w" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:18px;text-align:center;box-sizing:border-box">
+      </div>
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">REPS</div>
+        <input type="number" id="ls-setup-r" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:18px;text-align:center;box-sizing:border-box">
+      </div>
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);text-align:center;margin-bottom:16px">Enter Set 1 weight & reps to begin</div>
+    <button onclick="liveLockIn()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:14px;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000">✓ LOCK IN & START</button>
+  </div>
 
-    <!-- SCREEN: LIVE SET -->
-    <div id="ls-live" style="display:none;flex:1;flex-direction:column">
-      <div style="padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
-          <div style="display:flex;align-items:center;gap:8px">
-            <div id="ls-ex-name" style="font-family:Bebas Neue,sans-serif;font-size:22px;letter-spacing:0.06em;color:var(--text)"></div>
-            <button onclick="openExerciseHistory(document.getElementById('ls-ex-name').textContent)" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px" title="View history">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </button>
-          </div>
-          <div id="ls-set-badge" style="font-family:DM Mono,monospace;font-size:10px;color:var(--accent);background:rgba(232,255,71,0.1);padding:3px 8px;border-radius:4px"></div>
+  <!-- LIVE SET SCREEN -->
+  <div id="ls-live" style="display:none">
+    <div style="padding:0 20px 12px;border-bottom:1px solid var(--border);margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div id="ls-ex-name" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.06em;color:var(--text)"></div>
+          <button onclick="openExerciseHistory(document.getElementById('ls-ex-name').textContent)" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </button>
         </div>
-        <div id="ls-target" style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)"></div>
+        <div id="ls-set-badge" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);background:rgba(232,255,71,0.1);padding:3px 8px;border-radius:4px"></div>
       </div>
-      <div style="flex:1;overflow-y:auto;padding:14px 20px">
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">
-          <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px">CURRENT SET</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div>
-              <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text2);margin-bottom:4px">WEIGHT (LBS)</div>
-              <input type="number" id="ls-w" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:20px;text-align:center;box-sizing:border-box;font-family:Bebas Neue,sans-serif">
-            </div>
-            <div>
-              <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text2);margin-bottom:4px">REPS</div>
-              <input type="number" id="ls-r" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:20px;text-align:center;box-sizing:border-box;font-family:Bebas Neue,sans-serif">
-            </div>
+      <div id="ls-target" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)"></div>
+    </div>
+    <div style="padding:0 20px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px">CURRENT SET</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text2);margin-bottom:4px">WEIGHT (LBS)</div>
+            <input type="number" id="ls-w" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:22px;text-align:center;box-sizing:border-box;font-family:'Bebas Neue',sans-serif">
           </div>
-        </div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">
-          <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px">SET HISTORY</div>
-          <div id="ls-history"><div style="color:var(--text3);font-family:DM Mono,monospace;font-size:11px;text-align:center;padding:4px 0">No sets yet</div></div>
-        </div>
-        <div>
-          <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px">UP NEXT</div>
-          <div id="ls-upcoming"></div>
+          <div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text2);margin-bottom:4px">REPS</div>
+            <input type="number" id="ls-r" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:22px;text-align:center;box-sizing:border-box;font-family:'Bebas Neue',sans-serif">
+          </div>
         </div>
       </div>
-      <div id="ls-rest-bar" style="display:none;background:var(--surface);border-top:1px solid var(--border);padding:8px 20px;flex-direction:row;align-items:center;gap:10px;flex-shrink:0">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px">SET HISTORY</div>
+        <div id="ls-history"><div style="color:var(--text3);font-family:'DM Mono',monospace;font-size:11px;text-align:center;padding:4px 0">No sets yet</div></div>
+      </div>
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px">UP NEXT</div>
+        <div id="ls-upcoming"></div>
+      </div>
+    </div>
+    <!-- Rest timer bar -->
+    <div id="ls-rest-bar" style="display:none;background:var(--surface);border-top:1px solid var(--border);padding:10px 20px;margin-top:12px">
+      <div style="display:flex;align-items:center;gap:10px">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">REST</div>
-        <div id="ls-rest-count" style="font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--accent);letter-spacing:0.05em;min-width:32px"></div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">REST</div>
+        <div id="ls-rest-count" style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent);letter-spacing:0.05em;min-width:32px"></div>
         <div style="flex:1;background:var(--surface2);border-radius:4px;height:4px;overflow:hidden">
           <div id="ls-rest-fill" style="height:100%;background:var(--accent);border-radius:4px;transition:width 1s linear"></div>
         </div>
-        <button onclick="liveEditRest()" style="background:none;border:1px solid var(--border);border-radius:5px;color:var(--text3);font-family:DM Mono,monospace;font-size:10px;padding:3px 8px;cursor:pointer">Edit</button>
-      </div>
-      <div style="padding:10px 20px 14px;border-top:1px solid var(--border);flex-shrink:0">
-        <button onclick="liveCompleteSet()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:13px;font-family:DM Mono,monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000;display:flex;align-items:center;justify-content:center;gap:6px">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> COMPLETE SET
-        </button>
+        <button onclick="liveEditRest()" style="background:none;border:1px solid var(--border);border-radius:5px;color:var(--text3);font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;cursor:pointer">Edit</button>
       </div>
     </div>
-
-    <!-- SCREEN: RIR -->
-    <div id="ls-rir" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:20px">
-      <div style="width:100%;max-width:340px">
-        <div style="font-family:Bebas Neue,sans-serif;font-size:24px;letter-spacing:0.08em;color:var(--text);margin-bottom:2px;text-align:center">Reps In Reserve</div>
-        <div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;margin-bottom:18px">How many more reps could you have done?</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px" id="ls-rir-grid"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
-          <button onclick="liveNextExercise()" style="background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.06em;cursor:pointer;color:var(--text3)">Next Exercise</button>
-          <button id="ls-gen-btn" onclick="liveGenerateNext()" disabled style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.06em;cursor:pointer;color:var(--text3)">Next Set</button>
-        </div>
+    <div style="padding:12px 20px 20px">
+      <button onclick="liveCompleteSet()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:14px;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000">✓ COMPLETE SET</button>
     </div>
-
-    <!-- SCREEN: ADD EXERCISE -->
-    <div id="ls-add" style="display:none;flex:1;flex-direction:column">
-      <!-- Same header as ls-start for consistency -->
-      <div class="header">
-        <div class="logo">LIVE</div>
-        <button onclick="liveGoToSummary()" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--text3);font-family:'DM Mono',monospace;font-size:10px;padding:5px 10px;cursor:pointer;letter-spacing:0.06em">End Session</button>
-      </div>
-      <!-- Completed exercises summary -->
-      <div id="ls-completed-log" style="display:none;padding:14px 20px 0;overflow-y:auto;max-height:260px;flex-shrink:0"></div>
-      <!-- Empty state prompt -->
-      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center">
-        <div style="width:56px;height:56px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg>
-        </div>
-        <div id="ls-add-title" style="font-family:Bebas Neue,sans-serif;font-size:18px;color:var(--text3);letter-spacing:0.08em;margin-bottom:6px">ADD YOUR FIRST EXERCISE</div>
-        <div id="ls-add-hint" style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3)">Tap below to begin</div>
-      </div>
-      <!-- Bottom buttons - pinned -->
-      <div style="padding:10px 20px calc(14px + var(--safe-bottom));border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;flex-shrink:0">
-        <button onclick="liveShowVaultPicker()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:13px;font-family:DM Mono,monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000;display:flex;align-items:center;justify-content:center;gap:6px">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg> ADD EXERCISE
-        </button>
-        <button onclick="liveGoToSummary()" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.08em;cursor:pointer;color:var(--text3)">Finish Session →</button>
-      </div>
-    </div>
-
-    <!-- SCREEN: VAULT PICKER -->
-    <div id="ls-vault" style="display:none;flex:1;flex-direction:column;padding:18px 20px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-        <button onclick="liveBackFromVault()" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:0">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-        </button>
-        <div style="font-family:Bebas Neue,sans-serif;font-size:18px;letter-spacing:0.08em;color:var(--accent)">Select Exercise</div>
-      </div>
-      <input type="text" id="ls-vault-search" placeholder="Search..." oninput="liveFilterVault(this.value)" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;margin-bottom:12px;box-sizing:border-box">
-      <div id="ls-vault-results" style="flex:1;overflow-y:auto"></div>
-    </div>
-
-    <!-- SCREEN: EXERCISE SETUP -->
-    <div id="ls-setup" style="display:none;flex:1;flex-direction:column;padding:18px 20px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-        <button onclick="liveShowVaultPicker()" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:0">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-        </button>
-        <div id="ls-setup-name" style="font-family:Bebas Neue,sans-serif;font-size:20px;letter-spacing:0.06em;color:var(--text)"></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <div>
-          <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">TARGET SETS</div>
-          <input type="number" id="ls-setup-sets" value="3" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:18px;text-align:center;box-sizing:border-box;font-family:Bebas Neue,sans-serif">
-        </div>
-        <div>
-          <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">REST (SEC)</div>
-          <input type="number" id="ls-setup-rest" value="45" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:18px;text-align:center;box-sizing:border-box;font-family:Bebas Neue,sans-serif">
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-        <div>
-          <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">WEIGHT (LBS)</div>
-          <input type="number" id="ls-setup-w" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:18px;text-align:center;box-sizing:border-box;font-family:Bebas Neue,sans-serif">
-        </div>
-        <div>
-          <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">REPS</div>
-          <input type="number" id="ls-setup-r" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:18px;text-align:center;box-sizing:border-box;font-family:Bebas Neue,sans-serif">
-        </div>
-      </div>
-      <div style="color:var(--text3);font-size:12px;font-family:DM Mono,monospace;margin-bottom:16px;text-align:center;line-height:1.6">Enter Set 1 weight & reps, then lock in to begin</div>
-      <button onclick="liveLockIn()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:13px;font-family:DM Mono,monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000;display:flex;align-items:center;justify-content:center;gap:6px">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> LOCK IN & START
-      </button>
-    </div>
-
-    <!-- SCREEN: SUMMARY -->
-    <div id="ls-summary" style="display:none;flex:1;flex-direction:column">
-      <div style="flex:1;overflow-y:auto;padding:16px 20px">
-        <div style="font-family:Bebas Neue,sans-serif;font-size:22px;letter-spacing:0.06em;color:var(--text);margin-bottom:14px">Session Summary</div>
-        <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">WORKOUT NAME</div>
-        <input type="text" id="ls-summary-name" placeholder="e.g. Monday Push" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:15px;box-sizing:border-box;margin-bottom:10px">
-        <div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">DATE</div>
-        <input type="date" id="ls-summary-date" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;box-sizing:border-box;margin-bottom:14px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-          <div class="stat-card"><div id="ls-stat-sets" class="stat-value">0</div><div class="stat-label">Total Sets</div></div>
-          <div class="stat-card"><div id="ls-stat-vol" class="stat-value">0</div><div class="stat-label">Volume (lbs)</div></div>
-        </div>
-        <div id="ls-summary-list"></div>
-      </div>
-      <div style="padding:10px 20px 14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;flex-shrink:0">
-        <button onclick="liveSaveSession()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:13px;font-family:DM Mono,monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000;display:flex;align-items:center;justify-content:center;gap:6px">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> SAVE & LOG
-        </button>
-        <button onclick="liveDiscardSession()" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.08em;cursor:pointer;color:var(--text3)">Discard</button>
-      </div>
-    </div>
-
-    <!-- SCREEN: SAVED CONFIRMATION -->
-    <div id="ls-saved" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;text-align:center">
-      <div style="width:60px;height:60px;border-radius:50%;background:rgba(232,255,71,0.1);border:1px solid rgba(232,255,71,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 18px">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-      </div>
-      <div style="font-family:Bebas Neue,sans-serif;font-size:26px;letter-spacing:0.08em;color:var(--text);margin-bottom:6px">Workout Saved!</div>
-      <div id="ls-saved-name" style="font-family:DM Mono,monospace;font-size:12px;color:var(--text3);margin-bottom:4px"></div>
-      <div id="ls-saved-stats" style="font-family:DM Mono,monospace;font-size:12px;color:var(--text3);margin-bottom:28px"></div>
-      <div style="display:flex;flex-direction:column;gap:8px;width:100%">
-        <button onclick="liveGoToLog()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:13px;font-family:DM Mono,monospace;font-size:12px;letter-spacing:0.08em;cursor:pointer;color:#000">View in Log</button>
-        <button onclick="liveReset()" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.08em;cursor:pointer;color:var(--text3)">Start New Session</button>
-      </div>
-    </div>
-
   </div>
+
+  <!-- RIR SCREEN -->
+  <div id="ls-rir" style="display:none;padding:20px">
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:0.08em;color:var(--text);margin-bottom:4px">Reps In Reserve</div>
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">How many more reps could you have done?</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:16px" id="ls-rir-grid"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="liveNextExercise()" style="background:none;border:1px solid var(--border);border-radius:10px;padding:12px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.06em;cursor:pointer;color:var(--text3)">Next Exercise</button>
+      <button id="ls-gen-btn" onclick="liveGenerateNext()" disabled style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.06em;cursor:pointer;color:var(--text3)">Next Set</button>
+    </div>
+  </div>
+
+  <!-- SUMMARY SCREEN -->
+  <div id="ls-summary" style="display:none;padding:0 20px 20px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.06em;color:var(--text);margin-bottom:14px">Session Summary</div>
+    <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">WORKOUT NAME</div>
+    <input type="text" id="ls-summary-name" placeholder="e.g. Monday Push" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:15px;box-sizing:border-box;margin-bottom:10px">
+    <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:5px">DATE</div>
+    <input type="date" id="ls-summary-date" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;box-sizing:border-box;margin-bottom:14px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div class="stat-card"><div id="ls-stat-sets" class="stat-value">0</div><div class="stat-label">Total Sets</div></div>
+      <div class="stat-card"><div id="ls-stat-vol" class="stat-value">0</div><div class="stat-label">Volume (lbs)</div></div>
+    </div>
+    <div id="ls-summary-list" style="margin-bottom:16px"></div>
+    <button onclick="liveSaveSession()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:14px;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000;margin-bottom:8px">✓ SAVE & LOG</button>
+    <button onclick="liveDiscardSession()" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:12px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;cursor:pointer;color:var(--text3)">Discard</button>
+  </div>
+
+  <!-- SAVED SCREEN -->
+  <div id="ls-saved" style="display:none;padding:40px 20px;text-align:center">
+    <div style="width:60px;height:60px;border-radius:50%;background:rgba(232,255,71,0.1);border:1px solid rgba(232,255,71,0.3);display:inline-flex;align-items:center;justify-content:center;margin-bottom:18px">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:0.08em;color:var(--text);margin-bottom:6px">Workout Saved!</div>
+    <div id="ls-saved-name" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);margin-bottom:4px"></div>
+    <div id="ls-saved-stats" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);margin-bottom:28px"></div>
+    <button onclick="liveGoToLog()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:13px;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.08em;cursor:pointer;color:#000;margin-bottom:8px">View in Log</button>
+    <button onclick="liveReset()" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;cursor:pointer;color:var(--text3)">Start New Session</button>
+  </div>
+
 </div>
-
-
 
 <!-- ===== SETTINGS PAGE ===== -->
 <div id="page-settings" class="page">
@@ -4750,21 +4717,17 @@ let liveState = {
 function liveShowScreen(id) {
   ['ls-start','ls-live','ls-rir','ls-add','ls-vault','ls-setup','ls-summary','ls-saved'].forEach(s => {
     const el = document.getElementById(s);
-    if (el) {
-      el.style.display = 'none';
-      el.style.flex = '';
-    }
+    if (el) el.style.display = 'none';
   });
   const el = document.getElementById(id);
-  if (el) {
-    el.style.display = 'flex';
-    el.style.flexDirection = 'column';
-    el.style.flex = '1';
-    el.style.minHeight = '0';
-  }
+  if (el) el.style.display = 'block';
+  // Show/hide End Session button
+  const endBtn = document.getElementById('live-end-btn');
+  if (endBtn) endBtn.style.display = (id === 'ls-start' || id === 'ls-saved') ? 'none' : 'block';
 }
 
 function liveInit() {
+  liveState = {exercises:[],currentExIdx:0,currentSetNum:1,selectedSession:null,selectedRIR:null,restSec:45,restInterval:null,selectedEx:null};
   liveSetStartMode('planned');
   liveShowScreen('ls-start');
 }
