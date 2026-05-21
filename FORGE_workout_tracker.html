@@ -1165,9 +1165,14 @@ select.input { appearance: none; }
     </div>
 
     <!-- SCREEN: ADD EXERCISE -->
-    <div id="ls-add" style="display:none;flex:1;flex-direction:column">
+    <div id="ls-add" style="display:none;flex:1;flex-direction:column;min-height:0;height:100%">
+      <!-- Header with End button -->
+      <div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+        <div style="font-family:Bebas Neue,sans-serif;font-size:16px;letter-spacing:0.08em;color:var(--accent)">LIVE</div>
+        <button onclick="liveGoToSummary()" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--text3);font-family:'DM Mono',monospace;font-size:10px;padding:5px 10px;cursor:pointer;letter-spacing:0.06em">End Session</button>
+      </div>
       <!-- Completed exercises summary -->
-      <div id="ls-completed-log" style="display:none;padding:14px 20px 0;overflow-y:auto;max-height:280px"></div>
+      <div id="ls-completed-log" style="display:none;padding:14px 20px 0;overflow-y:auto;max-height:260px"></div>
       <!-- Empty state / next prompt -->
       <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center">
         <div style="width:56px;height:56px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
