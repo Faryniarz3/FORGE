@@ -1290,9 +1290,18 @@ select.input { appearance: none; }
       <label class="input-label">Gist ID (leave blank to create new)</label>
       <input type="text" class="input" id="gh-gist-id" placeholder="Auto-generated on first sync">
     </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <button class="btn btn-secondary btn-full" onclick="saveGitHubSettings()">Save Settings</button>
+    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-primary" onclick="saveGitHubSettings()">Save & Sync Now</button>
-      <button class="btn btn-secondary" onclick="pullFromGist()">Pull from Gist</button>
+      <button class="btn btn-primary" style="flex:1" onclick="syncNowOnly()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Push to Gist
+      </button>
+      <button class="btn btn-secondary" style="flex:1" onclick="pullFromGist()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        Pull from Gist
+      </button>
     </div>
     <div id="sync-result" style="margin-top:12px;font-family:DM Mono,monospace;font-size:12px;color:var(--text2)"></div>
   </div>
@@ -4130,6 +4139,39 @@ async function syncToGist() {
     setSyncStatus('error', 'Sync failed');
     if (resultEl) resultEl.textContent = '✗ Error: ' + e.message;
     showToast('Sync failed: ' + e.message);
+  }
+}
+
+async function syncNowOnly() {
+  const settings = DB.get('settings', {});
+  if (!settings.ghToken || !settings.gistId) { alert('Save your token and Gist ID first.'); return; }
+  const resultEl = document.getElementById('sync-result');
+  if (resultEl) resultEl.textContent = 'Pushing to Gist...';
+  setSyncStatus('syncing', 'Pushing...');
+  try {
+    const state = getState();
+    const payload = {
+      sessions: state.sessions,
+      programs: state.programs,
+      prs: state.prs,
+      vault: getVault(),
+      philosophy: DB.get('philosophy', ''),
+      lastSync: new Date().toISOString()
+    };
+    const body = JSON.stringify({ files: { 'forge_data.json': { content: JSON.stringify(payload) } } });
+    const res = await fetch('https://api.github.com/gists/' + settings.gistId, {
+      method: 'PATCH',
+      headers: { Authorization: 'token ' + settings.ghToken, 'Content-Type': 'application/json' },
+      body
+    });
+    if (!res.ok) throw new Error('GitHub API: ' + res.status);
+    setSyncStatus('synced', 'Synced ' + new Date().toLocaleTimeString());
+    if (resultEl) resultEl.textContent = '✓ Pushed to Gist at ' + new Date().toLocaleTimeString();
+    showToast('Pushed to GitHub!');
+  } catch(e) {
+    setSyncStatus('error', 'Push failed');
+    if (resultEl) resultEl.textContent = '✗ Error: ' + e.message;
+    showToast('Push failed: ' + e.message);
   }
 }
 
