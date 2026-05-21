@@ -1158,14 +1158,10 @@ select.input { appearance: none; }
         <div style="font-family:Bebas Neue,sans-serif;font-size:24px;letter-spacing:0.08em;color:var(--text);margin-bottom:2px;text-align:center">Reps In Reserve</div>
         <div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;margin-bottom:18px">How many more reps could you have done?</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px" id="ls-rir-grid"></div>
-        <div id="ls-rir-suggestion" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;min-height:60px;display:flex;align-items:center;justify-content:center">
-          <div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center">Select RIR to see next set suggestion</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
           <button onclick="liveNextExercise()" style="background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.06em;cursor:pointer;color:var(--text3)">Next Exercise</button>
-          <button id="ls-gen-btn" onclick="liveGenerateNext()" disabled style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.06em;cursor:pointer;color:var(--text3)">Generate Set</button>
+          <button id="ls-gen-btn" onclick="liveGenerateNext()" disabled style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.06em;cursor:pointer;color:var(--text3)">Next Set</button>
         </div>
-      </div>
     </div>
 
     <!-- SCREEN: ADD EXERCISE -->
@@ -2565,6 +2561,7 @@ function viewSession(id) {
             <span style="color:var(--text3);min-width:20px">${i+1}</span>
             <span>${parts.join(' · ')}</span>
             ${set.isPR?'<span class="pr-badge">PR</span>':''}
+            ${set.rir?`<span style="font-family:DM Mono,monospace;font-size:10px;color:var(--accent);background:rgba(232,255,71,0.08);padding:2px 5px;border-radius:3px">${set.rir}</span>`:''}
           </div>`;
         }).join('')}
       </div>`;
@@ -5020,8 +5017,6 @@ function liveCompleteSet() {
   ex.sets.push({set:liveState.currentSetNum, weight:w, reps:r, rir:null});
   liveBuildRIRGrid();
   liveState.selectedRIR = null;
-  const sug = document.getElementById('ls-rir-suggestion');
-  if (sug) sug.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center">Select RIR to see next set suggestion</div>';
   const genBtn = document.getElementById('ls-gen-btn');
   if (genBtn) { genBtn.disabled=true; genBtn.style.background='var(--surface)'; genBtn.style.borderColor='var(--border)'; genBtn.style.color='var(--text3)'; }
   liveShowScreen('ls-rir');
@@ -5073,18 +5068,11 @@ function liveSelectRIR(idx) {
     b.style.background = i===idx ? 'rgba(232,255,71,0.1)' : 'var(--surface)';
     b.style.border = i===idx ? '1px solid rgba(232,255,71,0.4)' : '1px solid var(--border)';
   });
+  // Record RIR on the last set
   const ex = liveState.exercises[liveState.currentExIdx];
   const lastSet = ex.sets[ex.sets.length-1];
-  const algo = LIVE_RIR_ALGO[idx];
-  const nw = Math.max(0, lastSet.weight + algo.dw);
-  const nr = lastSet.reps + algo.dr;
-  lastSet.rir = LIVE_RIR_OPTS[idx].label;
-  const sug = document.getElementById('ls-rir-suggestion');
-  if (sug) sug.innerHTML = '<div style="text-align:center">' +
-    '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text2);margin-bottom:8px">'+algo.msg+'</div>' +
-    '<div style="font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--accent);letter-spacing:0.05em">'+nw+' lbs × '+nr+' reps</div>' +
-    '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3);margin-top:4px">suggested next set</div>' +
-    '</div>';
+  if (lastSet) lastSet.rir = LIVE_RIR_OPTS[idx].label;
+  // Enable Next Set button
   const btn = document.getElementById('ls-gen-btn');
   if (btn) { btn.disabled=false; btn.style.background='rgba(232,255,71,0.1)'; btn.style.borderColor='rgba(232,255,71,0.4)'; btn.style.color='var(--accent)'; }
 }
