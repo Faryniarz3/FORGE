@@ -6954,7 +6954,7 @@ function saveFoodItem() {
     vault.push(item);
   }
   saveFoodVault(vault);
-  closeModal('modal-food-item');
+  closeModal(\'\1\');
   renderFoodVaultList(document.getElementById('food-vault-search')?.value || '');
   showToast(editingFoodItemId ? 'Food updated' : name + ' added to vault');
 }
@@ -7011,7 +7011,7 @@ function toggleMealExpand(meal) {
 // ── Food log modal ──
 function openFoodLogModal(meal) {
   currentLogMeal = meal;
-  closeModal('modal-food-vault');
+  closeModal(\'\1\');
   const title = document.getElementById('food-log-modal-title');
   const body  = document.getElementById('food-log-modal-body');
   if (title) title.textContent = 'Add to ' + MEAL_LABELS[meal];
@@ -7026,7 +7026,7 @@ function openFoodLogModal(meal) {
     '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3);margin-bottom:8px;letter-spacing:0.08em">OR ADD MANUALLY</div>' +
     '<button onclick="openManualFoodEntry()" class="btn btn-ghost btn-full btn-sm">+ Manual Entry</button>' +
     '</div>' +
-    '<button onclick="closeModal('modal-food-log')" class="btn btn-ghost btn-full btn-sm" style="margin-top:8px">Cancel</button>';
+    '<button onclick="closeModal(\'modal-food-log\')" class="btn btn-ghost btn-full btn-sm" style="margin-top:8px">Cancel</button>';
 
   filterFoodLogVault('');
   openModal('modal-food-log');
@@ -7111,7 +7111,7 @@ function logFoodItem(foodId) {
     loggedAt: new Date().toISOString()
   };
   saveFoodLogEntry(currentLogMeal, entry);
-  closeModal('modal-food-log');
+  closeModal(\'\1\');
   showToast(food.name + ' added to ' + MEAL_LABELS[currentLogMeal]);
 }
 
@@ -7146,7 +7146,7 @@ function logManualEntry() {
     loggedAt: new Date().toISOString()
   };
   saveFoodLogEntry(currentLogMeal, entry);
-  closeModal('modal-food-log');
+  closeModal(\'\1\');
   showToast(name + ' logged');
 }
 
