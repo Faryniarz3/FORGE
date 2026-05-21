@@ -6973,7 +6973,7 @@ function renderFoodMeals() {
     const mealCals = items.reduce((s,i) => s+i.calories, 0);
     const mealProt = items.reduce((s,i) => s+i.protein, 0);
     return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer" onclick="toggleMealExpand('' + meal + '')">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer" onclick="toggleMealExpand(\'' + meal + '\')">>' +
       '<div style="display:flex;align-items:center;gap:8px">' +
       '<span style="font-size:16px">' + MEAL_ICONS[meal] + '</span>' +
       '<div>' +
@@ -6990,10 +6990,10 @@ function renderFoodMeals() {
         '<div style="font-size:13px;color:var(--text)">' + item.name + '</div>' +
         '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">' + item.servingQty + ' · ' + item.calories + ' cal · ' + item.protein + 'g P · ' + item.carbs + 'g C · ' + item.fat + 'g F</div>' +
         '</div>' +
-        '<button onclick="removeFoodLogItem('' + meal + '',' + i + ')" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 8px;font-size:14px">×</button>' +
+        '<button onclick="removeFoodLogItem(\'' + meal + '\',' + i + ')" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 8px;font-size:14px">×</button>' +
         '</div>'
       ).join('') : '') +
-      '<button onclick="openFoodLogModal('' + meal + '')" style="width:100%;background:none;border:1px dashed var(--border);border-radius:8px;padding:9px;font-family:DM Mono,monospace;font-size:11px;color:var(--text3);cursor:pointer;margin-top:6px;letter-spacing:0.06em">+ Add Food</button>' +
+      '<button onclick="openFoodLogModal(\'' + meal + '\')"> style="width:100%;background:none;border:1px dashed var(--border);border-radius:8px;padding:9px;font-family:DM Mono,monospace;font-size:11px;color:var(--text3);cursor:pointer;margin-top:6px;letter-spacing:0.06em">+ Add Food</button>' +
       '</div>' +
       '</div>';
   }).join('');
@@ -7062,7 +7062,7 @@ function selectFoodToLog(foodId) {
     '</div>' +
     '<div class="input-group">' +
     '<label class="input-label">Servings</label>' +
-    '<input type="number" class="input" id="food-log-qty" value="1" min="0.25" step="0.25" oninput="updateFoodLogPreview('' + foodId + '')" style="text-align:center;font-size:20px;font-family:Bebas Neue,sans-serif">' +
+    '<input type="number" class="input" id="food-log-qty" value="1" min="0.25" step="0.25" oninput="updateFoodLogPreview(\'' + foodId + '\')" style="text-align:center;font-size:20px;font-family:Bebas Neue,sans-serif">' +
     '</div>' +
     '<div id="food-log-preview" style="background:rgba(232,255,71,0.06);border:1px solid rgba(232,255,71,0.2);border-radius:8px;padding:12px;margin-bottom:14px">' +
     '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center">' +
@@ -7072,8 +7072,8 @@ function selectFoodToLog(foodId) {
     '<div><div style="font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--text)" id="flp-f">' + food.fat + '</div><div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3)">FAT</div></div>' +
     '</div></div>' +
     '<div style="display:flex;gap:8px">' +
-    '<button onclick="logFoodItem('' + foodId + '')" class="btn btn-primary" style="flex:1">Add to ' + MEAL_LABELS[currentLogMeal] + '</button>' +
-    '<button onclick="openFoodLogModal('' + currentLogMeal + '')" class="btn btn-ghost" style="flex:1">Back</button>' +
+    '<button onclick="logFoodItem(\'' + foodId + '\')" class="btn btn-primary" style="flex:1">Add to ' + MEAL_LABELS[currentLogMeal] + '</button>' +
+    '<button onclick="openFoodLogModal(\'' + currentLogMeal + '\')" class="btn btn-ghost" style="flex:1">Back</button>' +
     '</div>';
 }
 
@@ -7128,7 +7128,7 @@ function openManualFoodEntry() {
     '</div>' +
     '<div style="display:flex;gap:8px">' +
     '<button onclick="logManualEntry()" class="btn btn-primary" style="flex:1">Add</button>' +
-    '<button onclick="openFoodLogModal('' + currentLogMeal + '')" class="btn btn-ghost" style="flex:1">Back</button>' +
+    '<button onclick="openFoodLogModal(\'' + currentLogMeal + '\')" class="btn btn-ghost" style="flex:1">Back</button>' +
     '</div>';
 }
 
