@@ -6894,11 +6894,11 @@ function renderFoodVaultList(query) {
     '<div style="font-family:DM Mono,monospace;font-size:9px;color:' + (catColors[cat]||'#888') + ';letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">' + cat + '</div>' +
     foods.map(f =>
       '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:5px">' +
-      '<div style="flex:1;cursor:pointer" onclick="logFoodFromVault('' + f.id + '')">' +
+      '<div style="flex:1;cursor:pointer" onclick="logFoodFromVault(\'' + f.id + '\')">' +
       '<div style="font-size:13px;color:var(--text);margin-bottom:2px">' + f.name + '</div>' +
       '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">' + f.serving + '  ·  ' + f.calories + ' cal  ·  ' + f.protein + 'g P</div>' +
       '</div>' +
-      '<button onclick="openEditFoodItem('' + f.id + '')" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 8px;font-size:12px">✎</button>' +
+      '<button onclick="openEditFoodItem(\'' + f.id + '\')" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 8px;font-size:12px">✎</button>' +
       '</div>'
     ).join('') +
     '</div>'
@@ -7039,7 +7039,7 @@ function filterFoodLogVault(query) {
   const el = document.getElementById('food-log-vault-list');
   if (!el) return;
   el.innerHTML = filtered.map(f =>
-    '<div onclick="selectFoodToLog('' + f.id + '')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--surface2);cursor:pointer">' +
+    '<div onclick="selectFoodToLog(\'' + f.id + '\')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--surface2);cursor:pointer">' +
     '<div>' +
     '<div style="font-size:13px;color:var(--text)">' + f.name + '</div>' +
     '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">' + f.serving + '  ·  ' + f.calories + ' cal  ·  ' + f.protein + 'g P</div>' +
