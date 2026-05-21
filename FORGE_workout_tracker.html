@@ -960,6 +960,12 @@ select.input { appearance: none; }
     <div id="dash-day-card" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px"></div>
   </div>
 
+  <!-- RECENT WORKOUTS -->
+  <div class="section">
+    <div class="section-title">Recent Workouts</div>
+    <div id="dash-recent"></div>
+  </div>
+
   <!-- ACTIVE PROGRAM -->
   <div class="section">
     <div class="section-title">Active Program</div>
@@ -1739,6 +1745,9 @@ function renderDashboard() {
 
   // Calendar
   renderDashCalendar();
+
+  // Recent workouts
+  renderDashRecent();
 
   // Data charts
   renderDashVolumeChart();
@@ -5809,6 +5818,55 @@ function renderDashCalendar() {
       '</div>';
   }
   grid.innerHTML = html;
+}
+
+function renderDashRecent() {
+  const el = document.getElementById('dash-recent');
+  if (!el) return;
+
+  const sessions = getState().sessions
+    .filter(s => s.status === 'completed' || (!s.status && s.exercises && s.exercises.length))
+    .sort((a,b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 4);
+
+  if (!sessions.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:12px 0"><div class="empty-icon">🏋️</div><div class="empty-title">No completed workouts yet</div></div>';
+    return;
+  }
+
+  el.innerHTML = sessions.map(s => {
+    const d = new Date(s.date);
+    const dateStr = d.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+    const exes = (s.exercises||[]).filter(e => e.exType === 'strength' || e.exType === 'core');
+    const cardioExes = (s.exercises||[]).filter(e => ['treadmill','peloton','row'].includes(e.exType));
+    const vol = exes.reduce((sum,ex) => sum + (ex.sets||[]).reduce((ss,set) => ss+(set.weight||0)*(set.reps||0),0),0);
+    const totalSets = exes.reduce((sum,ex) => sum+(ex.sets||[]).length, 0);
+    const muscles = [...new Set(
+      exes.flatMap(ex => {
+        const vault = getVault().find(v => v.name.toLowerCase() === (ex.name||'').toLowerCase());
+        return vault?.muscles || [];
+      })
+    )].slice(0,3);
+    const colors = {chest:'#ff6b35',back:'#47c8ff',shoulders:'#ba68c8',biceps:'#ffb74d',triceps:'#ffd54f',legs:'#81c784',core:'#e8ff47','full body':'#aaa',cardio:'#47c8ff'};
+
+    const sid = s.id;
+    return '<div onclick="viewSession(\''+sid+'\')" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all 0.15s">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">' +
+      '<div style="font-weight:500;font-size:14px;color:var(--text)">' + s.name + (s.newPRs ? ' <span class="pr-badge">'+s.newPRs+' PR</span>' : '') + '</div>' +
+      '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">' + dateStr + '</div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between">' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+      (totalSets ? '<span style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3)">' + totalSets + ' sets</span>' : '') +
+      (vol ? '<span style="font-family:DM Mono,monospace;font-size:11px;color:var(--accent)">' + vol.toLocaleString() + ' lbs</span>' : '') +
+      (cardioExes.length && !exes.length ? '<span style="font-family:DM Mono,monospace;font-size:11px;color:var(--accent3)">Cardio</span>' : '') +
+      '</div>' +
+      '<div style="display:flex;gap:4px">' +
+      muscles.map(m => '<span style="width:8px;height:8px;border-radius:50%;background:'+(colors[m]||'#888')+';display:inline-block" title="'+m+'"></span>').join('') +
+      '</div>' +
+      '</div>' +
+      '</div>';
+  }).join('');
 }
 
 function dashCalPrev() {
