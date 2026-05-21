@@ -6865,45 +6865,76 @@ function openFoodVault() {
 function renderFoodVaultList(query) {
   const vault = getFoodVault();
   const q = (query || '').toLowerCase();
-  const filtered = vault.filter(f => f.name.toLowerCase().includes(q));
-
-  const catColors = {
-    protein:'#ff6b35',vegetable:'#81c784',carb:'#47c8ff',
-    fat:'#ffb74d',dairy:'#ba68c8',supplement:'#e8ff47',
-    snack:'#ffd54f',other:'#888'
-  };
-
+  const filtered = vault.filter(function(f) { return f.name.toLowerCase().includes(q); });
   const el = document.getElementById('food-vault-list');
   if (!el) return;
+  el.innerHTML = '';
 
   if (!filtered.length) {
-    el.innerHTML = '<div class="empty-state" style="padding:16px 0"><div class="empty-text">No foods found</div></div>';
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.style.padding = '16px 0';
+    empty.innerHTML = '<div class="empty-text">No foods found</div>';
+    el.appendChild(empty);
     return;
   }
 
+  const catColors = {protein:'#ff6b35',vegetable:'#81c784',carb:'#47c8ff',fat:'#ffb74d',dairy:'#ba68c8',supplement:'#e8ff47',snack:'#ffd54f',other:'#888'};
+
   // Group by category
   const cats = {};
-  filtered.forEach(f => {
+  filtered.forEach(function(f) {
     const c = f.category || 'other';
     if (!cats[c]) cats[c] = [];
     cats[c].push(f);
   });
 
-  el.innerHTML = Object.entries(cats).map(([cat, foods]) =>
-    '<div style="margin-bottom:14px">' +
-    '<div style="font-family:DM Mono,monospace;font-size:9px;color:' + (catColors[cat]||'#888') + ';letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">' + cat + '</div>' +
-    foods.map(f =>
-      '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:5px">' +
-      '<div style="flex:1;cursor:pointer" onclick="logFoodFromVault(\'' + f.id + '\')">' +
-      '<div style="font-size:13px;color:var(--text);margin-bottom:2px">' + f.name + '</div>' +
-      '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">' + f.serving + '  ·  ' + f.calories + ' cal  ·  ' + f.protein + 'g P</div>' +
-      '</div>' +
-      '<button onclick="openEditFoodItem(\'' + f.id + '\')" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 8px;font-size:12px">✎</button>' +
-      '</div>'
-    ).join('') +
-    '</div>'
-  ).join('');
+  Object.entries(cats).forEach(function(entry) {
+    const cat = entry[0];
+    const foods = entry[1];
+
+    const catSection = document.createElement('div');
+    catSection.style.marginBottom = '14px';
+
+    const catLabel = document.createElement('div');
+    catLabel.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:' + (catColors[cat]||'#888') + ';letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px';
+    catLabel.textContent = cat;
+    catSection.appendChild(catLabel);
+
+    foods.forEach(function(f) {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:5px';
+
+      const infoCol = document.createElement('div');
+      infoCol.style.cssText = 'flex:1;cursor:pointer';
+      const fname = document.createElement('div');
+      fname.style.cssText = 'font-size:13px;color:var(--text);margin-bottom:2px';
+      fname.textContent = f.name;
+      const fmeta = document.createElement('div');
+      fmeta.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
+      fmeta.textContent = f.serving + '  ·  ' + f.calories + ' cal  ·  ' + f.protein + 'g P';
+      infoCol.appendChild(fname);
+      infoCol.appendChild(fmeta);
+      (function(fid) {
+        infoCol.onclick = function() { logFoodFromVault(fid); };
+      })(f.id);
+
+      const editBtn = document.createElement('button');
+      editBtn.style.cssText = 'background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 8px;font-size:12px';
+      editBtn.textContent = '✎';
+      (function(fid) {
+        editBtn.onclick = function() { openEditFoodItem(fid); };
+      })(f.id);
+
+      row.appendChild(infoCol);
+      row.appendChild(editBtn);
+      catSection.appendChild(row);
+    });
+
+    el.appendChild(catSection);
+  });
 }
+
 
 // ── Add/Edit food item ──
 function openAddFoodItem() {
@@ -6968,36 +6999,99 @@ function renderFoodMeals() {
   const container = document.getElementById('food-meals-container');
   if (!container) return;
   const log = getTodayFoodLog();
-  container.innerHTML = MEALS.map(meal => {
+  container.innerHTML = '';
+
+  MEALS.forEach(function(meal) {
     const items = log.meals[meal] || [];
-    const mealCals = items.reduce((s,i) => s+i.calories, 0);
-    const mealProt = items.reduce((s,i) => s+i.protein, 0);
-    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer" onclick="toggleMealExpand(\'' + meal + '\')">>' +
-      '<div style="display:flex;align-items:center;gap:8px">' +
-      '<span style="font-size:16px">' + MEAL_ICONS[meal] + '</span>' +
-      '<div>' +
-      '<div style="font-weight:500;font-size:14px;color:var(--text)">' + MEAL_LABELS[meal] + '</div>' +
-      '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">' +
-      (items.length ? mealCals + ' cal  ·  ' + mealProt + 'g protein  ·  ' + items.length + ' item' + (items.length>1?'s':'') : 'Nothing logged yet') +
-      '</div></div></div>' +
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" id="meal-chevron-' + meal + '"><polyline points="6 9 12 15 18 9"/></svg>' +
-      '</div>' +
-      '<div id="meal-expand-' + meal + '" style="display:none;padding:0 14px 12px">' +
-      (items.length ? items.map((item,i) =>
-        '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid var(--surface2)">' +
-        '<div style="flex:1">' +
-        '<div style="font-size:13px;color:var(--text)">' + item.name + '</div>' +
-        '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">' + item.servingQty + ' · ' + item.calories + ' cal · ' + item.protein + 'g P · ' + item.carbs + 'g C · ' + item.fat + 'g F</div>' +
-        '</div>' +
-        '<button onclick="removeFoodLogItem(\'' + meal + '\',' + i + ')" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 8px;font-size:14px">×</button>' +
-        '</div>'
-      ).join('') : '') +
-      '<button onclick="openFoodLogModal(\'' + meal + '\')"> style="width:100%;background:none;border:1px dashed var(--border);border-radius:8px;padding:9px;font-family:DM Mono,monospace;font-size:11px;color:var(--text3);cursor:pointer;margin-top:6px;letter-spacing:0.06em">+ Add Food</button>' +
-      '</div>' +
-      '</div>';
-  }).join('');
+    const mealCals = items.reduce(function(s,i){return s+i.calories;},0);
+    const mealProt = items.reduce(function(s,i){return s+i.protein;},0);
+
+    // Outer card
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden';
+
+    // Header row (always visible)
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer';
+    header.onclick = function() { toggleMealExpand(meal); };
+
+    const leftSide = document.createElement('div');
+    leftSide.style.cssText = 'display:flex;align-items:center;gap:8px';
+
+    const icon = document.createElement('span');
+    icon.style.fontSize = '16px';
+    icon.textContent = MEAL_ICONS[meal];
+
+    const textBlock = document.createElement('div');
+    const mealTitle = document.createElement('div');
+    mealTitle.style.cssText = 'font-weight:500;font-size:14px;color:var(--text)';
+    mealTitle.textContent = MEAL_LABELS[meal];
+    const mealMeta = document.createElement('div');
+    mealMeta.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
+    mealMeta.textContent = items.length
+      ? mealCals + ' cal  ·  ' + mealProt + 'g protein  ·  ' + items.length + ' item' + (items.length>1?'s':'')
+      : 'Nothing logged yet';
+    textBlock.appendChild(mealTitle);
+    textBlock.appendChild(mealMeta);
+    leftSide.appendChild(icon);
+    leftSide.appendChild(textBlock);
+
+    const chevron = document.createElement('svg');
+    chevron.setAttribute('viewBox','0 0 24 24');
+    chevron.setAttribute('width','16');
+    chevron.setAttribute('height','16');
+    chevron.style.cssText = 'fill:none;stroke:var(--text3);stroke-width:2;flex-shrink:0;transition:transform 0.2s';
+    chevron.id = 'meal-chevron-' + meal;
+    chevron.innerHTML = '<polyline points="6 9 12 15 18 9"/>';
+
+    header.appendChild(leftSide);
+    header.appendChild(chevron);
+    card.appendChild(header);
+
+    // Expand area (hidden by default)
+    const expand = document.createElement('div');
+    expand.id = 'meal-expand-' + meal;
+    expand.style.cssText = 'display:none;padding:0 14px 12px';
+
+    // Logged items
+    items.forEach(function(item, i) {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid var(--surface2)';
+      const info = document.createElement('div');
+      info.style.flex = '1';
+      const itemName = document.createElement('div');
+      itemName.style.cssText = 'font-size:13px;color:var(--text)';
+      itemName.textContent = item.name;
+      const itemMeta = document.createElement('div');
+      itemMeta.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
+      itemMeta.textContent = item.servingQty + ' · ' + item.calories + ' cal · ' + item.protein + 'g P · ' + item.carbs + 'g C · ' + item.fat + 'g F';
+      info.appendChild(itemName);
+      info.appendChild(itemMeta);
+      const removeBtn = document.createElement('button');
+      removeBtn.style.cssText = 'background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 8px;font-size:14px';
+      removeBtn.textContent = '×';
+      (function(m, idx) {
+        removeBtn.onclick = function() { removeFoodLogItem(m, idx); };
+      })(meal, i);
+      row.appendChild(info);
+      row.appendChild(removeBtn);
+      expand.appendChild(row);
+    });
+
+    // Add Food button
+    const addBtn = document.createElement('button');
+    addBtn.style.cssText = 'width:100%;background:none;border:1px dashed var(--border);border-radius:8px;padding:9px;font-family:DM Mono,monospace;font-size:11px;color:var(--accent);cursor:pointer;margin-top:6px;letter-spacing:0.06em';
+    addBtn.textContent = '+ Add Food';
+    (function(m) {
+      addBtn.onclick = function() { openFoodLogModal(m); };
+    })(meal);
+    expand.appendChild(addBtn);
+
+    card.appendChild(expand);
+    container.appendChild(card);
+  });
 }
+
 
 function toggleMealExpand(meal) {
   const expand = document.getElementById('meal-expand-' + meal);
@@ -7059,18 +7153,47 @@ function openFoodLogModal(meal) {
 function filterFoodLogVault(query) {
   const vault = getFoodVault();
   const q = (query || '').toLowerCase();
-  const filtered = vault.filter(f => f.name.toLowerCase().includes(q)).slice(0,20);
+  const filtered = vault.filter(function(f) { return f.name.toLowerCase().includes(q); }).slice(0,20);
   const el = document.getElementById('food-log-vault-list');
   if (!el) return;
-  el.innerHTML = filtered.map(f =>
-    '<div onclick="selectFoodToLog(\'' + f.id + '\')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--surface2);cursor:pointer">' +
-    '<div>' +
-    '<div style="font-size:13px;color:var(--text)">' + f.name + '</div>' +
-    '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">' + f.serving + '  ·  ' + f.calories + ' cal  ·  ' + f.protein + 'g P</div>' +
-    '</div>' +
-    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>' +
-    '</div>'
-  ).join('');
+  el.innerHTML = '';
+
+  if (!filtered.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;padding:16px 0';
+    empty.textContent = 'No foods found';
+    el.appendChild(empty);
+    return;
+  }
+
+  filtered.forEach(function(f) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--surface2);cursor:pointer';
+
+    const info = document.createElement('div');
+    const name = document.createElement('div');
+    name.style.cssText = 'font-size:13px;color:var(--text)';
+    name.textContent = f.name;
+    const meta = document.createElement('div');
+    meta.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
+    meta.textContent = f.serving + '  ·  ' + f.calories + ' cal  ·  ' + f.protein + 'g P';
+    info.appendChild(name);
+    info.appendChild(meta);
+
+    const arrow = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    arrow.setAttribute('width','14'); arrow.setAttribute('height','14');
+    arrow.setAttribute('viewBox','0 0 24 24');
+    arrow.style.cssText = 'fill:none;stroke:var(--text3);stroke-width:2;flex-shrink:0';
+    arrow.innerHTML = '<polyline points="9 18 15 12 9 6"/>';
+
+    (function(fid) {
+      row.onclick = function() { selectFoodToLog(fid); };
+    })(f.id);
+
+    row.appendChild(info);
+    row.appendChild(arrow);
+    el.appendChild(row);
+  });
 }
 
 function selectFoodToLog(foodId) {
