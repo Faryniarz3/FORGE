@@ -1067,7 +1067,7 @@ select.input { appearance: none; }
 <div id="page-live" class="page">
 
   <!-- LIVE SCREENS WRAPPER -->
-  <div id="live-app" style="display:flex;flex-direction:column;min-height:calc(100vh - 60px)">
+  <div id="live-app" style="display:flex;flex-direction:column;height:calc(100vh - 60px);overflow:hidden">
 
     <!-- SCREEN: START -->
     <div id="ls-start" style="flex:1;display:flex;flex-direction:column">
@@ -1165,15 +1165,15 @@ select.input { appearance: none; }
     </div>
 
     <!-- SCREEN: ADD EXERCISE -->
-    <div id="ls-add" style="display:none;flex:1;flex-direction:column;min-height:0;height:100%">
-      <!-- Header with End button -->
-      <div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-        <div style="font-family:Bebas Neue,sans-serif;font-size:16px;letter-spacing:0.08em;color:var(--accent)">LIVE</div>
+    <div id="ls-add" style="display:none;flex:1;flex-direction:column">
+      <!-- Same header as ls-start for consistency -->
+      <div class="header">
+        <div class="logo">LIVE</div>
         <button onclick="liveGoToSummary()" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--text3);font-family:'DM Mono',monospace;font-size:10px;padding:5px 10px;cursor:pointer;letter-spacing:0.06em">End Session</button>
       </div>
       <!-- Completed exercises summary -->
-      <div id="ls-completed-log" style="display:none;padding:14px 20px 0;overflow-y:auto;max-height:260px"></div>
-      <!-- Empty state / next prompt -->
+      <div id="ls-completed-log" style="display:none;padding:14px 20px 0;overflow-y:auto;max-height:260px;flex-shrink:0"></div>
+      <!-- Empty state prompt -->
       <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center">
         <div style="width:56px;height:56px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5"><path d="M12 5v14M5 12h14"/></svg>
@@ -1181,7 +1181,8 @@ select.input { appearance: none; }
         <div id="ls-add-title" style="font-family:Bebas Neue,sans-serif;font-size:18px;color:var(--text3);letter-spacing:0.08em;margin-bottom:6px">ADD YOUR FIRST EXERCISE</div>
         <div id="ls-add-hint" style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3)">Tap below to begin</div>
       </div>
-      <div style="padding:10px 20px 14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px">
+      <!-- Bottom buttons - pinned -->
+      <div style="padding:10px 20px calc(14px + var(--safe-bottom));border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;flex-shrink:0">
         <button onclick="liveShowVaultPicker()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:13px;font-family:DM Mono,monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000;display:flex;align-items:center;justify-content:center;gap:6px">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg> ADD EXERCISE
         </button>
