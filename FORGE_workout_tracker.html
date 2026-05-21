@@ -7011,22 +7011,46 @@ function toggleMealExpand(meal) {
 // ── Food log modal ──
 function openFoodLogModal(meal) {
   currentLogMeal = meal;
-  closeModal(\'\1\');
+  closeModal('modal-food-vault');
   const title = document.getElementById('food-log-modal-title');
   const body  = document.getElementById('food-log-modal-body');
   if (title) title.textContent = 'Add to ' + MEAL_LABELS[meal];
+  if (!body) return;
 
-  const vault = getFoodVault();
-  const catColors = {protein:'#ff6b35',vegetable:'#81c784',carb:'#47c8ff',fat:'#ffb74d',dairy:'#ba68c8',supplement:'#e8ff47',snack:'#ffd54f',other:'#888'};
+  body.innerHTML = '';
 
-  if (body) body.innerHTML =
-    '<input type="text" class="input" placeholder="Search your food vault..." oninput="filterFoodLogVault(this.value)" style="margin-bottom:12px" id="food-log-search">' +
-    '<div id="food-log-vault-list"></div>' +
-    '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">' +
-    '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3);margin-bottom:8px;letter-spacing:0.08em">OR ADD MANUALLY</div>' +
-    '<button onclick="openManualFoodEntry()" class="btn btn-ghost btn-full btn-sm">+ Manual Entry</button>' +
-    '</div>' +
-    '<button onclick="closeModal(\'modal-food-log\')" class="btn btn-ghost btn-full btn-sm" style="margin-top:8px">Cancel</button>';
+  const search = document.createElement('input');
+  search.type = 'text';
+  search.className = 'input';
+  search.placeholder = 'Search your food vault...';
+  search.id = 'food-log-search';
+  search.style.marginBottom = '12px';
+  search.oninput = function() { filterFoodLogVault(this.value); };
+  body.appendChild(search);
+
+  const listEl = document.createElement('div');
+  listEl.id = 'food-log-vault-list';
+  body.appendChild(listEl);
+
+  const divider = document.createElement('div');
+  divider.style.cssText = 'margin-top:12px;border-top:1px solid var(--border);padding-top:12px';
+  const divLabel = document.createElement('div');
+  divLabel.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3);margin-bottom:8px;letter-spacing:0.08em';
+  divLabel.textContent = 'OR ADD MANUALLY';
+  const manualBtn = document.createElement('button');
+  manualBtn.className = 'btn btn-ghost btn-full btn-sm';
+  manualBtn.textContent = '+ Manual Entry';
+  manualBtn.onclick = openManualFoodEntry;
+  divider.appendChild(divLabel);
+  divider.appendChild(manualBtn);
+  body.appendChild(divider);
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-ghost btn-full btn-sm';
+  cancelBtn.style.marginTop = '8px';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = function() { closeModal('modal-food-log'); };
+  body.appendChild(cancelBtn);
 
   filterFoodLogVault('');
   openModal('modal-food-log');
@@ -7051,30 +7075,83 @@ function filterFoodLogVault(query) {
 
 function selectFoodToLog(foodId) {
   const vault = getFoodVault();
-  const food = vault.find(f => f.id === foodId);
+  const food = vault.find(function(f) { return f.id === foodId; });
   if (!food) return;
 
   const body = document.getElementById('food-log-modal-body');
-  if (body) body.innerHTML =
-    '<div style="background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:14px">' +
-    '<div style="font-weight:500;font-size:15px;color:var(--text);margin-bottom:4px">' + food.name + '</div>' +
-    '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3)">Per ' + food.serving + ':  ' + food.calories + ' cal  ·  ' + food.protein + 'g P  ·  ' + food.carbs + 'g C  ·  ' + food.fat + 'g F</div>' +
-    '</div>' +
-    '<div class="input-group">' +
-    '<label class="input-label">Servings</label>' +
-    '<input type="number" class="input" id="food-log-qty" value="1" min="0.25" step="0.25" oninput="updateFoodLogPreview(\'' + foodId + '\')" style="text-align:center;font-size:20px;font-family:Bebas Neue,sans-serif">' +
-    '</div>' +
-    '<div id="food-log-preview" style="background:rgba(232,255,71,0.06);border:1px solid rgba(232,255,71,0.2);border-radius:8px;padding:12px;margin-bottom:14px">' +
-    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center">' +
-    '<div><div style="font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--accent)" id="flp-cal">' + food.calories + '</div><div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3)">CAL</div></div>' +
-    '<div><div style="font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--text)" id="flp-p">' + food.protein + '</div><div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3)">PRO</div></div>' +
-    '<div><div style="font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--text)" id="flp-c">' + food.carbs + '</div><div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3)">CARB</div></div>' +
-    '<div><div style="font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--text)" id="flp-f">' + food.fat + '</div><div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3)">FAT</div></div>' +
-    '</div></div>' +
-    '<div style="display:flex;gap:8px">' +
-    '<button onclick="logFoodItem(\'' + foodId + '\')" class="btn btn-primary" style="flex:1">Add to ' + MEAL_LABELS[currentLogMeal] + '</button>' +
-    '<button onclick="openFoodLogModal(\'' + currentLogMeal + '\')" class="btn btn-ghost" style="flex:1">Back</button>' +
-    '</div>';
+  if (!body) return;
+  body.innerHTML = '';
+
+  // Food summary card
+  const card = document.createElement('div');
+  card.style.cssText = 'background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:14px';
+  const cardTitle = document.createElement('div');
+  cardTitle.style.cssText = 'font-weight:500;font-size:15px;color:var(--text);margin-bottom:4px';
+  cardTitle.textContent = food.name;
+  const cardMeta = document.createElement('div');
+  cardMeta.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text3)';
+  cardMeta.textContent = 'Per ' + food.serving + ':  ' + food.calories + ' cal  ·  ' + food.protein + 'g P  ·  ' + food.carbs + 'g C  ·  ' + food.fat + 'g F';
+  card.appendChild(cardTitle);
+  card.appendChild(cardMeta);
+  body.appendChild(card);
+
+  // Servings input
+  const qtyGroup = document.createElement('div');
+  qtyGroup.className = 'input-group';
+  const qtyLabel = document.createElement('label');
+  qtyLabel.className = 'input-label';
+  qtyLabel.textContent = 'Servings';
+  const qtyInput = document.createElement('input');
+  qtyInput.type = 'number';
+  qtyInput.className = 'input';
+  qtyInput.id = 'food-log-qty';
+  qtyInput.value = '1';
+  qtyInput.min = '0.25';
+  qtyInput.step = '0.25';
+  qtyInput.style.cssText = 'text-align:center;font-size:20px;font-family:Bebas Neue,sans-serif';
+  qtyInput.oninput = function() { updateFoodLogPreview(foodId); };
+  qtyGroup.appendChild(qtyLabel);
+  qtyGroup.appendChild(qtyInput);
+  body.appendChild(qtyGroup);
+
+  // Preview bar
+  const preview = document.createElement('div');
+  preview.id = 'food-log-preview';
+  preview.style.cssText = 'background:rgba(232,255,71,0.06);border:1px solid rgba(232,255,71,0.2);border-radius:8px;padding:12px;margin-bottom:14px';
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center';
+  [['flp-cal',food.calories,'CAL'],['flp-p',food.protein,'PRO'],['flp-c',food.carbs,'CARB'],['flp-f',food.fat,'FAT']].forEach(function(row) {
+    const cell = document.createElement('div');
+    const num = document.createElement('div');
+    num.id = row[0];
+    num.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:20px;color:' + (row[0]==='flp-cal'?'var(--accent)':'var(--text)');
+    num.textContent = row[1];
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:var(--text3)';
+    lbl.textContent = row[2];
+    cell.appendChild(num);
+    cell.appendChild(lbl);
+    grid.appendChild(cell);
+  });
+  preview.appendChild(grid);
+  body.appendChild(preview);
+
+  // Buttons
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:8px';
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn btn-primary';
+  addBtn.style.flex = '1';
+  addBtn.textContent = 'Add to ' + MEAL_LABELS[currentLogMeal];
+  addBtn.onclick = function() { logFoodItem(foodId); };
+  const backBtn = document.createElement('button');
+  backBtn.className = 'btn btn-ghost';
+  backBtn.style.flex = '1';
+  backBtn.textContent = 'Back';
+  backBtn.onclick = function() { openFoodLogModal(currentLogMeal); };
+  btnRow.appendChild(addBtn);
+  btnRow.appendChild(backBtn);
+  body.appendChild(btnRow);
 }
 
 function updateFoodLogPreview(foodId) {
@@ -7118,18 +7195,66 @@ function logFoodItem(foodId) {
 function openManualFoodEntry() {
   const body = document.getElementById('food-log-modal-body');
   if (!body) return;
-  body.innerHTML =
-    '<div class="input-group"><label class="input-label">Food Name</label><input type="text" class="input" id="mfe-name" placeholder="e.g. Dig Inn Chicken Bowl"></div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">' +
-    '<div class="input-group" style="margin-bottom:0"><label class="input-label">Calories</label><input type="number" class="input" id="mfe-cal" placeholder="0" style="text-align:center"></div>' +
-    '<div class="input-group" style="margin-bottom:0"><label class="input-label">Protein (g)</label><input type="number" class="input" id="mfe-p" placeholder="0" style="text-align:center"></div>' +
-    '<div class="input-group" style="margin-bottom:0"><label class="input-label">Carbs (g)</label><input type="number" class="input" id="mfe-c" placeholder="0" style="text-align:center"></div>' +
-    '<div class="input-group" style="margin-bottom:0"><label class="input-label">Fat (g)</label><input type="number" class="input" id="mfe-f" placeholder="0" style="text-align:center"></div>' +
-    '</div>' +
-    '<div style="display:flex;gap:8px">' +
-    '<button onclick="logManualEntry()" class="btn btn-primary" style="flex:1">Add</button>' +
-    '<button onclick="openFoodLogModal(\'' + currentLogMeal + '\')" class="btn btn-ghost" style="flex:1">Back</button>' +
-    '</div>';
+  body.innerHTML = '';
+
+  const fields = [
+    {id:'mfe-name', label:'Food Name', type:'text', placeholder:'e.g. Dig Inn Chicken Bowl', full:true},
+    {id:'mfe-cal',  label:'Calories',  type:'number', placeholder:'0'},
+    {id:'mfe-p',    label:'Protein (g)', type:'number', placeholder:'0'},
+    {id:'mfe-c',    label:'Carbs (g)',   type:'number', placeholder:'0'},
+    {id:'mfe-f',    label:'Fat (g)',     type:'number', placeholder:'0'},
+  ];
+
+  const nameGroup = document.createElement('div');
+  nameGroup.className = 'input-group';
+  const nameLabel = document.createElement('label');
+  nameLabel.className = 'input-label';
+  nameLabel.textContent = 'Food Name';
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.className = 'input';
+  nameInput.id = 'mfe-name';
+  nameInput.placeholder = 'e.g. Dig Inn Chicken Bowl';
+  nameGroup.appendChild(nameLabel);
+  nameGroup.appendChild(nameInput);
+  body.appendChild(nameGroup);
+
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px';
+  [['mfe-cal','Calories'],['mfe-p','Protein (g)'],['mfe-c','Carbs (g)'],['mfe-f','Fat (g)']].forEach(function(f) {
+    const grp = document.createElement('div');
+    grp.className = 'input-group';
+    grp.style.marginBottom = '0';
+    const lbl = document.createElement('label');
+    lbl.className = 'input-label';
+    lbl.textContent = f[1];
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.className = 'input';
+    inp.id = f[0];
+    inp.placeholder = '0';
+    inp.style.textAlign = 'center';
+    grp.appendChild(lbl);
+    grp.appendChild(inp);
+    grid.appendChild(grp);
+  });
+  body.appendChild(grid);
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:8px';
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn btn-primary';
+  addBtn.style.flex = '1';
+  addBtn.textContent = 'Add';
+  addBtn.onclick = logManualEntry;
+  const backBtn = document.createElement('button');
+  backBtn.className = 'btn btn-ghost';
+  backBtn.style.flex = '1';
+  backBtn.textContent = 'Back';
+  backBtn.onclick = function() { openFoodLogModal(currentLogMeal); };
+  btnRow.appendChild(addBtn);
+  btnRow.appendChild(backBtn);
+  body.appendChild(btnRow);
 }
 
 function logManualEntry() {
