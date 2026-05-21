@@ -1064,10 +1064,10 @@ select.input { appearance: none; }
 
 
 <!-- ===== LIVE WORKOUT PAGE ===== -->
-<div id="page-live" class="page">
+<div id="page-live" class="page" style="padding-bottom:0">
 
   <!-- LIVE SCREENS WRAPPER -->
-  <div id="live-app" style="display:flex;flex-direction:column;height:calc(100vh - 60px);overflow:hidden">
+  <div id="live-app" style="display:flex;flex-direction:column;min-height:calc(100vh - 60px)">
 
     <!-- SCREEN: START -->
     <div id="ls-start" style="flex:1;display:flex;flex-direction:column">
@@ -4750,10 +4750,18 @@ let liveState = {
 function liveShowScreen(id) {
   ['ls-start','ls-live','ls-rir','ls-add','ls-vault','ls-setup','ls-summary','ls-saved'].forEach(s => {
     const el = document.getElementById(s);
-    if (el) { el.style.display = 'none'; }
+    if (el) {
+      el.style.display = 'none';
+      el.style.flex = '';
+    }
   });
   const el = document.getElementById(id);
-  if (el) { el.style.display = 'flex'; el.style.flexDirection = 'column'; }
+  if (el) {
+    el.style.display = 'flex';
+    el.style.flexDirection = 'column';
+    el.style.flex = '1';
+    el.style.minHeight = '0';
+  }
 }
 
 function liveInit() {
