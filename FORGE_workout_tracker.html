@@ -6954,7 +6954,7 @@ function saveFoodItem() {
     vault.push(item);
   }
   saveFoodVault(vault);
-  closeModal(\'\1\');
+  closeModal('modal-food-item');
   renderFoodVaultList(document.getElementById('food-vault-search')?.value || '');
   showToast(editingFoodItemId ? 'Food updated' : name + ' added to vault');
 }
@@ -7188,7 +7188,7 @@ function logFoodItem(foodId) {
     loggedAt: new Date().toISOString()
   };
   saveFoodLogEntry(currentLogMeal, entry);
-  closeModal(\'\1\');
+  closeModal('modal-food-item');
   showToast(food.name + ' added to ' + MEAL_LABELS[currentLogMeal]);
 }
 
@@ -7271,7 +7271,7 @@ function logManualEntry() {
     loggedAt: new Date().toISOString()
   };
   saveFoodLogEntry(currentLogMeal, entry);
-  closeModal(\'\1\');
+  closeModal('modal-food-item');
   showToast(name + ' logged');
 }
 
