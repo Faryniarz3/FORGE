@@ -5018,7 +5018,6 @@ function liveCompleteSet() {
   if (!w || !r) { alert('Enter weight and reps'); return; }
   const ex = liveState.exercises[liveState.currentExIdx];
   ex.sets.push({set:liveState.currentSetNum, weight:w, reps:r, rir:null});
-  liveStartRest();
   liveBuildRIRGrid();
   liveState.selectedRIR = null;
   const sug = document.getElementById('ls-rir-suggestion');
@@ -5067,6 +5066,8 @@ function liveBuildRIRGrid() {
 }
 
 function liveSelectRIR(idx) {
+  // Start rest timer only on first RIR selection for this set
+  if (liveState.selectedRIR === null) liveStartRest();
   liveState.selectedRIR = idx;
   document.querySelectorAll('#ls-rir-grid button[id^="ls-rir-"]').forEach((b,i) => {
     b.style.background = i===idx ? 'rgba(232,255,71,0.1)' : 'var(--surface)';
@@ -5096,6 +5097,7 @@ function liveGenerateNext() {
   const nw = Math.max(0, lastSet.weight + algo.dw);
   const nr = lastSet.reps + algo.dr;
   liveState.currentSetNum++;
+
   const wEl = document.getElementById('ls-w');
   const rEl = document.getElementById('ls-r');
   if (wEl) wEl.value = nw;
@@ -5104,15 +5106,94 @@ function liveGenerateNext() {
   if (badgeEl) badgeEl.textContent = 'SET '+liveState.currentSetNum+' OF '+ex.targetSets;
   liveRenderHistory();
   liveShowScreen('ls-live');
+
+  // Check if target sets reached
   if (liveState.currentSetNum > ex.targetSets) {
-    setTimeout(() => {
-      liveState.currentSetNum = 1;
-      document.getElementById('ls-add-title').textContent = 'EXERCISE COMPLETE';
-      document.getElementById('ls-add-hint').textContent = 'Add your next exercise or finish the session';
-      liveRenderCompletedLog();
-      liveShowScreen('ls-add');
-    }, 200);
+    liveShowExerciseComplete();
   }
+}
+
+function liveShowExerciseComplete() {
+  // Stop rest timer
+  if (liveState.restInterval) clearInterval(liveState.restInterval);
+  const restBar = document.getElementById('ls-rest-bar');
+  if (restBar) restBar.style.display = 'none';
+
+  const nextIdx = liveState.currentExIdx + 1;
+  const nextEx = liveState.exercises[nextIdx];
+
+  // Show the complete banner + next exercise button on the live screen
+  const container = document.getElementById('ls-live');
+  if (!container) return;
+
+  // Build overlay inside live screen
+  let existing = document.getElementById('ls-ex-complete-banner');
+  if (existing) existing.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'ls-ex-complete-banner';
+  banner.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.93);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px;text-align:center;z-index:10';
+
+  const currentEx = liveState.exercises[liveState.currentExIdx];
+  const vol = currentEx.sets.reduce((sum,s) => sum+s.weight*s.reps, 0);
+
+  banner.innerHTML =
+    '<div style="width:52px;height:52px;border-radius:50%;background:rgba(232,255,71,0.12);border:1px solid rgba(232,255,71,0.3);display:flex;align-items:center;justify-content:center;margin-bottom:14px">' +
+    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
+    '</div>' +
+    '<div style="font-family:Bebas Neue,sans-serif;font-size:22px;letter-spacing:0.08em;color:var(--text);margin-bottom:4px">' + currentEx.name + '</div>' +
+    '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);margin-bottom:20px">' +
+    currentEx.sets.length + ' sets complete  ·  ' + vol.toLocaleString() + ' lbs volume' +
+    '</div>' +
+    (nextEx ?
+      '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;width:100%;margin-bottom:16px">' +
+      '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:6px">UP NEXT</div>' +
+      '<div style="font-family:Bebas Neue,sans-serif;font-size:18px;color:var(--accent);letter-spacing:0.06em;margin-bottom:4px">' + nextEx.name + '</div>' +
+      '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3)">' + nextEx.targetSets + ' sets' + (nextEx.reps ? ' × ' + nextEx.reps + ' reps' : '') + '</div>' +
+      '</div>' +
+      '<button onclick="liveMoveToNextExercise()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:14px;font-family:DM Mono,monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000;margin-bottom:8px">Move to Next Exercise →</button>'
+      :
+      '<div style="font-family:DM Mono,monospace;font-size:12px;color:var(--text3);margin-bottom:16px">All exercises complete!</div>' +
+      '<button onclick="liveGoToSummary()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:14px;font-family:DM Mono,monospace;font-size:13px;font-weight:500;letter-spacing:0.08em;cursor:pointer;color:#000;margin-bottom:8px">Finish Session →</button>'
+    ) +
+    '<button onclick="liveSkipToAdd()" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.06em;cursor:pointer;color:var(--text3)">Add Different Exercise</button>';
+
+  container.style.position = 'relative';
+  container.appendChild(banner);
+  liveShowScreen('ls-live');
+}
+
+function liveMoveToNextExercise() {
+  // Remove banner
+  const banner = document.getElementById('ls-ex-complete-banner');
+  if (banner) banner.remove();
+
+  // Advance to next exercise
+  liveState.currentExIdx++;
+  liveState.currentSetNum = 1;
+
+  const ex = liveState.exercises[liveState.currentExIdx];
+  if (!ex) { liveGoToSummary(); return; }
+
+  // Clear inputs
+  const wEl = document.getElementById('ls-w');
+  const rEl = document.getElementById('ls-r');
+  if (wEl) wEl.value = '';
+  if (rEl) rEl.value = '';
+
+  liveLoadExercise();
+  liveShowScreen('ls-live');
+  liveRenderCompletedLog();
+}
+
+function liveSkipToAdd() {
+  const banner = document.getElementById('ls-ex-complete-banner');
+  if (banner) banner.remove();
+  liveState.currentSetNum = 1;
+  document.getElementById('ls-add-title').textContent = 'EXERCISE COMPLETE';
+  document.getElementById('ls-add-hint').textContent = 'Add your next exercise or finish the session';
+  liveRenderCompletedLog();
+  liveShowScreen('ls-add');
 }
 
 function liveRenderCompletedLog() {
@@ -5138,11 +5219,9 @@ function liveRenderCompletedLog() {
 }
 
 function liveNextExercise() {
-  liveState.currentSetNum = 1;
-  document.getElementById('ls-add-title').textContent = 'EXERCISE COMPLETE';
-  document.getElementById('ls-add-hint').textContent = 'Add your next exercise or finish the session';
-  liveRenderCompletedLog();
-  liveShowScreen('ls-add');
+  // Called from RIR screen "Next Exercise" button — show exercise complete banner
+  liveShowScreen('ls-live');
+  liveShowExerciseComplete();
 }
 
 // ── SUMMARY ──
