@@ -881,9 +881,9 @@ select.input { appearance: none; }
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
     Vault
   </button>
-  <button class="nav-btn" onclick="showPage('prs')" id="nav-prs">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-    PRs
+  <button class="nav-btn" onclick="showPage('food')" id="nav-food">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
+    Food
   </button>
   <button class="nav-btn" onclick="showPage('settings')" id="nav-settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
@@ -972,6 +972,15 @@ select.input { appearance: none; }
         <div class="empty-text">Build a program in the Programs tab</div>
       </div>
     </div>
+  </div>
+
+  <!-- PRs COMPACT -->
+  <div class="section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="section-title" style="margin-bottom:0">Personal Records</div>
+      <button onclick="showPage('prs')" style="background:none;border:none;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);cursor:pointer;letter-spacing:0.06em">View All →</button>
+    </div>
+    <div id="dash-prs-compact"></div>
   </div>
 
   <!-- VOLUME BY MUSCLE GROUP (compact) -->
@@ -1240,6 +1249,144 @@ select.input { appearance: none; }
     <div id="ls-saved-stats" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);margin-bottom:28px"></div>
     <button onclick="liveGoToLog()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:13px;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.08em;cursor:pointer;color:#000;margin-bottom:8px">View in Log</button>
     <button onclick="liveReset()" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;cursor:pointer;color:var(--text3)">Start New Session</button>
+  </div>
+
+</div>
+
+
+<!-- ===== FOOD PAGE ===== -->
+<div id="page-food" class="page">
+  <div class="header">
+    <div class="logo">FOOD</div>
+    <div id="food-day-type" style="font-family:'DM Mono',monospace;font-size:10px;padding:3px 10px;border-radius:4px;background:rgba(232,255,71,0.1);color:var(--accent)">TRAINING DAY</div>
+  </div>
+
+  <!-- DAILY SUMMARY BAR -->
+  <div class="section" style="padding-bottom:0">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:0.05em;line-height:1" id="food-cal-remaining">--</div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:0.08em">CALORIES REMAINING</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)" id="food-cal-consumed">0 eaten</div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)" id="food-cal-target">of -- goal</div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)" id="food-cal-burned">+ 0 burned</div>
+      </div>
+    </div>
+    <!-- Macro progress bars -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--accent)">PROTEIN</div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)" id="food-protein-label">0/228g</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:3px;height:6px;overflow:hidden">
+          <div id="food-protein-bar" style="height:100%;background:var(--accent);border-radius:3px;width:0%;transition:width 0.4s ease"></div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:#47c8ff">CARBS</div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)" id="food-carbs-label">0/--g</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:3px;height:6px;overflow:hidden">
+          <div id="food-carbs-bar" style="height:100%;background:#47c8ff;border-radius:3px;width:0%;transition:width 0.4s ease"></div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:#ffb74d">FAT</div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)" id="food-fat-label">0/--g</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:3px;height:6px;overflow:hidden">
+          <div id="food-fat-bar" style="height:100%;background:#ffb74d;border-radius:3px;width:0%;transition:width 0.4s ease"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NUTRITION PROFILE SETUP -->
+  <div class="section" id="food-profile-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="section-title" style="margin-bottom:0">Nutrition Profile</div>
+      <button onclick="toggleProfileEdit()" id="profile-edit-btn" style="background:none;border:none;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);cursor:pointer;letter-spacing:0.06em">Edit</button>
+    </div>
+
+    <!-- Saved profile view -->
+    <div id="food-profile-saved" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px" id="food-profile-display"></div>
+      <div style="background:rgba(232,255,71,0.06);border:1px solid rgba(232,255,71,0.2);border-radius:10px;padding:12px">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--accent);letter-spacing:0.1em;margin-bottom:8px">DAILY TARGETS</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="food-targets-display"></div>
+      </div>
+    </div>
+
+    <!-- Profile edit form -->
+    <div id="food-profile-form">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="input-group" style="margin-bottom:0">
+          <label class="input-label">Age</label>
+          <input type="number" class="input" id="fp-age" value="33" style="padding:8px 10px">
+        </div>
+        <div class="input-group" style="margin-bottom:0">
+          <label class="input-label">Weight (lbs)</label>
+          <input type="number" class="input" id="fp-weight" value="190" style="padding:8px 10px">
+        </div>
+        <div class="input-group" style="margin-bottom:0">
+          <label class="input-label">Height (in)</label>
+          <input type="number" class="input" id="fp-height" value="72" style="padding:8px 10px">
+        </div>
+        <div class="input-group" style="margin-bottom:0">
+          <label class="input-label">Body Fat %</label>
+          <input type="number" class="input" id="fp-bf" value="16" style="padding:8px 10px">
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Activity Level</label>
+        <select class="input" id="fp-activity" style="padding:8px 10px">
+          <option value="1.2">Sedentary (desk job, little exercise)</option>
+          <option value="1.375">Lightly active (1-3 days/week)</option>
+          <option value="1.55" selected>Moderately active (3-5 days/week)</option>
+          <option value="1.725">Very active (6-7 days/week)</option>
+          <option value="1.9">Extra active (physical job + training)</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Primary Goal</label>
+        <select class="input" id="fp-goal" style="padding:8px 10px">
+          <option value="aggressive_cut" selected>Aggressive cut (fat loss priority)</option>
+          <option value="moderate_cut">Moderate cut (fat loss + performance)</option>
+          <option value="maintain">Maintain (recomp)</option>
+          <option value="bulk">Build muscle (surplus)</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Protein multiplier (g per lb bodyweight)</label>
+        <select class="input" id="fp-protein-mult" style="padding:8px 10px">
+          <option value="1.0">1.0x (minimum)</option>
+          <option value="1.2" selected>1.2x (recommended for cut)</option>
+          <option value="1.5">1.5x (aggressive)</option>
+        </select>
+      </div>
+      <button onclick="saveNutritionProfile()" class="btn btn-primary btn-full" style="margin-top:4px">Calculate & Save Targets</button>
+    </div>
+  </div>
+
+  <!-- TODAY'S WATER -->
+  <div class="section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="section-title" style="margin-bottom:0">Water</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="logWater(-8)" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--text3);width:28px;height:28px;cursor:pointer;font-size:16px">−</button>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent);min-width:50px;text-align:center" id="food-water-display">0 oz</div>
+        <button onclick="logWater(8)" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent);width:28px;height:28px;cursor:pointer;font-size:16px">+</button>
+      </div>
+    </div>
+    <div style="background:var(--surface2);border-radius:4px;height:6px;overflow:hidden">
+      <div id="food-water-bar" style="height:100%;background:#47c8ff;border-radius:4px;width:0%;transition:width 0.4s ease"></div>
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:4px" id="food-water-goal">Goal: 128 oz (1 gallon)</div>
   </div>
 
 </div>
@@ -1588,6 +1735,7 @@ function showPage(name) {
   if (name === 'programs') renderProgramsList();
   if (name === 'vault') renderVault();
   if (name === 'live') liveInit();
+  if (name === 'food') renderFoodPage();
   if (name === 'settings') loadSettingsPage();
 }
 
@@ -1636,6 +1784,9 @@ function renderDashboard() {
   document.getElementById('dash-volume').textContent = Math.round(volume).toLocaleString();
   document.getElementById('dash-cardio').textContent = Math.round(cardioMin);
   document.getElementById('dash-prs').textContent = weekPRs;
+
+  // PRs compact
+  renderDashPRsCompact();
 
   // Calendar
   renderDashCalendar();
@@ -6269,6 +6420,297 @@ function getMergeSummary(local, merged) {
   if (newExercises) parts.push(newExercises + ' new exercise' + (newExercises > 1 ? 's' : ''));
 
   return parts.length ? 'Merged: ' + parts.join(', ') : 'Already in sync';
+}
+
+
+// ============================================================
+// FOOD TAB — PHASE 1: PROFILE & TARGETS
+// ============================================================
+
+// ── TDEE + Target Calculator ──
+// Uses Mifflin-St Jeor with Katch-McArdle lean mass adjustment
+function calculateTDEE(profile) {
+  const { age, weightLbs, heightIn, bodyFatPct, activityMultiplier } = profile;
+  const weightKg = weightLbs * 0.453592;
+  const heightCm = heightIn * 2.54;
+
+  // Lean body mass (kg)
+  const lbm = weightKg * (1 - bodyFatPct / 100);
+
+  // Katch-McArdle BMR (most accurate with body fat known)
+  const bmr = 370 + (21.6 * lbm);
+
+  // TDEE
+  const tdee = bmr * activityMultiplier;
+
+  return { bmr: Math.round(bmr), tdee: Math.round(tdee) };
+}
+
+function calculateTargets(profile) {
+  const { weightLbs, goal, proteinMultiplier } = profile;
+  const { tdee } = calculateTDEE(profile);
+
+  // Calorie targets by goal
+  const deficits = {
+    aggressive_cut: 600,  // ~1-1.2 lbs/week loss
+    moderate_cut:   400,  // ~0.8 lbs/week loss
+    maintain:       0,
+    bulk:          300    // lean bulk
+  };
+  const deficit = deficits[goal] || 500;
+
+  const trainingCals = Math.round(tdee - deficit + 150); // +150 on training days
+  const restCals     = Math.round(tdee - deficit - 100); // -100 on rest days
+
+  // Protein: bodyweight × multiplier
+  const protein = Math.round(weightLbs * proteinMultiplier);
+
+  // Carbs: low-carb approach — training days get more
+  // Fat fills the rest
+  const proteinCals = protein * 4;
+
+  const trainingCarbs = Math.round((trainingCals * 0.20) / 4);  // ~20% carbs on training days
+  const restCarbs     = Math.round((restCals    * 0.10) / 4);  // ~10% carbs on rest days
+
+  const trainingFat = Math.round((trainingCals - proteinCals - (trainingCarbs * 4)) / 9);
+  const restFat     = Math.round((restCals     - proteinCals - (restCarbs     * 4)) / 9);
+
+  return {
+    tdee,
+    training: { calories: trainingCals, protein, carbs: trainingCarbs, fat: Math.max(trainingFat, 40) },
+    rest:     { calories: restCals,     protein, carbs: restCarbs,     fat: Math.max(restFat,     40) }
+  };
+}
+
+// ── Profile save/load ──
+function saveNutritionProfile() {
+  const profile = {
+    age:                parseInt(document.getElementById('fp-age').value) || 33,
+    weightLbs:          parseFloat(document.getElementById('fp-weight').value) || 190,
+    heightIn:           parseFloat(document.getElementById('fp-height').value) || 72,
+    bodyFatPct:         parseFloat(document.getElementById('fp-bf').value) || 16,
+    activityMultiplier: parseFloat(document.getElementById('fp-activity').value) || 1.55,
+    goal:               document.getElementById('fp-goal').value || 'aggressive_cut',
+    proteinMultiplier:  parseFloat(document.getElementById('fp-protein-mult').value) || 1.2,
+    savedAt:            new Date().toISOString()
+  };
+
+  const targets = calculateTargets(profile);
+  profile.targets = targets;
+
+  DB.set('nutritionProfile', profile);
+  showToast('Targets saved! ' + targets.training.calories + ' cal training / ' + targets.rest.calories + ' cal rest');
+  renderFoodProfile();
+  renderFoodDailySummary();
+}
+
+function getNutritionProfile() {
+  return DB.get('nutritionProfile', null);
+}
+
+function toggleProfileEdit() {
+  const form = document.getElementById('food-profile-form');
+  const saved = document.getElementById('food-profile-saved');
+  const btn = document.getElementById('profile-edit-btn');
+  if (form.style.display === 'none') {
+    form.style.display = 'block';
+    saved.style.display = 'none';
+    btn.textContent = 'Cancel';
+  } else {
+    const profile = getNutritionProfile();
+    if (profile) {
+      form.style.display = 'none';
+      saved.style.display = 'block';
+      btn.textContent = 'Edit';
+    }
+  }
+}
+
+function renderFoodProfile() {
+  const profile = getNutritionProfile();
+  if (!profile) return;
+
+  const form = document.getElementById('food-profile-form');
+  const saved = document.getElementById('food-profile-saved');
+  const btn = document.getElementById('profile-edit-btn');
+
+  // Pre-fill form fields
+  if (document.getElementById('fp-age')) document.getElementById('fp-age').value = profile.age;
+  if (document.getElementById('fp-weight')) document.getElementById('fp-weight').value = profile.weightLbs;
+  if (document.getElementById('fp-height')) document.getElementById('fp-height').value = profile.heightIn;
+  if (document.getElementById('fp-bf')) document.getElementById('fp-bf').value = profile.bodyFatPct;
+  if (document.getElementById('fp-activity')) document.getElementById('fp-activity').value = profile.activityMultiplier;
+  if (document.getElementById('fp-goal')) document.getElementById('fp-goal').value = profile.goal;
+  if (document.getElementById('fp-protein-mult')) document.getElementById('fp-protein-mult').value = profile.proteinMultiplier;
+
+  // Show saved view
+  form.style.display = 'none';
+  saved.style.display = 'block';
+  btn.textContent = 'Edit';
+
+  const t = profile.targets;
+  const displayEl = document.getElementById('food-profile-display');
+  const targetsEl = document.getElementById('food-targets-display');
+
+  if (displayEl) {
+    const stats = [
+      {label:'Age', val: profile.age + ' yrs'},
+      {label:'Weight', val: profile.weightLbs + ' lbs'},
+      {label:'Height', val: Math.floor(profile.heightIn/12) + "'" + (profile.heightIn%12) + '"'},
+      {label:'Body Fat', val: '~' + profile.bodyFatPct + '%'},
+      {label:'TDEE', val: t.tdee.toLocaleString() + ' cal'},
+      {label:'Goal', val: profile.goal.replace(/_/g,' ')},
+    ];
+    displayEl.innerHTML = stats.map(s =>
+      '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">' +
+      '<div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);letter-spacing:0.05em">' + s.val + '</div>' +
+      '<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-top:2px;text-transform:uppercase">' + s.label + '</div>' +
+      '</div>'
+    ).join('');
+  }
+
+  if (targetsEl && t) {
+    const rows = [
+      {label:'Training day', val: t.training.calories + ' cal'},
+      {label:'Rest day', val: t.rest.calories + ' cal'},
+      {label:'Protein (both)', val: t.training.protein + 'g / day'},
+      {label:'Training carbs', val: t.training.carbs + 'g'},
+      {label:'Rest carbs', val: t.rest.carbs + 'g'},
+      {label:'Training fat', val: t.training.fat + 'g'},
+    ];
+    targetsEl.innerHTML = rows.map(r =>
+      '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(232,255,71,0.1)">' +
+      '<div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text2)">' + r.label + '</div>' +
+      '<div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);font-weight:600">' + r.val + '</div>' +
+      '</div>'
+    ).join('');
+  }
+}
+
+// ── Training day detection ──
+function isTodayTrainingDay() {
+  const today = new Date().toISOString().slice(0,10);
+  const sessions = getState().sessions;
+  return sessions.some(s => s.date && s.date.slice(0,10) === today && s.status !== 'planned');
+}
+
+function getTodayTargets() {
+  const profile = getNutritionProfile();
+  if (!profile || !profile.targets) {
+    return { calories: 2150, protein: 228, carbs: 100, fat: 70 }; // defaults
+  }
+  return isTodayTrainingDay() ? profile.targets.training : profile.targets.rest;
+}
+
+// ── Daily Summary ──
+function getTodayFoodLog() {
+  const today = new Date().toISOString().slice(0,10);
+  const logs = DB.get('foodLogs', {});
+  return logs[today] || { meals: { breakfast:[], lunch:[], dinner:[], snacks:[] }, water: 0 };
+}
+
+function getTodayTotals() {
+  const log = getTodayFoodLog();
+  let cal = 0, protein = 0, carbs = 0, fat = 0;
+  Object.values(log.meals).forEach(meal => {
+    meal.forEach(item => {
+      cal     += item.calories || 0;
+      protein += item.protein  || 0;
+      carbs   += item.carbs    || 0;
+      fat     += item.fat      || 0;
+    });
+  });
+  return { cal: Math.round(cal), protein: Math.round(protein), carbs: Math.round(carbs), fat: Math.round(fat) };
+}
+
+function renderFoodDailySummary() {
+  const targets = getTodayTargets();
+  const totals  = getTodayTotals();
+  const isTraining = isTodayTrainingDay();
+
+  // Day type badge
+  const badge = document.getElementById('food-day-type');
+  if (badge) {
+    badge.textContent = isTraining ? 'TRAINING DAY' : 'REST DAY';
+    badge.style.background = isTraining ? 'rgba(232,255,71,0.1)' : 'rgba(71,200,255,0.1)';
+    badge.style.color = isTraining ? 'var(--accent)' : '#47c8ff';
+  }
+
+  // Calories remaining
+  const remaining = targets.calories - totals.cal;
+  const calEl = document.getElementById('food-cal-remaining');
+  if (calEl) {
+    calEl.textContent = remaining.toLocaleString();
+    calEl.style.color = remaining < 0 ? 'var(--danger)' : remaining < 200 ? '#ffb74d' : 'var(--text)';
+  }
+
+  const consumed = document.getElementById('food-cal-consumed');
+  const target = document.getElementById('food-cal-target');
+  if (consumed) consumed.textContent = totals.cal.toLocaleString() + ' eaten';
+  if (target) target.textContent = 'of ' + targets.calories.toLocaleString() + ' goal';
+
+  // Macro bars
+  function setBar(barId, labelId, current, max, unit) {
+    const pct = Math.min(100, Math.round((current / max) * 100));
+    const bar = document.getElementById(barId);
+    const label = document.getElementById(labelId);
+    if (bar) bar.style.width = pct + '%';
+    if (label) label.textContent = current + '/' + max + unit;
+    if (bar && current > max) bar.style.background = 'var(--danger)';
+  }
+  setBar('food-protein-bar','food-protein-label', totals.protein, targets.protein, 'g');
+  setBar('food-carbs-bar',  'food-carbs-label',   totals.carbs,   targets.carbs,   'g');
+  setBar('food-fat-bar',    'food-fat-label',      totals.fat,     targets.fat,     'g');
+}
+
+// ── Water tracking ──
+function logWater(ozDelta) {
+  const today = new Date().toISOString().slice(0,10);
+  const logs = DB.get('foodLogs', {});
+  if (!logs[today]) logs[today] = { meals: { breakfast:[], lunch:[], dinner:[], snacks:[] }, water: 0 };
+  logs[today].water = Math.max(0, (logs[today].water || 0) + ozDelta);
+  DB.set('foodLogs', logs);
+  renderWater();
+}
+
+function renderWater() {
+  const log = getTodayFoodLog();
+  const oz = log.water || 0;
+  const goal = 128; // 1 gallon
+  const pct = Math.min(100, Math.round((oz / goal) * 100));
+  const display = document.getElementById('food-water-display');
+  const bar = document.getElementById('food-water-bar');
+  if (display) display.textContent = oz + ' oz';
+  if (bar) bar.style.width = pct + '%';
+}
+
+// ── Dashboard PRs compact ──
+function renderDashPRsCompact() {
+  const el = document.getElementById('dash-prs-compact');
+  if (!el) return;
+  const prs = getState().prs || {};
+  const strength = prs.strength || {};
+  const entries = Object.entries(strength).sort((a,b) => b[1].weight - a[1].weight).slice(0,4);
+  if (!entries.length) {
+    el.innerHTML = '<div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);text-align:center;padding:10px 0">No PRs yet</div>';
+    return;
+  }
+  el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+    entries.map(([name, pr]) =>
+      '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer" onclick="showPage('prs')">' +
+      '<div style="font-size:12px;color:var(--text2);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + name + '</div>' +
+      '<div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--accent);letter-spacing:0.05em">' + pr.weight + ' lbs</div>' +
+      '<div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">' + pr.reps + ' reps</div>' +
+      '</div>'
+    ).join('') +
+    '</div>';
+}
+
+// ── Main food page render ──
+function renderFoodPage() {
+  renderFoodProfile();
+  renderFoodDailySummary();
+  renderWater();
 }
 
 // ============================================================
