@@ -1451,18 +1451,33 @@ select.input { appearance: none; }
         <input type="number" class="input" id="fi-fat" placeholder="0" style="text-align:center">
       </div>
     </div>
-    <div class="input-group">
-      <label class="input-label">Category</label>
-      <select class="input" id="fi-category">
-        <option value="protein">Protein</option>
-        <option value="vegetable">Vegetable</option>
-        <option value="carb">Carb</option>
-        <option value="fat">Fat</option>
-        <option value="dairy">Dairy</option>
-        <option value="supplement">Supplement</option>
-        <option value="snack">Snack</option>
-        <option value="other">Other</option>
-      </select>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="input-group" style="margin-bottom:0">
+        <label class="input-label">Category</label>
+        <select class="input" id="fi-category">
+          <option value="protein">Protein</option>
+          <option value="vegetable">Vegetable</option>
+          <option value="carb">Carb</option>
+          <option value="fat">Fat</option>
+          <option value="dairy">Dairy</option>
+          <option value="supplement">Supplement</option>
+          <option value="snack">Snack</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="input-group" style="margin-bottom:0">
+        <label class="input-label">Portion Style</label>
+        <select class="input" id="fi-portion-type">
+          <option value="piece">Pieces (1/2, 1, 2...)</option>
+          <option value="bulk">Bulk / Palm size</option>
+          <option value="vegetable">Vegetables (handful)</option>
+          <option value="dairy">Servings (1/2, 1, 1.5...)</option>
+          <option value="supplement">Scoops</option>
+          <option value="spoon">Spoons (tsp/tbsp)</option>
+          <option value="drink">Drinks (can/cup)</option>
+          <option value="count">Count (1, 2, 3...)</option>
+        </select>
+      </div>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="saveFoodItem()" class="btn btn-primary" style="flex:1">Save</button>
@@ -6792,43 +6807,56 @@ function renderDashPRsCompact() {
 // ============================================================
 
 // ── FOOD VAULT SEED — pre-loaded with your known foods ──
+
+// ── Portion systems ──
+const PORTION_TYPES = {
+  piece:      [{label:'1/4',  mult:0.25}, {label:'1/2', mult:0.5}, {label:'1',   mult:1}, {label:'1.5', mult:1.5}, {label:'2', mult:2}],
+  bulk:       [{label:'1 palm', mult:1}, {label:'2 palms', mult:2}, {label:'1/4 batch', mult:'batch_0.25'}, {label:'1/3 batch', mult:'batch_0.33'}, {label:'1/2 batch', mult:'batch_0.5'}, {label:'Full batch', mult:'batch_1'}],
+  vegetable:  [{label:'Handful', mult:0.5}, {label:'2 handfuls', mult:1}, {label:'1 cup', mult:1}, {label:'2 cups', mult:2}, {label:'Bowl', mult:2.5}],
+  dairy:      [{label:'1/2 serving', mult:0.5}, {label:'1 serving', mult:1}, {label:'1.5 servings', mult:1.5}, {label:'2 servings', mult:2}],
+  supplement: [{label:'1/2 scoop', mult:0.5}, {label:'1 scoop', mult:1}, {label:'2 scoops', mult:2}],
+  spoon:      [{label:'1 tsp', mult:0.33}, {label:'1 tbsp', mult:1}, {label:'2 tbsp', mult:2}],
+  drink:      [{label:'1/2 can', mult:0.5}, {label:'1 can', mult:1}, {label:'1 cup', mult:1}, {label:'2 cups', mult:2}],
+  count:      [{label:'1', mult:1}, {label:'2', mult:2}, {label:'3', mult:3}, {label:'4', mult:4}],
+};
+
 const FOOD_VAULT_SEED = [
-  // Proteins
-  {id:'fv001',name:'Grilled Chicken Breast',serving:'4 oz',calories:187,protein:35,carbs:0,fat:4,category:'protein'},
-  {id:'fv002',name:'93/7 Ground Beef',serving:'4 oz raw',calories:196,protein:22,carbs:0,fat:11,category:'protein'},
-  {id:'fv003',name:'Braised Chuck Roast',serving:'4 oz',calories:240,protein:26,carbs:0,fat:15,category:'protein'},
-  {id:'fv004',name:'Braised Pork Shoulder',serving:'4 oz',calories:230,protein:25,carbs:0,fat:14,category:'protein'},
-  {id:'fv005',name:'Shrimp',serving:'4 oz',calories:112,protein:24,carbs:1,fat:1,category:'protein'},
-  {id:'fv006',name:'Whole Eggs',serving:'2 eggs',calories:140,protein:12,carbs:1,fat:10,category:'protein'},
-  {id:'fv007',name:'Egg Whites',serving:'3 whites',calories:51,protein:11,carbs:1,fat:0,category:'protein'},
-  {id:'fv008',name:'Rotisserie Chicken',serving:'4 oz',calories:200,protein:30,carbs:0,fat:9,category:'protein'},
-  {id:'fv009',name:'Ground Turkey 93/7',serving:'4 oz raw',calories:170,protein:22,carbs:0,fat:9,category:'protein'},
-  {id:'fv010',name:'Sirloin Steak',serving:'4 oz',calories:220,protein:26,carbs:0,fat:13,category:'protein'},
-  {id:'fv011',name:'Pork Tenderloin',serving:'4 oz',calories:136,protein:24,carbs:0,fat:4,category:'protein'},
+  // Proteins (piece)
+  {id:'fv001',name:'Grilled Chicken Breast',serving:'1 breast (~6oz)',calories:280,protein:53,carbs:0,fat:6,category:'protein',portionType:'piece'},
+  {id:'fv002',name:'93/7 Ground Beef',serving:'4oz (1 palm)',calories:196,protein:22,carbs:0,fat:11,category:'protein',portionType:'bulk'},
+  {id:'fv003',name:'Braised Chuck Roast',serving:'4oz (1 palm)',calories:240,protein:26,carbs:0,fat:15,category:'protein',portionType:'bulk'},
+  {id:'fv004',name:'Braised Pork Shoulder',serving:'4oz (1 palm)',calories:230,protein:25,carbs:0,fat:14,category:'protein',portionType:'bulk'},
+  {id:'fv005',name:'Shrimp',serving:'4oz (1 palm)',calories:112,protein:24,carbs:1,fat:1,category:'protein',portionType:'bulk'},
+  {id:'fv006',name:'Whole Eggs',serving:'1 egg',calories:70,protein:6,carbs:1,fat:5,category:'protein',portionType:'count'},
+  {id:'fv007',name:'Egg Whites',serving:'1 white',calories:17,protein:4,carbs:0,fat:0,category:'protein',portionType:'count'},
+  {id:'fv008',name:'Rotisserie Chicken',serving:'4oz (1 palm)',calories:200,protein:30,carbs:0,fat:9,category:'protein',portionType:'bulk'},
+  {id:'fv009',name:'Ground Turkey 93/7',serving:'4oz (1 palm)',calories:170,protein:22,carbs:0,fat:9,category:'protein',portionType:'bulk'},
+  {id:'fv010',name:'Sirloin Steak',serving:'4oz (1 palm)',calories:220,protein:26,carbs:0,fat:13,category:'protein',portionType:'bulk'},
+  {id:'fv011',name:'Pork Tenderloin',serving:'4oz (1 palm)',calories:136,protein:24,carbs:0,fat:4,category:'protein',portionType:'bulk'},
   // Dairy / Supplements
-  {id:'fv020',name:'Oikos Vanilla Greek Yogurt',serving:'2/3 cup (150g)',calories:100,protein:15,carbs:10,fat:0,category:'dairy'},
-  {id:'fv021',name:'Chocolate Whey Protein',serving:'1 scoop (30g)',calories:120,protein:25,carbs:3,fat:2,category:'supplement'},
-  {id:'fv022',name:'Cottage Cheese',serving:'1/2 cup',calories:90,protein:14,carbs:5,fat:1,category:'dairy'},
+  {id:'fv020',name:'Oikos Vanilla Greek Yogurt',serving:'1 container (150g)',calories:100,protein:15,carbs:10,fat:0,category:'dairy',portionType:'dairy'},
+  {id:'fv021',name:'Chocolate Whey Protein',serving:'1 scoop (30g)',calories:120,protein:25,carbs:3,fat:2,category:'supplement',portionType:'supplement'},
+  {id:'fv022',name:'Cottage Cheese',serving:'1/2 cup',calories:90,protein:14,carbs:5,fat:1,category:'dairy',portionType:'dairy'},
   // Vegetables
-  {id:'fv030',name:'Broccoli',serving:'1 cup',calories:55,protein:4,carbs:11,fat:1,category:'vegetable'},
-  {id:'fv031',name:'Green Beans',serving:'1 cup',calories:44,protein:2,carbs:10,fat:0,category:'vegetable'},
-  {id:'fv032',name:'Bell Peppers',serving:'1 medium',calories:37,protein:1,carbs:9,fat:0,category:'vegetable'},
-  {id:'fv033',name:'Onion',serving:'1/2 cup',calories:32,protein:1,carbs:7,fat:0,category:'vegetable'},
-  {id:'fv034',name:'Spinach',serving:'2 cups',calories:14,protein:2,carbs:2,fat:0,category:'vegetable'},
-  {id:'fv035',name:'Asparagus',serving:'6 spears',calories:27,protein:3,carbs:5,fat:0,category:'vegetable'},
-  {id:'fv036',name:'Zucchini',serving:'1 medium',calories:33,protein:2,carbs:6,fat:0,category:'vegetable'},
+  {id:'fv030',name:'Broccoli',serving:'1 handful (~1 cup)',calories:55,protein:4,carbs:11,fat:1,category:'vegetable',portionType:'vegetable'},
+  {id:'fv031',name:'Green Beans',serving:'1 handful (~1 cup)',calories:44,protein:2,carbs:10,fat:0,category:'vegetable',portionType:'vegetable'},
+  {id:'fv032',name:'Bell Peppers',serving:'1 medium',calories:37,protein:1,carbs:9,fat:0,category:'vegetable',portionType:'vegetable'},
+  {id:'fv033',name:'Onion',serving:'1 handful',calories:32,protein:1,carbs:7,fat:0,category:'vegetable',portionType:'vegetable'},
+  {id:'fv034',name:'Spinach',serving:'1 handful',calories:14,protein:2,carbs:2,fat:0,category:'vegetable',portionType:'vegetable'},
+  {id:'fv035',name:'Asparagus',serving:'1 handful (~6 spears)',calories:27,protein:3,carbs:5,fat:0,category:'vegetable',portionType:'vegetable'},
+  {id:'fv036',name:'Zucchini',serving:'1 medium',calories:33,protein:2,carbs:6,fat:0,category:'vegetable',portionType:'piece'},
   // Carbs
-  {id:'fv040',name:'Low Carb Pasta',serving:'2 oz dry',calories:170,protein:12,carbs:22,fat:2,category:'carb'},
-  {id:'fv041',name:'Frozen Blueberries',serving:'1/2 cup',calories:42,protein:1,carbs:10,fat:0,category:'carb'},
-  {id:'fv042',name:'Sweet Potato',serving:'1 medium',calories:103,protein:2,carbs:24,fat:0,category:'carb'},
-  {id:'fv043',name:'White Rice',serving:'1/3 cup dry',calories:228,protein:4,carbs:50,fat:0,category:'carb'},
-  // Fats / Snacks
-  {id:'fv050',name:'Peanut Butter',serving:'1 tbsp',calories:94,protein:4,carbs:3,fat:8,category:'fat'},
-  {id:'fv051',name:'Olive Oil',serving:'1 tbsp',calories:119,protein:0,carbs:0,fat:14,category:'fat'},
+  {id:'fv040',name:'Low Carb Pasta',serving:'1/2 cup dry',calories:170,protein:12,carbs:22,fat:2,category:'carb',portionType:'dairy'},
+  {id:'fv041',name:'Frozen Blueberries',serving:'1/2 cup',calories:42,protein:1,carbs:10,fat:0,category:'carb',portionType:'dairy'},
+  {id:'fv042',name:'Sweet Potato',serving:'1 medium',calories:103,protein:2,carbs:24,fat:0,category:'carb',portionType:'piece'},
+  {id:'fv043',name:'White Rice',serving:'1/3 cup dry',calories:228,protein:4,carbs:50,fat:0,category:'carb',portionType:'dairy'},
+  // Fats
+  {id:'fv050',name:'Peanut Butter',serving:'1 tbsp',calories:94,protein:4,carbs:3,fat:8,category:'fat',portionType:'spoon'},
+  {id:'fv051',name:'Olive Oil',serving:'1 tbsp',calories:119,protein:0,carbs:0,fat:14,category:'fat',portionType:'spoon'},
   // Drinks
-  {id:'fv060',name:'Celsius Energy Drink',serving:'1 can',calories:10,protein:0,carbs:2,fat:0,category:'other'},
-  {id:'fv061',name:'Black Coffee',serving:'1 cup',calories:2,protein:0,carbs:0,fat:0,category:'other'},
-  {id:'fv062',name:'Protein Shake (Water)',serving:'1 scoop + water',calories:120,protein:25,carbs:3,fat:2,category:'supplement'},
+  {id:'fv060',name:'Celsius Energy Drink',serving:'1 can',calories:10,protein:0,carbs:2,fat:0,category:'other',portionType:'drink'},
+  {id:'fv061',name:'Black Coffee',serving:'1 cup',calories:2,protein:0,carbs:0,fat:0,category:'other',portionType:'drink'},
+  {id:'fv062',name:'Protein Shake (Water)',serving:'1 scoop + water',calories:120,protein:25,carbs:3,fat:2,category:'supplement',portionType:'supplement'},
 ];
 
 // ── Food Vault DB ──
@@ -6961,6 +6989,8 @@ function openEditFoodItem(id) {
   document.getElementById('fi-carbs').value = food.carbs;
   document.getElementById('fi-fat').value = food.fat;
   document.getElementById('fi-category').value = food.category || 'other';
+  const ptEl = document.getElementById('fi-portion-type');
+  if (ptEl) ptEl.value = food.portionType || 'dairy';
   openModal('modal-food-item');
 }
 
@@ -6976,6 +7006,7 @@ function saveFoodItem() {
     carbs:    parseFloat(document.getElementById('fi-carbs').value) || 0,
     fat:      parseFloat(document.getElementById('fi-fat').value) || 0,
     category: document.getElementById('fi-category').value || 'other',
+    portionType: document.getElementById('fi-portion-type')?.value || 'dairy',
   };
   const vault = getFoodVault();
   if (editingFoodItemId) {
@@ -7207,56 +7238,104 @@ function selectFoodToLog(foodId) {
 
   // Food summary card
   const card = document.createElement('div');
-  card.style.cssText = 'background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:14px';
+  card.style.cssText = 'background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:16px';
   const cardTitle = document.createElement('div');
-  cardTitle.style.cssText = 'font-weight:500;font-size:15px;color:var(--text);margin-bottom:4px';
+  cardTitle.style.cssText = 'font-weight:500;font-size:15px;color:var(--text);margin-bottom:3px';
   cardTitle.textContent = food.name;
   const cardMeta = document.createElement('div');
-  cardMeta.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text3)';
+  cardMeta.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
   cardMeta.textContent = 'Per ' + food.serving + ':  ' + food.calories + ' cal  ·  ' + food.protein + 'g P  ·  ' + food.carbs + 'g C  ·  ' + food.fat + 'g F';
   card.appendChild(cardTitle);
   card.appendChild(cardMeta);
   body.appendChild(card);
 
-  // Servings input
-  const qtyGroup = document.createElement('div');
-  qtyGroup.className = 'input-group';
-  const qtyLabel = document.createElement('label');
-  qtyLabel.className = 'input-label';
-  qtyLabel.textContent = 'Servings';
-  const qtyInput = document.createElement('input');
-  qtyInput.type = 'number';
-  qtyInput.className = 'input';
-  qtyInput.id = 'food-log-qty';
-  qtyInput.value = '1';
-  qtyInput.min = '0.25';
-  qtyInput.step = '0.25';
-  qtyInput.style.cssText = 'text-align:center;font-size:20px;font-family:Bebas Neue,sans-serif';
-  qtyInput.oninput = function() { updateFoodLogPreview(foodId); };
-  qtyGroup.appendChild(qtyLabel);
-  qtyGroup.appendChild(qtyInput);
-  body.appendChild(qtyGroup);
+  const portionType = food.portionType || 'dairy';
+  const portions = PORTION_TYPES[portionType] || PORTION_TYPES.dairy;
+  const isBulk = portionType === 'bulk';
 
-  // Preview bar
+  // Batch size input (only for bulk foods)
+  if (isBulk) {
+    const batchGroup = document.createElement('div');
+    batchGroup.id = 'batch-size-group';
+    batchGroup.style.cssText = 'background:rgba(71,200,255,0.06);border:1px solid rgba(71,200,255,0.2);border-radius:8px;padding:12px;margin-bottom:14px';
+    const batchLabel = document.createElement('div');
+    batchLabel.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:#47c8ff;letter-spacing:0.1em;margin-bottom:8px';
+    batchLabel.textContent = 'BATCH SIZE (how much did you cook total?)';
+    const batchRow = document.createElement('div');
+    batchRow.style.cssText = 'display:flex;align-items:center;gap:8px';
+    const batchInput = document.createElement('input');
+    batchInput.type = 'number';
+    batchInput.id = 'batch-total-oz';
+    batchInput.className = 'input';
+    batchInput.placeholder = 'e.g. 16';
+    batchInput.style.cssText = 'flex:1;text-align:center;font-size:18px;font-family:Bebas Neue,sans-serif';
+    batchInput.oninput = function() { updatePortionPreview(foodId, currentPortionMult); };
+    const batchUnit = document.createElement('div');
+    batchUnit.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text3);white-space:nowrap';
+    batchUnit.textContent = 'oz total';
+    batchRow.appendChild(batchInput);
+    batchRow.appendChild(batchUnit);
+    batchGroup.appendChild(batchLabel);
+    batchGroup.appendChild(batchRow);
+    body.appendChild(batchGroup);
+  }
+
+  // Portion buttons
+  const portionLabel = document.createElement('div');
+  portionLabel.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px';
+  portionLabel.textContent = 'SELECT PORTION';
+  body.appendChild(portionLabel);
+
+  const portionGrid = document.createElement('div');
+  portionGrid.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px';
+
+  portions.forEach(function(p) {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-family:DM Mono,monospace;font-size:12px;color:var(--text2);cursor:pointer;transition:all 0.15s';
+    btn.textContent = p.label;
+    btn.dataset.mult = p.mult;
+    btn.onclick = function() {
+      portionGrid.querySelectorAll('button').forEach(function(b) {
+        b.style.background = 'var(--surface)';
+        b.style.border = '1px solid var(--border)';
+        b.style.color = 'var(--text2)';
+      });
+      btn.style.background = 'rgba(232,255,71,0.12)';
+      btn.style.border = '1px solid rgba(232,255,71,0.4)';
+      btn.style.color = 'var(--accent)';
+      currentPortionMult = p.mult;
+      updatePortionPreview(foodId, p.mult);
+    };
+    portionGrid.appendChild(btn);
+  });
+  body.appendChild(portionGrid);
+
+  // Macro preview
   const preview = document.createElement('div');
   preview.id = 'food-log-preview';
   preview.style.cssText = 'background:rgba(232,255,71,0.06);border:1px solid rgba(232,255,71,0.2);border-radius:8px;padding:12px;margin-bottom:14px';
-  const grid = document.createElement('div');
-  grid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center';
-  [['flp-cal',food.calories,'CAL'],['flp-p',food.protein,'PRO'],['flp-c',food.carbs,'CARB'],['flp-f',food.fat,'FAT']].forEach(function(row) {
+  const previewGrid = document.createElement('div');
+  previewGrid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center';
+  [['flp-cal',food.calories,'CAL','var(--accent)'],['flp-p',food.protein,'PRO','var(--text)'],['flp-c',food.carbs,'CARB','var(--text)'],['flp-f',food.fat,'FAT','var(--text)']].forEach(function(row) {
     const cell = document.createElement('div');
     const num = document.createElement('div');
     num.id = row[0];
-    num.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:20px;color:' + (row[0]==='flp-cal'?'var(--accent)':'var(--text)');
+    num.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:20px;color:' + row[3];
     num.textContent = row[1];
     const lbl = document.createElement('div');
     lbl.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:var(--text3)';
     lbl.textContent = row[2];
     cell.appendChild(num);
     cell.appendChild(lbl);
-    grid.appendChild(cell);
+    previewGrid.appendChild(cell);
   });
-  preview.appendChild(grid);
+  preview.appendChild(previewGrid);
+
+  const previewHint = document.createElement('div');
+  previewHint.id = 'portion-hint';
+  previewHint.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3);text-align:center;margin-top:8px';
+  previewHint.textContent = 'Select a portion above';
+  preview.appendChild(previewHint);
   body.appendChild(preview);
 
   // Buttons
@@ -7266,7 +7345,7 @@ function selectFoodToLog(foodId) {
   addBtn.className = 'btn btn-primary';
   addBtn.style.flex = '1';
   addBtn.textContent = 'Add to ' + MEAL_LABELS[currentLogMeal];
-  addBtn.onclick = function() { logFoodItem(foodId); };
+  addBtn.onclick = function() { logFoodItemPortioned(foodId); };
   const backBtn = document.createElement('button');
   backBtn.className = 'btn btn-ghost';
   backBtn.style.flex = '1';
@@ -7277,42 +7356,81 @@ function selectFoodToLog(foodId) {
   body.appendChild(btnRow);
 }
 
-function updateFoodLogPreview(foodId) {
+// Track currently selected portion multiplier
+let currentPortionMult = null;
+
+function updatePortionPreview(foodId, mult) {
   const vault = getFoodVault();
-  const food = vault.find(f => f.id === foodId);
-  if (!food) return;
-  const qty = parseFloat(document.getElementById('food-log-qty')?.value) || 1;
-  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = Math.round(val); };
-  set('flp-cal', food.calories * qty);
-  set('flp-p',   food.protein  * qty);
-  set('flp-c',   food.carbs    * qty);
-  set('flp-f',   food.fat      * qty);
+  const food = vault.find(function(f) { return f.id === foodId; });
+  if (!food || mult === null) return;
+
+  let actualMult = mult;
+
+  // Handle batch portions
+  if (typeof mult === 'string' && mult.startsWith('batch_')) {
+    const fraction = parseFloat(mult.replace('batch_', ''));
+    const batchOz = parseFloat(document.getElementById('batch-total-oz')?.value) || 16;
+    // food.calories is per 4oz (1 palm = 4oz)
+    const palmsPer4oz = batchOz / 4;
+    actualMult = palmsPer4oz * fraction;
+  }
+
+  const set = function(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = Math.round(val);
+  };
+  set('flp-cal', food.calories * actualMult);
+  set('flp-p',   food.protein  * actualMult);
+  set('flp-c',   food.carbs    * actualMult);
+  set('flp-f',   food.fat      * actualMult);
+
+  const hint = document.getElementById('portion-hint');
+  if (hint) hint.textContent = Math.round(food.calories * actualMult) + ' calories selected';
+}
+
+function logFoodItemPortioned(foodId) {
+  const vault = getFoodVault();
+  const food = vault.find(function(f) { return f.id === foodId; });
+  if (!food || !currentLogMeal) return;
+  if (currentPortionMult === null) { showToast('Please select a portion size'); return; }
+
+  let actualMult = currentPortionMult;
+  let portionLabel = '';
+
+  if (typeof currentPortionMult === 'string' && currentPortionMult.startsWith('batch_')) {
+    const fraction = parseFloat(currentPortionMult.replace('batch_', ''));
+    const batchOz = parseFloat(document.getElementById('batch-total-oz')?.value) || 16;
+    actualMult = (batchOz / 4) * fraction;
+    portionLabel = (fraction < 1 ? (fraction === 0.25 ? '1/4' : fraction === 0.33 ? '1/3' : '1/2') : 'Full') + ' of ' + batchOz + 'oz batch';
+  } else {
+    // Find the label for this mult
+    const portionType = food.portionType || 'dairy';
+    const portions = PORTION_TYPES[portionType] || [];
+    const match = portions.find(function(p) { return p.mult === currentPortionMult; });
+    portionLabel = match ? match.label + ' ' + food.serving : currentPortionMult + 'x serving';
+  }
+
+  const entry = {
+    id: Date.now().toString(),
+    foodId,
+    name: food.name,
+    servingQty: portionLabel,
+    calories: Math.round(food.calories * actualMult),
+    protein:  Math.round(food.protein  * actualMult),
+    carbs:    Math.round(food.carbs    * actualMult),
+    fat:      Math.round(food.fat      * actualMult),
+    loggedAt: new Date().toISOString()
+  };
+
+  currentPortionMult = null;
+  saveFoodLogEntry(currentLogMeal, entry);
+  closeModal('modal-food-log');
+  showToast(food.name + ' added to ' + MEAL_LABELS[currentLogMeal]);
 }
 
 function logFoodFromVault(foodId) {
   if (!currentLogMeal) currentLogMeal = 'snacks';
   selectFoodToLog(foodId);
-}
-
-function logFoodItem(foodId) {
-  const vault = getFoodVault();
-  const food = vault.find(f => f.id === foodId);
-  if (!food || !currentLogMeal) return;
-  const qty = parseFloat(document.getElementById('food-log-qty')?.value) || 1;
-  const entry = {
-    id: Date.now().toString(),
-    foodId,
-    name: food.name,
-    servingQty: Math.round(qty * 10) / 10 + ' × ' + food.serving,
-    calories: Math.round(food.calories * qty),
-    protein:  Math.round(food.protein  * qty),
-    carbs:    Math.round(food.carbs    * qty),
-    fat:      Math.round(food.fat      * qty),
-    loggedAt: new Date().toISOString()
-  };
-  saveFoodLogEntry(currentLogMeal, entry);
-  closeModal('modal-food-item');
-  showToast(food.name + ' added to ' + MEAL_LABELS[currentLogMeal]);
 }
 
 function openManualFoodEntry() {
