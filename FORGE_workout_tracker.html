@@ -6907,26 +6907,38 @@ function renderFoodVaultList(query) {
     return;
   }
 
-  const catColors = {protein:'#ff6b35',vegetable:'#81c784',carb:'#47c8ff',fat:'#ffb74d',dairy:'#ba68c8',supplement:'#e8ff47',snack:'#ffd54f',other:'#888'};
+  // Group into 3 top-level buckets
+  const GROUP_MAP = {
+    protein:    'protein',
+    vegetable:  'vegetable',
+    carb:       'carb',
+    fat:        'carb',       // fats go in carb section as "fats & extras"
+    dairy:      'protein',    // dairy is protein-adjacent
+    supplement: 'protein',    // supplements with protein
+    snack:      'carb',
+    other:      'carb'
+  };
+  const GROUP_LABELS = {protein:'Protein', vegetable:'Vegetables', carb:'Carbs, Fats & Other'};
+  const GROUP_COLORS = {protein:'#ff6b35', vegetable:'#81c784', carb:'#47c8ff'};
+  const GROUP_ORDER  = ['protein','vegetable','carb'];
 
-  // Group by category
-  const cats = {};
+  const cats = {protein:[],vegetable:[],carb:[]};
   filtered.forEach(function(f) {
-    const c = f.category || 'other';
-    if (!cats[c]) cats[c] = [];
-    cats[c].push(f);
+    const bucket = GROUP_MAP[f.category || 'other'] || 'carb';
+    cats[bucket].push(f);
   });
 
-  Object.entries(cats).forEach(function(entry) {
-    const cat = entry[0];
-    const foods = entry[1];
+  GROUP_ORDER.forEach(function(cat) {
+    const foods = cats[cat];
+    if (!foods.length) return;
+    const entry = [cat, foods];
 
     const catSection = document.createElement('div');
     catSection.style.marginBottom = '14px';
 
     const catLabel = document.createElement('div');
-    catLabel.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:' + (catColors[cat]||'#888') + ';letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px';
-    catLabel.textContent = cat;
+    catLabel.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;font-weight:600;color:' + (GROUP_COLORS[cat]||'#888') + ';letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)';
+    catLabel.textContent = GROUP_LABELS[cat] || cat;
     catSection.appendChild(catLabel);
 
     foods.forEach(function(f) {
