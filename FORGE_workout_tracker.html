@@ -1391,7 +1391,12 @@ select.input { appearance: none; }
 
   <!-- TODAY'S MEALS -->
   <div class="section">
-    <div class="section-title">Today's Meals</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="section-title" style="margin-bottom:0">Today's Meals</div>
+      <button onclick="openLoadTemplateModal()" style="background:rgba(232,255,71,0.08);border:1px solid rgba(232,255,71,0.25);border-radius:6px;color:var(--accent);font-family:'DM Mono',monospace;font-size:10px;padding:5px 10px;cursor:pointer;letter-spacing:0.06em">
+        📋 Load Template
+      </button>
+    </div>
     <div id="food-meals-container"></div>
   </div>
 
@@ -6875,8 +6880,261 @@ const FOOD_VAULT_SEED = [
   {id:'fv060',name:'Celsius Energy Drink',serving:'1 can',calories:10,protein:0,carbs:2,fat:0,category:'drinks',portionType:'drink'},
   {id:'fv061',name:'Black Coffee',serving:'1 cup',calories:2,protein:0,carbs:0,fat:0,category:'drinks',portionType:'drink'},
   {id:'fv065',name:'Water',serving:'1 glass (8oz)',calories:0,protein:0,carbs:0,fat:0,category:'drinks',portionType:'drink'},
+  {id:'fv066',name:'Electrolyte Water',serving:'1 scoop in water',calories:5,protein:0,carbs:1,fat:0,category:'drinks',portionType:'drink'},
+  // NEW PROTEINS
+  {id:'fv012',name:'Ground Chicken',serving:'4oz (1 palm)',calories:149,protein:22,carbs:0,fat:7,category:'protein',portionType:'bulk'},
+  {id:'fv013',name:'Bacon',serving:'1 strip',calories:43,protein:3,carbs:0,fat:3,category:'protein',portionType:'count'},
+  // NEW VEGETABLES
+  {id:'fv037',name:'Cauliflower Rice',serving:'1 cup',calories:25,protein:2,carbs:5,fat:0,category:'vegetables',portionType:'vegetable'},
+  {id:'fv038',name:'Mushrooms',serving:'1 handful',calories:15,protein:2,carbs:2,fat:0,category:'vegetables',portionType:'vegetable'},
+  {id:'fv039',name:'Cucumbers',serving:'1 handful',calories:8,protein:0,carbs:2,fat:0,category:'vegetables',portionType:'vegetable'},
+  {id:'fv044',name:'Lettuce Wraps',serving:'2 large leaves',calories:10,protein:1,carbs:1,fat:0,category:'vegetables',portionType:'count'},
+  // NEW SNACKS
+  {id:'fv053',name:'Babybel Cheese',serving:'1 wheel',calories:70,protein:5,carbs:0,fat:6,category:'snacks',portionType:'count'},
 ];
 
+
+
+// ============================================================
+// MEAL PLAN TEMPLATES
+// ============================================================
+const MEAL_PLAN_TEMPLATES = {
+  tuesday: {
+    label: 'Tuesday',
+    totalCals: 2220, totalProtein: 263, totalCarbs: 65, totalFat: 90,
+    meals: {
+      breakfast: [
+        {name:'Whey Protein Shake (Pre-Workout)',servingQty:'1 scoop',calories:130,protein:25,carbs:3,fat:2,note:'5:50 AM — Pre-Workout'},
+        {name:'Ground Chicken',servingQty:'8oz (2 palms)',calories:298,protein:44,carbs:0,fat:14},
+        {name:'Egg Whites',servingQty:'1.5 cups (~9 whites)',calories:130,protein:27,carbs:2,fat:0},
+        {name:'Whole Eggs',servingQty:'2 eggs',calories:140,protein:12,carbs:1,fat:10},
+        {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
+        {name:'Bell Peppers',servingQty:'Handful',calories:37,protein:1,carbs:9,fat:0},
+        {name:'Onion',servingQty:'Handful',calories:32,protein:1,carbs:7,fat:0},
+      ],
+      lunch: [
+        {name:'Braised Pork Shoulder',servingQty:'8oz (2 palms)',calories:460,protein:50,carbs:0,fat:28},
+        {name:'Cauliflower Rice',servingQty:'2 cups',calories:50,protein:4,carbs:10,fat:0},
+        {name:'Green Beans',servingQty:'2 handfuls',calories:44,protein:2,carbs:10,fat:0},
+        {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
+      ],
+      snacks: [
+        {name:'Babybel Cheese',servingQty:'2 wheels',calories:140,protein:10,carbs:0,fat:12},
+        {name:'Egg Whites',servingQty:'1 cup (~6 whites)',calories:85,protein:18,carbs:1,fat:0},
+        {name:'Cucumbers',servingQty:'Handful',calories:8,protein:0,carbs:2,fat:0},
+      ],
+      dinner: [
+        {name:'Ground Chicken',servingQty:'10oz (2.5 palms)',calories:373,protein:55,carbs:0,fat:18},
+        {name:'Lettuce Wraps',servingQty:'2 large leaves',calories:10,protein:1,carbs:1,fat:0},
+        {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
+        {name:'Bell Peppers',servingQty:'Handful',calories:37,protein:1,carbs:9,fat:0},
+        {name:'Onion',servingQty:'Handful',calories:32,protein:1,carbs:7,fat:0},
+        {name:'Cauliflower Rice',servingQty:'1 cup',calories:25,protein:2,carbs:5,fat:0},
+      ],
+    }
+  },
+  wednesday: {
+    label: 'Wednesday',
+    totalCals: 1850, totalProtein: 246, totalCarbs: 68, totalFat: 64,
+    meals: {
+      breakfast: [
+        {name:'Nutricost Whey Protein',servingQty:'1 scoop',calories:130,protein:25,carbs:3,fat:2,note:'7:00 AM — with black coffee'},
+        {name:'Black Coffee',servingQty:'1 cup',calories:2,protein:0,carbs:0,fat:0},
+      ],
+      lunch: [
+        {name:'Ground Chicken',servingQty:'10oz (2.5 palms)',calories:373,protein:55,carbs:0,fat:18},
+        {name:'Cauliflower Rice',servingQty:'1 cup',calories:25,protein:2,carbs:5,fat:0},
+        {name:'Green Beans',servingQty:'2 handfuls',calories:44,protein:2,carbs:10,fat:0},
+        {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
+      ],
+      snacks: [
+        {name:'Egg Whites',servingQty:'1.5 cups (~9 whites)',calories:130,protein:27,carbs:2,fat:0,note:'3:30 PM — Pre-Workout'},
+        {name:'Babybel Cheese',servingQty:'1 wheel',calories:70,protein:5,carbs:0,fat:6},
+        {name:'Cucumbers',servingQty:'Handful',calories:8,protein:0,carbs:2,fat:0},
+        {name:'Egg Whites',servingQty:'1 cup (~6 whites)',calories:85,protein:18,carbs:1,fat:0,note:'9:00 PM — Protein Snack'},
+        {name:'Nutricost Whey Protein',servingQty:'1 scoop',calories:130,protein:25,carbs:3,fat:2},
+      ],
+      dinner: [
+        {name:'Braised Pork Shoulder',servingQty:'8oz (2 palms)',calories:460,protein:50,carbs:0,fat:28},
+        {name:'Lettuce Wraps',servingQty:'2 large leaves',calories:10,protein:1,carbs:1,fat:0},
+        {name:'Bell Peppers',servingQty:'Handful',calories:37,protein:1,carbs:9,fat:0},
+        {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
+        {name:'Onion',servingQty:'Handful',calories:32,protein:1,carbs:7,fat:0},
+      ],
+    }
+  },
+  thursday: {
+    label: 'Thursday',
+    totalCals: 2120, totalProtein: 249, totalCarbs: 61, totalFat: 89,
+    meals: {
+      breakfast: [
+        {name:'Whey Protein Shake (Pre-Workout)',servingQty:'1 scoop',calories:130,protein:25,carbs:3,fat:2,note:'5:50 AM — Pre-Workout'},
+        {name:'Egg Whites',servingQty:'2 cups (~12 whites)',calories:170,protein:36,carbs:2,fat:0},
+        {name:'Whole Eggs',servingQty:'2 eggs',calories:140,protein:12,carbs:1,fat:10},
+        {name:'Bacon',servingQty:'3 strips',calories:129,protein:9,carbs:0,fat:9},
+        {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
+        {name:'Onion',servingQty:'Handful',calories:32,protein:1,carbs:7,fat:0},
+        {name:'Bell Peppers',servingQty:'Handful',calories:37,protein:1,carbs:9,fat:0},
+      ],
+      lunch: [
+        {name:'Ground Chicken',servingQty:'10oz (2.5 palms)',calories:373,protein:55,carbs:0,fat:18},
+        {name:'Lettuce Wraps',servingQty:'2 large leaves',calories:10,protein:1,carbs:1,fat:0},
+        {name:'Cauliflower Rice',servingQty:'1 cup',calories:25,protein:2,carbs:5,fat:0},
+        {name:'Green Beans',servingQty:'2 handfuls',calories:44,protein:2,carbs:10,fat:0},
+      ],
+      snacks: [
+        {name:'Babybel Cheese',servingQty:'2 wheels',calories:140,protein:10,carbs:0,fat:12},
+        {name:'Egg Whites',servingQty:'1 cup (~6 whites)',calories:85,protein:18,carbs:1,fat:0},
+        {name:'Cucumbers',servingQty:'Handful',calories:8,protein:0,carbs:2,fat:0},
+      ],
+      dinner: [
+        {name:'Braised Pork Shoulder',servingQty:'7oz (~1.75 palms)',calories:403,protein:44,carbs:0,fat:25},
+        {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
+        {name:'Cauliflower Rice',servingQty:'1 cup',calories:25,protein:2,carbs:5,fat:0},
+      ],
+    }
+  }
+};
+
+function openLoadTemplateModal() {
+  const body = document.getElementById('food-log-modal-body');
+  const title = document.getElementById('food-log-modal-title');
+  if (!body || !title) return;
+  title.textContent = 'Load Meal Template';
+  body.innerHTML = '';
+
+  const hint = document.createElement('div');
+  hint.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text3);margin-bottom:16px';
+  hint.textContent = 'Pre-fill today\'s meals from your meal plan';
+  body.appendChild(hint);
+
+  Object.entries(MEAL_PLAN_TEMPLATES).forEach(function(entry) {
+    const key = entry[0];
+    const tmpl = entry[1];
+
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all 0.15s';
+    card.onmouseenter = function() { card.style.borderColor = 'rgba(232,255,71,0.4)'; };
+    card.onmouseleave = function() { card.style.borderColor = 'var(--border)'; };
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px';
+
+    const label = document.createElement('div');
+    label.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:18px;letter-spacing:0.06em;color:var(--text)';
+    label.textContent = tmpl.label;
+
+    const macros = document.createElement('div');
+    macros.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--accent)';
+    macros.textContent = tmpl.totalCals + ' cal';
+
+    row.appendChild(label);
+    row.appendChild(macros);
+
+    const meta = document.createElement('div');
+    meta.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
+    meta.textContent = tmpl.totalProtein + 'g P  ·  ' + tmpl.totalCarbs + 'g C  ·  ' + tmpl.totalFat + 'g F  ·  ' +
+      Object.values(tmpl.meals).reduce(function(s,m){return s+m.length;},0) + ' food items';
+
+    card.appendChild(row);
+    card.appendChild(meta);
+    card.onclick = function() { confirmLoadTemplate(key); };
+    body.appendChild(card);
+  });
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-ghost btn-full btn-sm';
+  cancelBtn.style.marginTop = '8px';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = function() { closeModal('modal-food-log'); };
+  body.appendChild(cancelBtn);
+
+  openModal('modal-food-log');
+}
+
+function confirmLoadTemplate(templateKey) {
+  const log = getTodayFoodLog();
+  const hasExisting = Object.values(log.meals).some(function(m) { return m.length > 0; });
+  const tmpl = MEAL_PLAN_TEMPLATES[templateKey];
+
+  if (!hasExisting) {
+    applyTemplate(templateKey);
+    return;
+  }
+
+  // Ask replace or merge
+  const body = document.getElementById('food-log-modal-body');
+  const title = document.getElementById('food-log-modal-title');
+  title.textContent = 'Meals Already Logged';
+  body.innerHTML = '';
+
+  const msg = document.createElement('div');
+  msg.style.cssText = 'font-family:DM Mono,monospace;font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.5';
+  msg.textContent = 'You already have meals logged today. What would you like to do with the ' + tmpl.label + ' template?';
+  body.appendChild(msg);
+
+  const replaceBtn = document.createElement('button');
+  replaceBtn.className = 'btn btn-primary btn-full';
+  replaceBtn.style.marginBottom = '8px';
+  replaceBtn.textContent = 'Replace — start fresh from template';
+  replaceBtn.onclick = function() { applyTemplate(templateKey, 'replace'); };
+
+  const mergeBtn = document.createElement('button');
+  mergeBtn.className = 'btn btn-ghost btn-full';
+  mergeBtn.style.marginBottom = '8px';
+  mergeBtn.textContent = 'Merge — add template alongside existing';
+  mergeBtn.onclick = function() { applyTemplate(templateKey, 'merge'); };
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-ghost btn-full btn-sm';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = function() { closeModal('modal-food-log'); };
+
+  body.appendChild(replaceBtn);
+  body.appendChild(mergeBtn);
+  body.appendChild(cancelBtn);
+}
+
+function applyTemplate(templateKey, mode) {
+  const tmpl = MEAL_PLAN_TEMPLATES[templateKey];
+  const today = new Date().toISOString().slice(0,10);
+  const logs = DB.get('foodLogs', {});
+  if (!logs[today]) logs[today] = {meals:{breakfast:[],lunch:[],dinner:[],snacks:[]},water:0};
+
+  const water = logs[today].water || 0;
+
+  if (mode === 'replace') {
+    logs[today].meals = {breakfast:[],lunch:[],dinner:[],snacks:[]};
+  }
+
+  // Add template items with unique IDs
+  Object.entries(tmpl.meals).forEach(function(entry) {
+    const meal = entry[0];
+    const items = entry[1];
+    if (!logs[today].meals[meal]) logs[today].meals[meal] = [];
+    items.forEach(function(item) {
+      logs[today].meals[meal].push({
+        id: Date.now().toString() + Math.random().toString(36).slice(2,6),
+        foodId: null,
+        name: item.name,
+        servingQty: item.servingQty + (item.note ? '  (' + item.note + ')' : ''),
+        calories: item.calories,
+        protein: item.protein,
+        carbs: item.carbs,
+        fat: item.fat,
+        loggedAt: new Date().toISOString(),
+        fromTemplate: templateKey,
+      });
+    });
+  });
+
+  logs[today].water = water;
+  DB.set('foodLogs', logs);
+  closeModal('modal-food-log');
+  renderFoodMeals();
+  renderFoodDailySummary();
+  showToast(tmpl.label + ' template loaded — ' + tmpl.totalCals + ' cal');
+}
 
 // ── Food Vault DB ──
 let activeFoodVaultCat = null; // null = all
