@@ -1314,12 +1314,13 @@ select.input { appearance: none; }
     </button>
   </div>
 
-    <!-- SAVED MEALS LIST -->
+    <!-- SAVED MEALS FOLDER -->
   <div class="section">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div class="section-title" style="margin-bottom:0">Saved Meals</div>
       <button onclick="openMealBuilder()" style="background:none;border:none;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);cursor:pointer;letter-spacing:0.06em">+ Build New</button>
     </div>
+    <!-- Top-level Saved Meals folder -->
     <div id="food-saved-meals-list"></div>
   </div>
 
@@ -7166,64 +7167,221 @@ function applyTemplate(templateKey, mode) {
 
 
 // ── Saved meals homepage list ──
+
+// Folder config: label → which mealSlot values go inside
+const SAVED_MEAL_FOLDERS = [
+  {id:'breakfast',  label:'Breakfast',      slots:['breakfast'],           icon:'☀️'},
+  {id:'lunchdinner',label:'Lunch / Dinner',  slots:['lunch','dinner'],      icon:'🍽️'},
+  {id:'snacks',     label:'Snacks',          slots:['snacks'],              icon:'🍎'},
+  {id:'supplements',label:'Supplements',     slots:['supplements','supplement'], icon:'💊'},
+  {id:'protein',    label:'Protein',         slots:['protein'],             icon:'💪'},
+];
+
+// Track open/closed state for folders
+const folderOpenState = {
+  root: false,
+  breakfast: false, lunchdinner: false, snacks: false,
+  supplements: false, protein: false
+};
+
 function renderSavedMealsList() {
   const el = document.getElementById('food-saved-meals-list');
   if (!el) return;
   el.innerHTML = '';
 
   const meals = getSavedMeals();
-  if (!meals.length) {
-    const empty = document.createElement('div');
-    empty.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;padding:14px 0';
-    empty.textContent = 'No saved meals yet — tap + Build New';
-    el.appendChild(empty);
-    return;
-  }
 
-  const slotColors = {breakfast:'#ffb74d',lunch:'#47c8ff',dinner:'#ba68c8',snacks:'#81c784'};
+  // ── Root folder: "Saved Meals" ──
+  const rootFolder = buildFolder({
+    id: 'root',
+    label: 'Saved Meals',
+    icon: '📁',
+    count: meals.length,
+    color: 'var(--accent)',
+    children: function(container) {
+      // Build sub-folders
+      SAVED_MEAL_FOLDERS.forEach(function(folder) {
+        // Match meals to this folder
+        const folderMeals = meals.filter(function(m) {
+          const slot = (m.mealSlot || 'other').toLowerCase();
+          return folder.slots.some(function(s) { return slot === s; });
+        });
 
-  meals.forEach(function(meal) {
-    const card = document.createElement('div');
-    card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color 0.15s';
-    card.onmouseenter = function(){ card.style.borderColor = 'rgba(232,255,71,0.3)'; };
-    card.onmouseleave = function(){ card.style.borderColor = 'var(--border)'; };
-    card.onclick = function(){ openAddMealToDay(meal.id); };
+        // Also catch 'other'/'custom' in protein folder
+        const extraMeals = folder.id === 'protein'
+          ? meals.filter(function(m) {
+              const slot = (m.mealSlot || 'other').toLowerCase();
+              return slot === 'other' || slot === 'custom' ||
+                !SAVED_MEAL_FOLDERS.some(function(f) {
+                  return f.slots.includes(slot);
+                });
+            })
+          : [];
 
-    // Top row: name + calories
-    const topRow = document.createElement('div');
-    topRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:5px';
+        const allMeals = folderMeals.concat(
+          folder.id === 'protein' ? extraMeals.filter(function(m) {
+            return !folderMeals.find(function(x){return x.id===m.id;});
+          }) : []
+        );
 
-    const name = document.createElement('div');
-    name.style.cssText = 'font-weight:500;font-size:14px;color:var(--text);flex:1;margin-right:8px';
-    name.textContent = meal.name;
-
-    const cals = document.createElement('div');
-    cals.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:18px;color:var(--accent);letter-spacing:0.05em;flex-shrink:0';
-    cals.textContent = meal.totalCals + ' cal';
-
-    topRow.appendChild(name);
-    topRow.appendChild(cals);
-
-    // Bottom row: macros + slot badge
-    const bottomRow = document.createElement('div');
-    bottomRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between';
-
-    const macros = document.createElement('div');
-    macros.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
-    macros.textContent = meal.totalProtein + 'g P  ·  ' + meal.totalCarbs + 'g C  ·  ' + meal.totalFat + 'g F';
-
-    const slotBadge = document.createElement('div');
-    const slotColor = slotColors[meal.mealSlot] || 'var(--text3)';
-    slotBadge.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid ' + slotColor + ';color:' + slotColor + ';opacity:0.8;text-transform:uppercase;letter-spacing:0.06em';
-    slotBadge.textContent = meal.mealSlot || 'any';
-
-    bottomRow.appendChild(macros);
-    bottomRow.appendChild(slotBadge);
-
-    card.appendChild(topRow);
-    card.appendChild(bottomRow);
-    el.appendChild(card);
+        const sub = buildFolder({
+          id: folder.id,
+          label: folder.label,
+          icon: folder.icon,
+          count: allMeals.length,
+          color: 'var(--text2)',
+          indent: true,
+          children: function(subContainer) {
+            if (!allMeals.length) {
+              const empty = document.createElement('div');
+              empty.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text3);padding:10px 0 6px 20px';
+              empty.textContent = 'No meals here yet';
+              subContainer.appendChild(empty);
+              return;
+            }
+            allMeals.forEach(function(meal) {
+              subContainer.appendChild(buildMealRow(meal));
+            });
+          }
+        });
+        container.appendChild(sub);
+      });
+    }
   });
+
+  el.appendChild(rootFolder);
+}
+
+function buildFolder(opts) {
+  const wrapper = document.createElement('div');
+  wrapper.style.marginBottom = opts.indent ? '4px' : '0';
+
+  // Folder header row
+  const header = document.createElement('div');
+  header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;' +
+    'padding:' + (opts.indent ? '9px 10px 9px 14px' : '11px 12px') + ';' +
+    'background:' + (opts.indent ? 'var(--surface)' : 'var(--surface2)') + ';' +
+    'border:1px solid var(--border);' +
+    'border-radius:' + (folderOpenState[opts.id] ? '8px 8px 0 0' : '8px') + ';' +
+    'cursor:pointer;transition:all 0.15s';
+
+  header.onmouseenter = function(){ header.style.borderColor = 'rgba(232,255,71,0.3)'; };
+  header.onmouseleave = function(){ header.style.borderColor = 'var(--border)'; };
+
+  const leftPart = document.createElement('div');
+  leftPart.style.cssText = 'display:flex;align-items:center;gap:8px';
+
+  const iconEl = document.createElement('span');
+  iconEl.style.cssText = 'font-size:' + (opts.indent ? '14px' : '16px');
+  iconEl.textContent = opts.icon;
+
+  const labelEl = document.createElement('div');
+  labelEl.style.cssText = 'font-family:DM Mono,monospace;font-size:' +
+    (opts.indent ? '11px' : '12px') + ';color:' + opts.color + ';letter-spacing:0.04em;font-weight:' +
+    (opts.indent ? 'normal' : '600');
+  labelEl.textContent = opts.label;
+
+  const countEl = document.createElement('div');
+  countEl.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:var(--text3);' +
+    'background:var(--surface2);padding:2px 6px;border-radius:10px';
+  countEl.textContent = opts.count;
+
+  leftPart.appendChild(iconEl);
+  leftPart.appendChild(labelEl);
+  leftPart.appendChild(countEl);
+
+  const chevron = document.createElement('svg');
+  chevron.setAttribute('width','14'); chevron.setAttribute('height','14');
+  chevron.setAttribute('viewBox','0 0 24 24');
+  chevron.style.cssText = 'fill:none;stroke:var(--text3);stroke-width:2;transition:transform 0.2s;flex-shrink:0;' +
+    'transform:' + (folderOpenState[opts.id] ? 'rotate(180deg)' : 'rotate(0deg)');
+  chevron.innerHTML = '<polyline points="6 9 12 15 18 9"/>';
+
+  header.appendChild(leftPart);
+  header.appendChild(chevron);
+  wrapper.appendChild(header);
+
+  // Children container
+  const body = document.createElement('div');
+  body.style.cssText = 'display:' + (folderOpenState[opts.id] ? 'block' : 'none') + ';' +
+    'border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;' +
+    'background:var(--bg);padding:' + (opts.indent ? '4px 6px 8px 6px' : '8px');
+
+  if (folderOpenState[opts.id]) opts.children(body);
+
+  header.onclick = function() {
+    folderOpenState[opts.id] = !folderOpenState[opts.id];
+    chevron.style.transform = folderOpenState[opts.id] ? 'rotate(180deg)' : 'rotate(0deg)';
+    header.style.borderRadius = folderOpenState[opts.id] ? '8px 8px 0 0' : '8px';
+    body.style.display = folderOpenState[opts.id] ? 'block' : 'none';
+    if (folderOpenState[opts.id] && !body.children.length) {
+      opts.children(body);
+    }
+  };
+
+  wrapper.appendChild(body);
+  return wrapper;
+}
+
+function buildMealRow(meal) {
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;' +
+    'background:var(--surface);border:1px solid var(--border);border-radius:8px;' +
+    'padding:10px 12px;margin-bottom:5px;cursor:pointer;transition:border-color 0.15s';
+  row.onmouseenter = function(){ row.style.borderColor = 'rgba(232,255,71,0.3)'; };
+  row.onmouseleave = function(){ row.style.borderColor = 'var(--border)'; };
+  row.onclick = function(){ openAddMealToDay(meal.id); };
+
+  const info = document.createElement('div');
+  info.style.flex = '1';
+  const name = document.createElement('div');
+  name.style.cssText = 'font-size:13px;color:var(--text);margin-bottom:2px';
+  name.textContent = meal.name;
+  const meta = document.createElement('div');
+  meta.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
+  meta.textContent = meal.totalCals + ' cal  ·  ' + meal.totalProtein + 'g P  ·  ' + meal.items.length + ' items';
+  info.appendChild(name);
+  info.appendChild(meta);
+
+  // Edit button
+  const editBtn = document.createElement('button');
+  editBtn.style.cssText = 'background:none;border:1px solid var(--border);border-radius:6px;color:var(--text3);cursor:pointer;padding:5px 8px;font-size:11px;margin-left:8px;flex-shrink:0';
+  editBtn.textContent = '✎';
+  editBtn.title = 'Edit meal';
+  editBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    openEditSavedMeal(meal.id);
+  }, true);
+
+  row.appendChild(info);
+  row.appendChild(editBtn);
+  return row;
+}
+
+// ── Edit saved meal ──
+function openEditSavedMeal(mealId) {
+  const meals = getSavedMeals();
+  const meal = meals.find(function(m){ return m.id === mealId; });
+  if (!meal) return;
+
+  // Pre-populate meal builder with this meal's data
+  mbIngredients = meal.items.map(function(item) { return Object.assign({}, item); });
+  mbCurrentFood = null;
+
+  const nameEl = document.getElementById('mb-name');
+  const slotEl = document.getElementById('mb-slot');
+  if (nameEl) nameEl.value = meal.name;
+  if (slotEl) slotEl.value = meal.mealSlot || 'dinner';
+
+  // Change save button to "Update Meal" and store editing ID
+  window._editingMealId = mealId;
+
+  const saveBtn = document.querySelector('#modal-meal-builder .btn-primary');
+  if (saveBtn) saveBtn.textContent = 'Update Meal';
+
+  renderMbIngredients();
+  updateMbTotals();
+  openModal('modal-meal-builder');
 }
 
 // ── Add meal to a specific day + slot ──
@@ -7392,6 +7550,9 @@ function openMealBuilder() {
   // Reset state
   mbIngredients = [];
   mbCurrentFood = null;
+  window._editingMealId = null;
+  const saveBtn = document.querySelector('#modal-meal-builder .btn-primary');
+  if (saveBtn) saveBtn.textContent = 'Save Meal';
 
   // Reset form fields
   const nameEl = document.getElementById('mb-name');
@@ -7587,7 +7748,7 @@ function updateMbTotals() {
   set('mb-total-f',   totals.f);
 }
 
-// ── Save meal ──
+// ── Save / Update meal ──
 function saveMealFromBuilder() {
   const name = (document.getElementById('mb-name')?.value || '').trim();
   const slot = document.getElementById('mb-slot')?.value || 'dinner';
@@ -7603,25 +7764,50 @@ function saveMealFromBuilder() {
     return acc;
   }, {cal:0, p:0, c:0, f:0});
 
-  const newMeal = {
-    id:           'sm_custom_' + Date.now(),
-    name:         name,
-    mealSlot:     slot,
-    tags:         ['custom'],
-    totalCals:    Math.round(totals.cal),
-    totalProtein: Math.round(totals.p),
-    totalCarbs:   Math.round(totals.c),
-    totalFat:     Math.round(totals.f),
-    items:        mbIngredients.slice(),
-  };
-
   const meals = getSavedMeals();
-  meals.unshift(newMeal); // add to top
+  const editId = window._editingMealId || null;
+
+  if (editId) {
+    // Update existing meal
+    const idx = meals.findIndex(function(m){ return m.id === editId; });
+    if (idx > -1) {
+      meals[idx] = Object.assign(meals[idx], {
+        name:         name,
+        mealSlot:     slot,
+        totalCals:    Math.round(totals.cal),
+        totalProtein: Math.round(totals.p),
+        totalCarbs:   Math.round(totals.c),
+        totalFat:     Math.round(totals.f),
+        items:        mbIngredients.slice(),
+      });
+    }
+    window._editingMealId = null;
+    showToast(name + ' updated!');
+  } else {
+    // New meal
+    const newMeal = {
+      id:           'sm_custom_' + Date.now(),
+      name:         name,
+      mealSlot:     slot,
+      tags:         ['custom'],
+      totalCals:    Math.round(totals.cal),
+      totalProtein: Math.round(totals.p),
+      totalCarbs:   Math.round(totals.c),
+      totalFat:     Math.round(totals.f),
+      items:        mbIngredients.slice(),
+    };
+    meals.unshift(newMeal);
+    showToast(name + ' saved!');
+  }
+
   saveSavedMeals(meals);
+
+  // Reset save button label
+  const saveBtn = document.querySelector('#modal-meal-builder .btn-primary');
+  if (saveBtn) saveBtn.textContent = 'Save Meal';
 
   closeModal('modal-meal-builder');
   renderSavedMealsList();
-  showToast(name + ' saved!');
 
   // Reset
   mbIngredients = [];
