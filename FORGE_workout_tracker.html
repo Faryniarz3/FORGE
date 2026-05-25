@@ -6750,26 +6750,6 @@ function renderFoodDailySummary() {
   setBar('food-fat-bar',    'food-fat-label',      totals.fat,     targets.fat,     'g');
 }
 
-// ── Water tracking ──
-function logWater(ozDelta) {
-  const today = new Date().toISOString().slice(0,10);
-  const logs = DB.get('foodLogs', {});
-  if (!logs[today]) logs[today] = { meals: { breakfast:[], lunch:[], dinner:[], snacks:[] }, water: 0 };
-  logs[today].water = Math.max(0, (logs[today].water || 0) + ozDelta);
-  DB.set('foodLogs', logs);
-  renderWater();
-}
-
-function renderWater() {
-  const log = getTodayFoodLog();
-  const oz = log.water || 0;
-  const goal = 128; // 1 gallon
-  const pct = Math.min(100, Math.round((oz / goal) * 100));
-  const display = document.getElementById('food-water-display');
-  const bar = document.getElementById('food-water-bar');
-  if (display) display.textContent = oz + ' oz';
-  if (bar) bar.style.width = pct + '%';
-}
 
 // ── Dashboard PRs compact ──
 function renderDashPRsCompact() {
