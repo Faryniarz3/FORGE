@@ -7759,6 +7759,28 @@ const MEALS = ['breakfast','lunch','dinner','snacks'];
 const MEAL_LABELS = {breakfast:'Breakfast',lunch:'Lunch',dinner:'Dinner',snacks:'Snacks'};
 const MEAL_ICONS  = {breakfast:'☀️',lunch:'🕐',dinner:'🍽️',snacks:'🍎'};
 
+
+function confirmDeleteMeal(meal) {
+  const log = getSelectedDateFoodLog();
+  const items = (log.meals[meal] || []);
+  if (!items.length) return;
+
+  const sel = new Date(foodSelectedDate + 'T12:00:00');
+  const dateLabel = sel.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+
+  if (confirm('Delete all ' + items.length + ' item' + (items.length>1?'s':'') + ' from ' + MEAL_LABELS[meal] + ' on ' + dateLabel + '?')) {
+    const logs = DB.get('foodLogs', {});
+    if (logs[foodSelectedDate] && logs[foodSelectedDate].meals[meal]) {
+      logs[foodSelectedDate].meals[meal] = [];
+      DB.set('foodLogs', logs);
+      renderFoodMeals();
+      renderFoodCalendar();
+      renderFoodDaySummaryBar();
+      showToast(MEAL_LABELS[meal] + ' cleared');
+    }
+  }
+}
+
 function renderFoodMeals() {
   const container = document.getElementById('food-meals-container');
   if (!container) return;
@@ -7800,14 +7822,31 @@ function renderFoodMeals() {
     leftSide.appendChild(icon);
     leftSide.appendChild(textBlock);
 
+    const rightSide = document.createElement('div');
+    rightSide.style.cssText = 'display:flex;align-items:center;gap:6px';
+
+    // Delete meal button (only show if items exist)
+    if (items.length > 0) {
+      const deleteBtn = document.createElement('button');
+      deleteBtn.style.cssText = 'background:none;border:none;color:var(--text3);cursor:pointer;padding:4px;font-size:14px;opacity:0.6';
+      deleteBtn.title = 'Delete all items in this meal';
+      deleteBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
+      deleteBtn.onclick = function(e) {
+        e.stopPropagation();
+        confirmDeleteMeal(meal);
+      };
+      rightSide.appendChild(deleteBtn);
+    }
+
     const chevron = document.createElement('svg');
     chevron.setAttribute('viewBox','0 0 24 24');
     chevron.setAttribute('width','16'); chevron.setAttribute('height','16');
     chevron.style.cssText = 'fill:none;stroke:var(--text3);stroke-width:2;flex-shrink:0;transition:transform 0.2s';
     chevron.id = 'meal-chevron-' + meal;
     chevron.innerHTML = '<polyline points="6 9 12 15 18 9"/>';
+    rightSide.appendChild(chevron);
     header.appendChild(leftSide);
-    header.appendChild(chevron);
+    header.appendChild(rightSide);
     card.appendChild(header);
 
     // Expand area
