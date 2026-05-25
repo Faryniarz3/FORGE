@@ -7855,7 +7855,7 @@ async function aiCalculateMacros() {
   if (btn) btn.disabled = true;
   if (noteEl) noteEl.style.display = 'none';
 
-  const prompt = 'You are a nutrition database. Given the food name and serving size below, return ONLY a valid JSON object with these exact keys: calories, protein, carbs, fat, confidence, note. All macro values should be numbers (not strings). Confidence should be "high", "medium", or "low". Note should be a brief 1-sentence explanation of your source/assumption. Do not include any other text, markdown, or explanation outside the JSON object.  Food: ' + name + ' Serving: ' + (serving || '1 serving');
+  const prompt = 'Return ONLY a JSON object with keys: calories, protein, carbs, fat, confidence (high/medium/low), note. Numbers only. No markdown. Food: ' + name + ' Serving: ' + (serving || '1 serving');
 
 
   try {
@@ -7921,7 +7921,7 @@ async function aiCalculateMbMacros() {
   if (btn) btn.disabled = true;
   if (noteEl) noteEl.style.display = 'none';
 
-  const prompt = 'You are a nutrition database. Given the food name and serving size below, return ONLY a valid JSON object with these exact keys: calories, protein, carbs, fat, confidence, note. All macro values should be numbers. Confidence: "high", "medium", or "low". Note: 1-sentence explanation. No other text outside the JSON.  Food: ' + name + ' Serving: ' + (serving || '1 serving');
+  const prompt = 'Return ONLY a JSON object with keys: calories, protein, carbs, fat, confidence (high/medium/low), note. Numbers only. No markdown. Food: ' + name + ' Serving: ' + (serving || '1 serving');
 
 
   try {
@@ -8627,7 +8627,19 @@ let activeFoodVaultCat = null; // null = all
 let activeFoodLogCat = null;
 
 function getFoodVault() {
-  return DB.get('foodVault', []);
+  const stored = DB.get('foodVault', null);
+  if (stored === null || stored.length === 0) {
+    DB.set('foodVault', FOOD_VAULT_SEED);
+    return FOOD_VAULT_SEED.slice();
+  }
+  // Merge any new seed items not already stored
+  const ids = new Set(stored.map(function(f){return f.id;}));
+  const merged = stored.slice();
+  FOOD_VAULT_SEED.forEach(function(seed){
+    if (!ids.has(seed.id)) merged.push(seed);
+  });
+  if (merged.length !== stored.length) DB.set('foodVault', merged);
+  return merged;
 }
 function saveFoodVault(vault) {
   DB.set('foodVault', vault);
@@ -9733,9 +9745,9 @@ function initDragReorder(container) {
 // One-time data reset — clears food vault, saved meals, food logs
 // Version key: if not set, wipe and set it
 function runDataReset() {
-  const RESET_KEY = 'forge_food_reset_v2';
+  const RESET_KEY = 'forge_food_reset_v3';
   if (!DB.get(RESET_KEY, false)) {
-    DB.set('foodVault', []);
+    DB.set('foodVault', null); // null triggers re-seed from FOOD_VAULT_SEED
     DB.set('savedMeals', null); // null triggers seed load
     DB.set('foodLogs', {});
     DB.set(RESET_KEY, true);
