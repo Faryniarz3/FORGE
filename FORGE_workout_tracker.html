@@ -7855,9 +7855,7 @@ async function aiCalculateMacros() {
   if (btn) btn.disabled = true;
   if (noteEl) noteEl.style.display = 'none';
 
-  const prompt = 'You are a nutrition database. Given the food name and serving size below, return ONLY a valid JSON object with these exact keys: calories, protein, carbs, fat, confidence, note. All macro values should be numbers (not strings). Confidence should be "high", "medium", or "low". Note should be a brief 1-sentence explanation of your source/assumption. Do not include any other text, markdown, or explanation outside the JSON object.
-
-Food: ' + name + '
+  const prompt = 'You are a nutrition database. Given the food name and serving size below, return ONLY a valid JSON object with these exact keys: calories, protein, carbs, fat, confidence, note. All macro values should be numbers (not strings). Confidence should be "high", "medium", or "low". Note should be a brief 1-sentence explanation of your source/assumption. Do not include any other text, markdown, or explanation outside the JSON object.  Food: ' + name + '
 Serving: ' + (serving || '1 serving');
 
   try {
@@ -7923,9 +7921,7 @@ async function aiCalculateMbMacros() {
   if (btn) btn.disabled = true;
   if (noteEl) noteEl.style.display = 'none';
 
-  const prompt = 'You are a nutrition database. Given the food name and serving size below, return ONLY a valid JSON object with these exact keys: calories, protein, carbs, fat, confidence, note. All macro values should be numbers. Confidence: "high", "medium", or "low". Note: 1-sentence explanation. No other text outside the JSON.
-
-Food: ' + name + '
+  const prompt = 'You are a nutrition database. Given the food name and serving size below, return ONLY a valid JSON object with these exact keys: calories, protein, carbs, fat, confidence, note. All macro values should be numbers. Confidence: "high", "medium", or "low". Note: 1-sentence explanation. No other text outside the JSON.  Food: ' + name + '
 Serving: ' + (serving || '1 serving');
 
   try {
