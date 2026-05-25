@@ -1373,30 +1373,17 @@ select.input { appearance: none; }
     </div>
   </div>
 
-  <!-- TODAY'S WATER -->
-  <div class="section">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div class="section-title" style="margin-bottom:0">Water</div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <button onclick="logWater(-8)" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--text3);width:28px;height:28px;cursor:pointer;font-size:16px">−</button>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent);min-width:50px;text-align:center" id="food-water-display">0 oz</div>
-        <button onclick="logWater(8)" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent);width:28px;height:28px;cursor:pointer;font-size:16px">+</button>
-      </div>
-    </div>
-    <div style="background:var(--surface2);border-radius:4px;height:6px;overflow:hidden">
-      <div id="food-water-bar" style="height:100%;background:#47c8ff;border-radius:4px;width:0%;transition:width 0.4s ease"></div>
-    </div>
-    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:4px" id="food-water-goal">Goal: 128 oz (1 gallon)</div>
-  </div>
-
-  <!-- TODAY'S MEALS -->
+  <!-- FOOD CALENDAR -->
   <div class="section">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div class="section-title" style="margin-bottom:0">Today's Meals</div>
-      <button onclick="openLoadTemplateModal()" style="background:rgba(232,255,71,0.08);border:1px solid rgba(232,255,71,0.25);border-radius:6px;color:var(--accent);font-family:'DM Mono',monospace;font-size:10px;padding:5px 10px;cursor:pointer;letter-spacing:0.06em">
-        📋 Load Template
-      </button>
+      <div class="section-title" style="margin-bottom:0">Meal Planner</div>
+      <button onclick="openLoadTemplateModal()" style="background:rgba(232,255,71,0.08);border:1px solid rgba(232,255,71,0.25);border-radius:6px;color:var(--accent);font-family:'DM Mono',monospace;font-size:10px;padding:5px 10px;cursor:pointer;letter-spacing:0.06em">📋 Template</button>
     </div>
+    <!-- Week strip -->
+    <div id="food-week-strip" style="display:flex;gap:5px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px"></div>
+    <!-- Selected day label -->
+    <div id="food-selected-day-label" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);margin-bottom:12px;letter-spacing:0.06em"></div>
+    <!-- Meal cards -->
     <div id="food-meals-container"></div>
   </div>
 
@@ -6601,7 +6588,7 @@ function saveNutritionProfile() {
   DB.set('nutritionProfile', profile);
   showToast('Targets saved! ' + targets.training.calories + ' cal training / ' + targets.rest.calories + ' cal rest');
   renderFoodProfile();
-  renderFoodDailySummary();
+  renderFoodDaySummaryBar();
 }
 
 function getNutritionProfile() {
@@ -7097,7 +7084,7 @@ function confirmLoadTemplate(templateKey) {
 
 function applyTemplate(templateKey, mode) {
   const tmpl = MEAL_PLAN_TEMPLATES[templateKey];
-  const today = new Date().toISOString().slice(0,10);
+  const today = foodSelectedDate || new Date().toISOString().slice(0,10);
   const logs = DB.get('foodLogs', {});
   if (!logs[today]) logs[today] = {meals:{breakfast:[],lunch:[],dinner:[],snacks:[]},water:0};
 
@@ -7132,10 +7119,154 @@ function applyTemplate(templateKey, mode) {
   DB.set('foodLogs', logs);
   closeModal('modal-food-log');
   renderFoodMeals();
-  renderFoodDailySummary();
+  renderFoodDaySummaryBar();
   showToast(tmpl.label + ' template loaded — ' + tmpl.totalCals + ' cal');
 }
 
+
+
+// ============================================================
+// FOOD CALENDAR + MEAL PLANNER
+// ============================================================
+let foodSelectedDate = new Date().toISOString().slice(0,10); // YYYY-MM-DD
+
+function renderFoodCalendar() {
+  const strip = document.getElementById('food-week-strip');
+  if (!strip) return;
+  strip.innerHTML = '';
+
+  const today = new Date();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  // Show 7 days: 3 past + today + 3 future
+  for (let i = -3; i <= 6; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const dateStr = d.toISOString().slice(0,10);
+    const isToday = i === 0;
+    const isSelected = dateStr === foodSelectedDate;
+    const isPast = i < 0;
+    const isFuture = i > 0;
+
+    // Check if has logged food
+    const logs = DB.get('foodLogs', {});
+    const dayLog = logs[dateStr];
+    const hasFood = dayLog && Object.values(dayLog.meals || {}).some(function(m){return m.length > 0;});
+    const hasPlan = dayLog && dayLog.planned && Object.values(dayLog.planned || {}).some(function(m){return m.length > 0;});
+
+    const btn = document.createElement('button');
+    btn.style.cssText = 'flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;width:44px;min-height:60px;border-radius:10px;cursor:pointer;transition:all 0.15s;gap:3px;' +
+      'background:' + (isSelected ? 'var(--accent)' : isToday ? 'rgba(232,255,71,0.08)' : 'var(--surface)') + ';' +
+      'border:1px solid ' + (isSelected ? 'var(--accent)' : isToday ? 'rgba(232,255,71,0.3)' : 'var(--border)') + ';';
+
+    const dayName = document.createElement('div');
+    dayName.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;letter-spacing:0.06em;color:' + (isSelected ? '#000' : isToday ? 'var(--accent)' : 'var(--text3)');
+    dayName.textContent = days[d.getDay()].toUpperCase();
+
+    const dayNum = document.createElement('div');
+    dayNum.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:18px;letter-spacing:0.04em;line-height:1;color:' + (isSelected ? '#000' : isToday ? 'var(--accent)' : 'var(--text)');
+    dayNum.textContent = d.getDate();
+
+    // Dot indicator
+    const dot = document.createElement('div');
+    dot.style.cssText = 'width:5px;height:5px;border-radius:50%;background:' +
+      (hasFood ? (isSelected ? '#000' : 'var(--accent)') : hasPlan ? (isSelected ? '#000' : '#47c8ff') : 'transparent');
+
+    btn.appendChild(dayName);
+    btn.appendChild(dayNum);
+    btn.appendChild(dot);
+
+    (function(ds) {
+      btn.onclick = function() {
+        foodSelectedDate = ds;
+        renderFoodCalendar();
+        renderFoodDaySummaryBar();
+        renderFoodMeals();
+      };
+    })(dateStr);
+
+    strip.appendChild(btn);
+  }
+
+  // Update selected day label
+  const labelEl = document.getElementById('food-selected-day-label');
+  if (labelEl) {
+    const sel = new Date(foodSelectedDate + 'T12:00:00');
+    const todayStr = new Date().toISOString().slice(0,10);
+    const diff = Math.round((new Date(foodSelectedDate) - new Date(todayStr)) / 86400000);
+    let label = sel.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
+    if (diff === 0) label += '  —  TODAY';
+    else if (diff === 1) label += '  —  TOMORROW';
+    else if (diff === -1) label += '  —  YESTERDAY';
+    labelEl.textContent = label;
+  }
+}
+
+// Override getTodayFoodLog to use selected date
+function getSelectedDateFoodLog() {
+  const logs = DB.get('foodLogs', {});
+  return logs[foodSelectedDate] || {meals:{breakfast:[],lunch:[],dinner:[],snacks:[]},water:0};
+}
+
+function getSelectedDateTotals() {
+  const log = getSelectedDateFoodLog();
+  let cal=0, protein=0, carbs=0, fat=0;
+  Object.values(log.meals).forEach(function(meal) {
+    meal.forEach(function(item) {
+      cal     += item.calories || 0;
+      protein += item.protein  || 0;
+      carbs   += item.carbs    || 0;
+      fat     += item.fat      || 0;
+    });
+  });
+  return {cal:Math.round(cal), protein:Math.round(protein), carbs:Math.round(carbs), fat:Math.round(fat)};
+}
+
+// Override renderFoodDailySummary to use selected date
+function renderFoodDaySummaryBar() {
+  const targets = getTodayTargets();
+  const totals = getSelectedDateTotals();
+  const todayStr = new Date().toISOString().slice(0,10);
+  const isToday = foodSelectedDate === todayStr;
+
+  const badge = document.getElementById('food-day-type');
+  if (badge) {
+    if (isToday) {
+      const isTraining = isTodayTrainingDay();
+      badge.textContent = isTraining ? 'TRAINING DAY' : 'REST DAY';
+      badge.style.background = isTraining ? 'rgba(232,255,71,0.1)' : 'rgba(71,200,255,0.1)';
+      badge.style.color = isTraining ? 'var(--accent)' : '#47c8ff';
+    } else {
+      const sel = new Date(foodSelectedDate + 'T12:00:00');
+      const diff = Math.round((new Date(foodSelectedDate) - new Date(todayStr)) / 86400000);
+      badge.textContent = diff > 0 ? 'PLANNED' : 'PAST';
+      badge.style.background = diff > 0 ? 'rgba(71,200,255,0.1)' : 'rgba(255,255,255,0.05)';
+      badge.style.color = diff > 0 ? '#47c8ff' : 'var(--text3)';
+    }
+  }
+
+  const remaining = targets.calories - totals.cal;
+  const calEl = document.getElementById('food-cal-remaining');
+  if (calEl) {
+    calEl.textContent = remaining.toLocaleString();
+    calEl.style.color = remaining < 0 ? 'var(--danger)' : remaining < 200 ? '#ffb74d' : 'var(--text)';
+  }
+  const consumed = document.getElementById('food-cal-consumed');
+  const target = document.getElementById('food-cal-target');
+  if (consumed) consumed.textContent = totals.cal.toLocaleString() + ' eaten';
+  if (target) target.textContent = 'of ' + targets.calories.toLocaleString() + ' goal';
+
+  function setBar(barId, labelId, current, max, unit) {
+    const pct = Math.min(100, Math.round((current/max)*100));
+    const bar = document.getElementById(barId);
+    const lbl = document.getElementById(labelId);
+    if (bar) { bar.style.width = pct + '%'; bar.style.background = current > max ? 'var(--danger)' : undefined; }
+    if (lbl) lbl.textContent = current + '/' + max + unit;
+  }
+  setBar('food-protein-bar','food-protein-label',totals.protein,targets.protein,'g');
+  setBar('food-carbs-bar','food-carbs-label',totals.carbs,targets.carbs,'g');
+  setBar('food-fat-bar','food-fat-label',totals.fat,targets.fat,'g');
+}
 
 // ============================================================
 // SAVED MEALS
@@ -7354,7 +7485,7 @@ function logSavedMeal(mealId, targetMealSlot) {
   const meal = meals.find(function(m){return m.id === mealId;});
   if (!meal || !targetMealSlot) return;
 
-  const today = new Date().toISOString().slice(0,10);
+  const today = foodSelectedDate || new Date().toISOString().slice(0,10);
   const logs = DB.get('foodLogs', {});
   if (!logs[today]) logs[today] = {meals:{breakfast:[],lunch:[],dinner:[],snacks:[]},water:0};
   if (!logs[today].meals[targetMealSlot]) logs[today].meals[targetMealSlot] = [];
@@ -7376,7 +7507,7 @@ function logSavedMeal(mealId, targetMealSlot) {
 
   DB.set('foodLogs', logs);
   renderFoodMeals();
-  renderFoodDailySummary();
+  renderFoodDaySummaryBar();
   closeModal('modal-food-log');
   showToast(meal.name + ' added to ' + MEAL_LABELS[targetMealSlot]);
 }
@@ -7651,7 +7782,10 @@ const MEAL_ICONS  = {breakfast:'☀️',lunch:'🕐',dinner:'🍽️',snacks:'�
 function renderFoodMeals() {
   const container = document.getElementById('food-meals-container');
   if (!container) return;
-  const log = getTodayFoodLog();
+  const log = getSelectedDateFoodLog();
+  const todayStr = new Date().toISOString().slice(0,10);
+  const isFuture = foodSelectedDate > todayStr;
+  const isPast = foodSelectedDate < todayStr;
   container.innerHTML = '';
 
   MEALS.forEach(function(meal) {
@@ -7659,22 +7793,19 @@ function renderFoodMeals() {
     const mealCals = items.reduce(function(s,i){return s+i.calories;},0);
     const mealProt = items.reduce(function(s,i){return s+i.protein;},0);
 
-    // Outer card
     const card = document.createElement('div');
     card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden';
 
-    // Header row (always visible)
+    // Header
     const header = document.createElement('div');
     header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer';
     header.onclick = function() { toggleMealExpand(meal); };
 
     const leftSide = document.createElement('div');
     leftSide.style.cssText = 'display:flex;align-items:center;gap:8px';
-
     const icon = document.createElement('span');
     icon.style.fontSize = '16px';
     icon.textContent = MEAL_ICONS[meal];
-
     const textBlock = document.createElement('div');
     const mealTitle = document.createElement('div');
     mealTitle.style.cssText = 'font-weight:500;font-size:14px;color:var(--text)';
@@ -7682,8 +7813,8 @@ function renderFoodMeals() {
     const mealMeta = document.createElement('div');
     mealMeta.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
     mealMeta.textContent = items.length
-      ? mealCals + ' cal  ·  ' + mealProt + 'g protein  ·  ' + items.length + ' item' + (items.length>1?'s':'')
-      : 'Nothing logged yet';
+      ? mealCals + ' cal  ·  ' + mealProt + 'g P  ·  ' + items.length + ' item' + (items.length>1?'s':'')
+      : (isFuture ? 'Tap to plan' : 'Nothing logged');
     textBlock.appendChild(mealTitle);
     textBlock.appendChild(mealMeta);
     leftSide.appendChild(icon);
@@ -7691,17 +7822,15 @@ function renderFoodMeals() {
 
     const chevron = document.createElement('svg');
     chevron.setAttribute('viewBox','0 0 24 24');
-    chevron.setAttribute('width','16');
-    chevron.setAttribute('height','16');
+    chevron.setAttribute('width','16'); chevron.setAttribute('height','16');
     chevron.style.cssText = 'fill:none;stroke:var(--text3);stroke-width:2;flex-shrink:0;transition:transform 0.2s';
     chevron.id = 'meal-chevron-' + meal;
     chevron.innerHTML = '<polyline points="6 9 12 15 18 9"/>';
-
     header.appendChild(leftSide);
     header.appendChild(chevron);
     card.appendChild(header);
 
-    // Expand area (hidden by default)
+    // Expand area
     const expand = document.createElement('div');
     expand.id = 'meal-expand-' + meal;
     expand.style.cssText = 'display:none;padding:0 14px 12px';
@@ -7717,27 +7846,23 @@ function renderFoodMeals() {
       itemName.textContent = item.name;
       const itemMeta = document.createElement('div');
       itemMeta.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
-      itemMeta.textContent = item.servingQty + ' · ' + item.calories + ' cal · ' + item.protein + 'g P · ' + item.carbs + 'g C · ' + item.fat + 'g F';
+      itemMeta.textContent = item.servingQty + ' · ' + item.calories + ' cal · ' + item.protein + 'g P';
       info.appendChild(itemName);
       info.appendChild(itemMeta);
       const removeBtn = document.createElement('button');
       removeBtn.style.cssText = 'background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 8px;font-size:14px';
       removeBtn.textContent = '×';
-      (function(m, idx) {
-        removeBtn.onclick = function() { removeFoodLogItem(m, idx); };
-      })(meal, i);
+      (function(m, idx) { removeBtn.onclick = function() { removeFoodLogItemByDate(m, idx, foodSelectedDate); }; })(meal, i);
       row.appendChild(info);
       row.appendChild(removeBtn);
       expand.appendChild(row);
     });
 
-    // Add Food button
+    // Add food button
     const addBtn = document.createElement('button');
     addBtn.style.cssText = 'width:100%;background:none;border:1px dashed var(--border);border-radius:8px;padding:9px;font-family:DM Mono,monospace;font-size:11px;color:var(--accent);cursor:pointer;margin-top:6px;letter-spacing:0.06em';
-    addBtn.textContent = '+ Add Food';
-    (function(m) {
-      addBtn.onclick = function() { openFoodLogModal(m); };
-    })(meal);
+    addBtn.textContent = isFuture ? '+ Plan Meal' : '+ Add Food';
+    (function(m) { addBtn.onclick = function() { openFoodLogModal(m); }; })(meal);
     expand.appendChild(addBtn);
 
     card.appendChild(expand);
@@ -8336,34 +8461,39 @@ function logManualEntry() {
 }
 
 function saveFoodLogEntry(meal, entry) {
-  const today = new Date().toISOString().slice(0,10);
+  const dateStr = (typeof foodSelectedDate !== 'undefined' ? foodSelectedDate : null) || new Date().toISOString().slice(0,10);
   const logs = DB.get('foodLogs', {});
-  if (!logs[today]) logs[today] = { meals:{breakfast:[],lunch:[],dinner:[],snacks:[]}, water:0 };
-  if (!logs[today].meals[meal]) logs[today].meals[meal] = [];
-  logs[today].meals[meal].push(entry);
+  if (!logs[dateStr]) logs[dateStr] = { meals:{breakfast:[],lunch:[],dinner:[],snacks:[]}, water:0 };
+  if (!logs[dateStr].meals[meal]) logs[dateStr].meals[meal] = [];
+  logs[dateStr].meals[meal].push(entry);
   DB.set('foodLogs', logs);
   renderFoodMeals();
-  renderFoodDailySummary();
+  renderFoodCalendar();
+  renderFoodDaySummaryBar();
 }
 
 function removeFoodLogItem(meal, idx) {
-  const today = new Date().toISOString().slice(0,10);
+  removeFoodLogItemByDate(meal, idx, new Date().toISOString().slice(0,10));
+}
+
+function removeFoodLogItemByDate(meal, idx, dateStr) {
   const logs = DB.get('foodLogs', {});
-  if (logs[today]?.meals[meal]) {
-    logs[today].meals[meal].splice(idx, 1);
+  if (logs[dateStr]?.meals[meal]) {
+    logs[dateStr].meals[meal].splice(idx, 1);
     DB.set('foodLogs', logs);
     renderFoodMeals();
-    renderFoodDailySummary();
+    renderFoodDaySummaryBar();
   }
 }
 
 // ── Main food page render ──
 function renderFoodPage() {
   renderFoodProfile();
-  renderFoodDailySummary();
-  renderWater();
+  renderFoodDaySummaryBar();
+  renderFoodCalendar();
   renderFoodMeals();
-  getFoodVault(); // ensure seed is loaded
+  getFoodVault();
+  getSavedMeals();
 }
 
 // ============================================================
