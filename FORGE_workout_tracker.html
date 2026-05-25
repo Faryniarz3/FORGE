@@ -1874,7 +1874,8 @@ function showPage(name) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   document.getElementById('nav-' + name).classList.add('active');
-  if (name === 'dashboard') renderDashboard();
+  if (name === 'dashboard') runDataReset();
+  renderDashboard();
   prefillGitHubSettings();
   if (name === 'prs') renderPRs();
   if (name === 'log') renderLogList();
@@ -6864,59 +6865,7 @@ const SHAKE_VARIANTS = [
   {id:'shake_whey',     name:'Nutricost Whey',           serving:'1 scoop (36g)',        calories:130, protein:25, carbs:3, fat:2},
 ];
 
-const FOOD_VAULT_SEED = [
-  // PROTEIN
-  {id:'fv001',name:'Grilled Chicken Breast',serving:'1 breast (~6oz)',calories:280,protein:53,carbs:0,fat:6,category:'protein',portionType:'piece'},
-  {id:'fv002',name:'93/7 Ground Beef',serving:'4oz (1 palm)',calories:196,protein:22,carbs:0,fat:11,category:'protein',portionType:'bulk'},
-  {id:'fv003',name:'Braised Chuck Roast',serving:'4oz (1 palm)',calories:240,protein:26,carbs:0,fat:15,category:'protein',portionType:'bulk'},
-  {id:'fv004',name:'Braised Pork Shoulder',serving:'4oz (1 palm)',calories:230,protein:25,carbs:0,fat:14,category:'protein',portionType:'bulk'},
-  {id:'fv005',name:'Shrimp',serving:'4oz (1 palm)',calories:112,protein:24,carbs:1,fat:1,category:'protein',portionType:'bulk'},
-  {id:'fv006',name:'Whole Eggs',serving:'1 egg',calories:70,protein:6,carbs:1,fat:5,category:'protein',portionType:'count'},
-  {id:'fv007',name:'Egg Whites',serving:'1 white',calories:17,protein:4,carbs:0,fat:0,category:'protein',portionType:'count'},
-  {id:'fv008',name:'Rotisserie Chicken',serving:'4oz (1 palm)',calories:200,protein:30,carbs:0,fat:9,category:'protein',portionType:'bulk'},
-  {id:'fv009',name:'Ground Turkey 93/7',serving:'4oz (1 palm)',calories:170,protein:22,carbs:0,fat:9,category:'protein',portionType:'bulk'},
-  {id:'fv010',name:'Sirloin Steak',serving:'4oz (1 palm)',calories:220,protein:26,carbs:0,fat:13,category:'protein',portionType:'bulk'},
-  {id:'fv011',name:'Pork Tenderloin',serving:'4oz (1 palm)',calories:136,protein:24,carbs:0,fat:4,category:'protein',portionType:'bulk'},
-  // VEGETABLES
-  {id:'fv030',name:'Broccoli',serving:'1 handful (~1 cup)',calories:55,protein:4,carbs:11,fat:1,category:'vegetables',portionType:'vegetable'},
-  {id:'fv031',name:'Green Beans',serving:'1 handful (~1 cup)',calories:44,protein:2,carbs:10,fat:0,category:'vegetables',portionType:'vegetable'},
-  {id:'fv032',name:'Bell Peppers',serving:'1 handful',calories:37,protein:1,carbs:9,fat:0,category:'vegetables',portionType:'vegetable'},
-  {id:'fv033',name:'Onion',serving:'1 handful',calories:32,protein:1,carbs:7,fat:0,category:'vegetables',portionType:'vegetable'},
-  {id:'fv034',name:'Spinach',serving:'1 handful',calories:14,protein:2,carbs:2,fat:0,category:'vegetables',portionType:'vegetable'},
-  {id:'fv035',name:'Asparagus',serving:'1 handful (~6 spears)',calories:27,protein:3,carbs:5,fat:0,category:'vegetables',portionType:'vegetable'},
-  {id:'fv036',name:'Zucchini',serving:'1 medium',calories:33,protein:2,carbs:6,fat:0,category:'vegetables',portionType:'piece'},
-  // CARBS
-  {id:'fv040',name:'Low Carb Pasta',serving:'1/2 cup dry',calories:170,protein:12,carbs:22,fat:2,category:'carbs',portionType:'dairy'},
-  {id:'fv041',name:'Frozen Blueberries',serving:'1/2 cup',calories:42,protein:1,carbs:10,fat:0,category:'carbs',portionType:'dairy'},
-  {id:'fv042',name:'Sweet Potato',serving:'1 medium',calories:103,protein:2,carbs:24,fat:0,category:'carbs',portionType:'piece'},
-  {id:'fv043',name:'White Rice',serving:'1/3 cup dry',calories:228,protein:4,carbs:50,fat:0,category:'carbs',portionType:'dairy'},
-  // SUPPLEMENTS
-  {id:'fv021',name:'Protein Shake',serving:'see variants',calories:0,protein:0,carbs:0,fat:0,category:'supplements',portionType:'shake',isShake:true},
-  {id:'fv062',name:'Creatine',serving:'1 scoop (5g)',calories:0,protein:0,carbs:0,fat:0,category:'supplements',portionType:'supplement'},
-  {id:'fv063',name:'Pre-Workout',serving:'1 scoop',calories:10,protein:0,carbs:2,fat:0,category:'supplements',portionType:'supplement'},
-  {id:'fv064',name:'Psyllium Husk',serving:'1 tsp',calories:15,protein:0,carbs:4,fat:0,category:'supplements',portionType:'supplement'},
-  // SNACKS
-  {id:'fv020',name:'Oikos Vanilla Greek Yogurt',serving:'1 container (150g)',calories:100,protein:15,carbs:10,fat:0,category:'snacks',portionType:'dairy'},
-  {id:'fv022',name:'Cottage Cheese',serving:'1/2 cup',calories:90,protein:14,carbs:5,fat:1,category:'snacks',portionType:'dairy'},
-  {id:'fv050',name:'Peanut Butter',serving:'1 tbsp',calories:94,protein:4,carbs:3,fat:8,category:'snacks',portionType:'spoon'},
-  // FATS
-  {id:'fv051',name:'Olive Oil',serving:'1 tbsp',calories:119,protein:0,carbs:0,fat:14,category:'fats',portionType:'spoon'},
-  {id:'fv052',name:'Avocado',serving:'1/2 avocado',calories:120,protein:2,carbs:6,fat:11,category:'fats',portionType:'piece'},
-  // DRINKS
-  {id:'fv060',name:'Celsius Energy Drink',serving:'1 can',calories:10,protein:0,carbs:2,fat:0,category:'drinks',portionType:'drink'},
-  {id:'fv061',name:'Black Coffee',serving:'1 cup',calories:2,protein:0,carbs:0,fat:0,category:'drinks',portionType:'drink'},
-  {id:'fv065',name:'Water',serving:'1 glass (8oz)',calories:0,protein:0,carbs:0,fat:0,category:'drinks',portionType:'drink'},
-  {id:'fv066',name:'Electrolyte Water',serving:'1 scoop in water',calories:5,protein:0,carbs:1,fat:0,category:'drinks',portionType:'drink'},
-  // NEW PROTEINS
-  {id:'fv012',name:'Ground Chicken',serving:'4oz (1 palm)',calories:149,protein:22,carbs:0,fat:7,category:'protein',portionType:'bulk'},
-  {id:'fv013',name:'Bacon',serving:'1 strip',calories:43,protein:3,carbs:0,fat:3,category:'protein',portionType:'count'},
-  // NEW VEGETABLES
-  {id:'fv037',name:'Cauliflower Rice',serving:'1 cup',calories:25,protein:2,carbs:5,fat:0,category:'vegetables',portionType:'vegetable'},
-  {id:'fv038',name:'Mushrooms',serving:'1 handful',calories:15,protein:2,carbs:2,fat:0,category:'vegetables',portionType:'vegetable'},
-  {id:'fv039',name:'Cucumbers',serving:'1 handful',calories:8,protein:0,carbs:2,fat:0,category:'vegetables',portionType:'vegetable'},
-  {id:'fv044',name:'Lettuce Wraps',serving:'2 large leaves',calories:10,protein:1,carbs:1,fat:0,category:'vegetables',portionType:'count'},
-  // NEW SNACKS
-  {id:'fv053',name:'Babybel Cheese',serving:'1 wheel',calories:70,protein:5,carbs:0,fat:6,category:'snacks',portionType:'count'},
+const FOOD_VAULT_SEED = [];
 ];
 
 
@@ -7962,181 +7911,10 @@ function renderFoodDaySummaryBar() {
 // ============================================================
 
 const SAVED_MEALS_SEED = [
-  // ── TUESDAY ──
   {
-    id:'sm_tue_preworkout',mealSlot:'breakfast',
-    name:'Pre-Workout Shake',
-    tags:['protein','supplement'],
-    totalCals:130, totalProtein:25, totalCarbs:3, totalFat:2,
-    items:[
-      {name:'Nutricost Whey Protein',servingQty:'1 scoop',calories:130,protein:25,carbs:3,fat:2},
-      {name:'Electrolyte Water',servingQty:'1 scoop in water',calories:5,protein:0,carbs:1,fat:0},
-    ]
-  },
-  {
-    id:'sm_tue_breakfast',mealSlot:'breakfast',
-    name:'Tue — Post-Workout Breakfast',
-    tags:['protein','high-protein'],
-    totalCals:620, totalProtein:86, totalCarbs:19, totalFat:24,
-    items:[
-      {name:'Ground Chicken',servingQty:'8oz (2 palms)',calories:298,protein:44,carbs:0,fat:14},
-      {name:'Egg Whites',servingQty:'1.5 cups',calories:130,protein:27,carbs:2,fat:0},
-      {name:'Whole Eggs',servingQty:'2 eggs',calories:140,protein:12,carbs:1,fat:10},
-      {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
-      {name:'Bell Peppers',servingQty:'Handful',calories:37,protein:1,carbs:9,fat:0},
-      {name:'Onion',servingQty:'Handful',calories:32,protein:1,carbs:7,fat:0},
-    ]
-  },
-  {
-    id:'sm_tue_lunch',mealSlot:'lunch',
-    name:'Tue — Pork & Cauliflower Lunch',
-    tags:['protein','low-carb'],
-    totalCals:569, totalProtein:58, totalCarbs:22, totalFat:28,
-    items:[
-      {name:'Braised Pork Shoulder',servingQty:'8oz (2 palms)',calories:460,protein:50,carbs:0,fat:28},
-      {name:'Cauliflower Rice',servingQty:'2 cups',calories:50,protein:4,carbs:10,fat:0},
-      {name:'Green Beans',servingQty:'2 handfuls',calories:44,protein:2,carbs:10,fat:0},
-      {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
-    ]
-  },
-  {
-    id:'sm_tue_snack',mealSlot:'snacks',
-    name:'Tue — Afternoon Snack',
-    tags:['snack'],
-    totalCals:233, totalProtein:28, totalCarbs:3, totalFat:12,
-    items:[
-      {name:'Babybel Cheese',servingQty:'2 wheels',calories:140,protein:10,carbs:0,fat:12},
-      {name:'Egg Whites',servingQty:'1 cup',calories:85,protein:18,carbs:1,fat:0},
-      {name:'Cucumbers',servingQty:'Handful',calories:8,protein:0,carbs:2,fat:0},
-    ]
-  },
-  {
-    id:'sm_tue_dinner',mealSlot:'dinner',
-    name:'Tue — Chicken Lettuce Wrap Dinner',
-    tags:['protein','low-carb'],
-    totalCals:492, totalProtein:63, totalCarbs:24, totalFat:18,
-    items:[
-      {name:'Ground Chicken',servingQty:'10oz (2.5 palms)',calories:373,protein:55,carbs:0,fat:18},
-      {name:'Lettuce Wraps',servingQty:'2 large leaves',calories:10,protein:1,carbs:1,fat:0},
-      {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
-      {name:'Bell Peppers',servingQty:'Handful',calories:37,protein:1,carbs:9,fat:0},
-      {name:'Onion',servingQty:'Handful',calories:32,protein:1,carbs:7,fat:0},
-      {name:'Cauliflower Rice',servingQty:'1 cup',calories:25,protein:2,carbs:5,fat:0},
-    ]
-  },
-
-  // ── WEDNESDAY ──
-  {
-    id:'sm_wed_breakfast',mealSlot:'breakfast',
-    name:'Wed — Whey & Coffee Breakfast',
-    tags:['supplement','quick'],
-    totalCals:132, totalProtein:25, totalCarbs:3, totalFat:2,
-    items:[
-      {name:'Nutricost Whey Protein',servingQty:'1 scoop',calories:130,protein:25,carbs:3,fat:2},
-      {name:'Black Coffee',servingQty:'1 cup',calories:2,protein:0,carbs:0,fat:0},
-    ]
-  },
-  {
-    id:'sm_wed_lunch',mealSlot:'lunch',
-    name:'Wed — Chicken & Cauli Lunch',
-    tags:['protein','low-carb'],
-    totalCals:457, totalProtein:61, totalCarbs:17, totalFat:18,
-    items:[
-      {name:'Ground Chicken',servingQty:'10oz (2.5 palms)',calories:373,protein:55,carbs:0,fat:18},
-      {name:'Cauliflower Rice',servingQty:'1 cup',calories:25,protein:2,carbs:5,fat:0},
-      {name:'Green Beans',servingQty:'2 handfuls',calories:44,protein:2,carbs:10,fat:0},
-      {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
-    ]
-  },
-  {
-    id:'sm_wed_preworkout_snack',mealSlot:'snacks',
-    name:'Wed — Pre-Workout Snack',
-    tags:['snack','pre-workout'],
-    totalCals:208, totalProtein:32, totalCarbs:4, totalFat:6,
-    items:[
-      {name:'Egg Whites',servingQty:'1.5 cups',calories:130,protein:27,carbs:2,fat:0},
-      {name:'Babybel Cheese',servingQty:'1 wheel',calories:70,protein:5,carbs:0,fat:6},
-      {name:'Cucumbers',servingQty:'Handful',calories:8,protein:0,carbs:2,fat:0},
-    ]
-  },
-  {
-    id:'sm_wed_dinner',mealSlot:'dinner',
-    name:'Wed — Pork Lettuce Wrap Dinner',
-    tags:['protein','low-carb'],
-    totalCals:554, totalProtein:55, totalCarbs:19, totalFat:28,
-    items:[
-      {name:'Braised Pork Shoulder',servingQty:'8oz (2 palms)',calories:460,protein:50,carbs:0,fat:28},
-      {name:'Lettuce Wraps',servingQty:'2 large leaves',calories:10,protein:1,carbs:1,fat:0},
-      {name:'Bell Peppers',servingQty:'Handful',calories:37,protein:1,carbs:9,fat:0},
-      {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
-      {name:'Onion',servingQty:'Handful',calories:32,protein:1,carbs:7,fat:0},
-    ]
-  },
-  {
-    id:'sm_wed_protein_snack',mealSlot:'snacks',
-    name:'Wed — Protein Snack (PM)',
-    tags:['snack','high-protein'],
-    totalCals:215, totalProtein:43, totalCarbs:4, totalFat:2,
-    items:[
-      {name:'Egg Whites',servingQty:'1 cup',calories:85,protein:18,carbs:1,fat:0},
-      {name:'Nutricost Whey Protein',servingQty:'1 scoop',calories:130,protein:25,carbs:3,fat:2},
-    ]
-  },
-
-  // ── THURSDAY ──
-  {
-    id:'sm_thu_breakfast',mealSlot:'breakfast',
-    name:'Thu — Bacon Egg Scramble',
-    tags:['protein','high-protein'],
-    totalCals:663, totalProtein:86, totalCarbs:19, totalFat:33,
-    items:[
-      {name:'Egg Whites',servingQty:'2 cups',calories:170,protein:36,carbs:2,fat:0},
-      {name:'Whole Eggs',servingQty:'2 eggs',calories:140,protein:12,carbs:1,fat:10},
-      {name:'Bacon',servingQty:'3 strips',calories:129,protein:9,carbs:0,fat:9},
-      {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
-      {name:'Onion',servingQty:'Handful',calories:32,protein:1,carbs:7,fat:0},
-      {name:'Bell Peppers',servingQty:'Handful',calories:37,protein:1,carbs:9,fat:0},
-    ]
-  },
-  {
-    id:'sm_thu_lunch',mealSlot:'lunch',
-    name:'Thu — Chicken Wrap Lunch',
-    tags:['protein','low-carb'],
-    totalCals:452, totalProtein:60, totalCarbs:16, totalFat:18,
-    items:[
-      {name:'Ground Chicken',servingQty:'10oz (2.5 palms)',calories:373,protein:55,carbs:0,fat:18},
-      {name:'Lettuce Wraps',servingQty:'2 large leaves',calories:10,protein:1,carbs:1,fat:0},
-      {name:'Cauliflower Rice',servingQty:'1 cup',calories:25,protein:2,carbs:5,fat:0},
-      {name:'Green Beans',servingQty:'2 handfuls',calories:44,protein:2,carbs:10,fat:0},
-    ]
-  },
-  {
-    id:'sm_thu_snack',mealSlot:'snacks',
-    name:'Thu — Afternoon Snack',
-    tags:['snack'],
-    totalCals:233, totalProtein:28, totalCarbs:3, totalFat:12,
-    items:[
-      {name:'Babybel Cheese',servingQty:'2 wheels',calories:140,protein:10,carbs:0,fat:12},
-      {name:'Egg Whites',servingQty:'1 cup',calories:85,protein:18,carbs:1,fat:0},
-      {name:'Cucumbers',servingQty:'Handful',calories:8,protein:0,carbs:2,fat:0},
-    ]
-  },
-  {
-    id:'sm_thu_dinner',mealSlot:'dinner',
-    name:'Thu — Pork & Cauli Dinner',
-    tags:['protein','low-carb'],
-    totalCals:443, totalProtein:48, totalCarbs:7, totalFat:25,
-    items:[
-      {name:'Braised Pork Shoulder',servingQty:'7oz (1.75 palms)',calories:403,protein:44,carbs:0,fat:25},
-      {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
-      {name:'Cauliflower Rice',servingQty:'1 cup',calories:25,protein:2,carbs:5,fat:0},
-    ]
-  },
-
-  // ── DESSERT / UNIVERSAL ──
-  {
-    id:'sm_dessert',mealSlot:'snacks',
+    id:'sm_dessert',
     name:'Protein Dessert Bowl',
+    mealSlot:'snacks',
     tags:['snack','dessert'],
     totalCals:306, totalProtein:44, totalCarbs:16, totalFat:10,
     items:[
@@ -8151,19 +7929,12 @@ const SAVED_MEALS_SEED = [
 // ── Saved Meals DB ──
 function getSavedMeals() {
   const stored = DB.get('savedMeals', null);
-  if (!stored || !stored.length) {
+  if (stored === null) {
     DB.set('savedMeals', SAVED_MEALS_SEED);
-    return SAVED_MEALS_SEED;
+    return SAVED_MEALS_SEED.slice();
   }
-  // Merge seed IDs not already stored
-  const ids = new Set(stored.map(function(m){return m.id;}));
-  const merged = stored.slice();
-  SAVED_MEALS_SEED.forEach(function(seed) {
-    if (!ids.has(seed.id)) merged.push(seed);
-  });
-  return merged;
+  return stored;
 }
-
 function saveSavedMeals(meals) {
   DB.set('savedMeals', meals);
 }
@@ -8617,20 +8388,8 @@ let activeFoodVaultCat = null; // null = all
 let activeFoodLogCat = null;
 
 function getFoodVault() {
-  const stored = DB.get('foodVault', null);
-  if (!stored || !stored.length) {
-    DB.set('foodVault', FOOD_VAULT_SEED);
-    return FOOD_VAULT_SEED;
-  }
-  // Merge seed items that aren't already there
-  const ids = new Set(stored.map(f => f.id));
-  const merged = [...stored];
-  FOOD_VAULT_SEED.forEach(seed => {
-    if (!ids.has(seed.id)) merged.push(seed);
-  });
-  return merged;
+  return DB.get('foodVault', []);
 }
-
 function saveFoodVault(vault) {
   DB.set('foodVault', vault);
 }
@@ -9731,6 +9490,19 @@ function initDragReorder(container) {
 // INIT
 // ============================================================
 // Pre-populate GitHub settings fields on load
+// One-time data reset — clears food vault, saved meals, food logs
+// Version key: if not set, wipe and set it
+function runDataReset() {
+  const RESET_KEY = 'forge_food_reset_v2';
+  if (!DB.get(RESET_KEY, false)) {
+    DB.set('foodVault', []);
+    DB.set('savedMeals', null); // null triggers seed load
+    DB.set('foodLogs', {});
+    DB.set(RESET_KEY, true);
+    console.log('FORGE: food data reset to v2');
+  }
+}
+
 function prefillGitHubSettings() {
   const settings = DB.get('settings', {});
   const tokenInput = document.getElementById('gh-token');
