@@ -1306,74 +1306,15 @@ select.input { appearance: none; }
     </div>
   </div>
 
-  <!-- NUTRITION PROFILE SETUP -->
-  <div class="section" id="food-profile-section">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div class="section-title" style="margin-bottom:0">Nutrition Profile</div>
-      <button onclick="toggleProfileEdit()" id="profile-edit-btn" style="background:none;border:none;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);cursor:pointer;letter-spacing:0.06em">Edit</button>
-    </div>
-
-    <!-- Saved profile view -->
-    <div id="food-profile-saved" style="display:none">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px" id="food-profile-display"></div>
-      <div style="background:rgba(232,255,71,0.06);border:1px solid rgba(232,255,71,0.2);border-radius:10px;padding:12px">
-        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--accent);letter-spacing:0.1em;margin-bottom:8px">DAILY TARGETS</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="food-targets-display"></div>
-      </div>
-    </div>
-
-    <!-- Profile edit form -->
-    <div id="food-profile-form">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <div class="input-group" style="margin-bottom:0">
-          <label class="input-label">Age</label>
-          <input type="number" class="input" id="fp-age" value="33" style="padding:8px 10px">
-        </div>
-        <div class="input-group" style="margin-bottom:0">
-          <label class="input-label">Weight (lbs)</label>
-          <input type="number" class="input" id="fp-weight" value="190" style="padding:8px 10px">
-        </div>
-        <div class="input-group" style="margin-bottom:0">
-          <label class="input-label">Height (in)</label>
-          <input type="number" class="input" id="fp-height" value="72" style="padding:8px 10px">
-        </div>
-        <div class="input-group" style="margin-bottom:0">
-          <label class="input-label">Body Fat %</label>
-          <input type="number" class="input" id="fp-bf" value="16" style="padding:8px 10px">
-        </div>
-      </div>
-      <div class="input-group">
-        <label class="input-label">Activity Level</label>
-        <select class="input" id="fp-activity" style="padding:8px 10px">
-          <option value="1.2">Sedentary (desk job, little exercise)</option>
-          <option value="1.375">Lightly active (1-3 days/week)</option>
-          <option value="1.55" selected>Moderately active (3-5 days/week)</option>
-          <option value="1.725">Very active (6-7 days/week)</option>
-          <option value="1.9">Extra active (physical job + training)</option>
-        </select>
-      </div>
-      <div class="input-group">
-        <label class="input-label">Primary Goal</label>
-        <select class="input" id="fp-goal" style="padding:8px 10px">
-          <option value="aggressive_cut" selected>Aggressive cut (fat loss priority)</option>
-          <option value="moderate_cut">Moderate cut (fat loss + performance)</option>
-          <option value="maintain">Maintain (recomp)</option>
-          <option value="bulk">Build muscle (surplus)</option>
-        </select>
-      </div>
-      <div class="input-group">
-        <label class="input-label">Protein multiplier (g per lb bodyweight)</label>
-        <select class="input" id="fp-protein-mult" style="padding:8px 10px">
-          <option value="1.0">1.0x (minimum)</option>
-          <option value="1.2" selected>1.2x (recommended for cut)</option>
-          <option value="1.5">1.5x (aggressive)</option>
-        </select>
-      </div>
-      <button onclick="saveNutritionProfile()" class="btn btn-primary btn-full" style="margin-top:4px">Calculate & Save Targets</button>
-    </div>
+  <!-- MEAL BUILDER -->
+  <div class="section" style="padding-bottom:0">
+    <button onclick="openMealBuilder()" style="width:100%;background:rgba(232,255,71,0.08);border:1px solid rgba(232,255,71,0.25);border-radius:10px;padding:14px;font-family:'DM Mono',monospace;font-size:13px;color:var(--accent);cursor:pointer;letter-spacing:0.06em;display:flex;align-items:center;justify-content:center;gap:8px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      Build a Saved Meal
+    </button>
   </div>
 
-  <!-- FOOD CALENDAR -->
+    <!-- FOOD CALENDAR -->
   <div class="section">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div class="section-title" style="margin-bottom:0">Meal Planner</div>
@@ -1475,6 +1416,114 @@ select.input { appearance: none; }
       <button onclick="saveFoodItem()" class="btn btn-primary" style="flex:1">Save</button>
       <button onclick="closeModal('modal-food-item')" class="btn btn-ghost" style="flex:1">Cancel</button>
     </div>
+  </div>
+</div>
+
+<!-- MEAL BUILDER MODAL -->
+<div id="modal-meal-builder" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="modal-title" style="margin-bottom:0">Build a Meal</div>
+      <button onclick="closeModal('modal-meal-builder')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:0">✕</button>
+    </div>
+
+    <!-- Meal name -->
+    <div class="input-group">
+      <label class="input-label">Meal Name</label>
+      <input type="text" class="input" id="mb-name" placeholder="e.g. Shrimp Stir Fry Bowl">
+    </div>
+
+    <!-- Meal slot -->
+    <div class="input-group">
+      <label class="input-label">Meal Slot</label>
+      <select class="input" id="mb-slot" style="padding:8px 10px">
+        <option value="breakfast">Breakfast</option>
+        <option value="lunch">Lunch</option>
+        <option value="dinner">Dinner</option>
+        <option value="snacks">Snacks</option>
+      </select>
+    </div>
+
+    <!-- Running macro totals -->
+    <div id="mb-totals" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">
+        <div id="mb-total-cal" style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent);letter-spacing:0.04em">0</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">CAL</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">
+        <div id="mb-total-p" style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);letter-spacing:0.04em">0</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">PROTEIN</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">
+        <div id="mb-total-c" style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);letter-spacing:0.04em">0</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">CARBS</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">
+        <div id="mb-total-f" style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);letter-spacing:0.04em">0</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">FAT</div>
+      </div>
+    </div>
+
+    <!-- Ingredient list -->
+    <div id="mb-ingredient-list" style="margin-bottom:10px"></div>
+
+    <!-- Add ingredient button -->
+    <button onclick="openMealBuilderVault()" style="width:100%;background:none;border:1px dashed var(--border);border-radius:8px;padding:10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);cursor:pointer;margin-bottom:14px;letter-spacing:0.06em">+ Add Ingredient</button>
+
+    <!-- Save button -->
+    <button onclick="saveMealFromBuilder()" class="btn btn-primary btn-full">Save Meal</button>
+  </div>
+</div>
+
+<!-- MEAL BUILDER VAULT PICKER -->
+<div id="modal-mb-vault" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button onclick="closeMbVault()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:20px;padding:0">←</button>
+      <div class="modal-title" style="margin-bottom:0">Select Ingredient</div>
+    </div>
+    <input type="text" class="input" id="mb-vault-search" placeholder="Search foods..." oninput="renderMbVaultList(this.value)" style="margin-bottom:12px">
+    <div id="mb-vault-list"></div>
+  </div>
+</div>
+
+<!-- MEAL BUILDER QUANTITY MODAL -->
+<div id="modal-mb-qty" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="modal-title" style="margin-bottom:0" id="mb-qty-title">Set Quantity</div>
+      <button onclick="closeMbQty()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:0">✕</button>
+    </div>
+    <div id="mb-qty-serving-label" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);margin-bottom:12px"></div>
+    <div class="input-group">
+      <label class="input-label">Quantity (× serving size)</label>
+      <input type="number" class="input" id="mb-qty-input" value="1" min="0.25" step="0.25"
+        style="text-align:center;font-size:24px;font-family:'Bebas Neue',sans-serif;padding:12px"
+        oninput="updateMbQtyPreview()">
+    </div>
+    <!-- Live macro preview -->
+    <div id="mb-qty-preview" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">
+        <div id="mbq-cal" style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--accent)">0</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">CAL</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">
+        <div id="mbq-p" style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text)">0</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">PRO</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">
+        <div id="mbq-c" style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text)">0</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">CARB</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">
+        <div id="mbq-f" style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text)">0</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">FAT</div>
+      </div>
+    </div>
+    <button onclick="confirmMbIngredient()" class="btn btn-primary btn-full">Add to Meal</button>
   </div>
 </div>
 
@@ -7104,6 +7153,252 @@ function applyTemplate(templateKey, mode) {
 }
 
 
+
+
+// ============================================================
+// MEAL BUILDER
+// ============================================================
+let mbIngredients = [];     // current ingredients being built
+let mbCurrentFood = null;   // food selected in vault, pending qty
+
+function openMealBuilder() {
+  // Reset state
+  mbIngredients = [];
+  mbCurrentFood = null;
+
+  // Reset form fields
+  const nameEl = document.getElementById('mb-name');
+  const slotEl = document.getElementById('mb-slot');
+  if (nameEl) nameEl.value = '';
+  if (slotEl) slotEl.value = 'breakfast';
+
+  renderMbIngredients();
+  updateMbTotals();
+  openModal('modal-meal-builder');
+}
+
+// ── Vault picker for builder ──
+function openMealBuilderVault() {
+  const searchEl = document.getElementById('mb-vault-search');
+  if (searchEl) searchEl.value = '';
+  renderMbVaultList('');
+  openModal('modal-mb-vault');
+}
+
+function closeMbVault() {
+  closeModal('modal-mb-vault');
+}
+
+function renderMbVaultList(query) {
+  const vault = getFoodVault();
+  const q = (query || '').toLowerCase();
+  const filtered = vault.filter(function(f) {
+    return f.name.toLowerCase().includes(q);
+  });
+
+  const el = document.getElementById('mb-vault-list');
+  if (!el) return;
+  el.innerHTML = '';
+
+  if (!filtered.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;padding:16px 0';
+    empty.textContent = 'No foods found';
+    el.appendChild(empty);
+    return;
+  }
+
+  filtered.forEach(function(f) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--surface2);cursor:pointer';
+
+    const info = document.createElement('div');
+    const name = document.createElement('div');
+    name.style.cssText = 'font-size:13px;color:var(--text);margin-bottom:2px';
+    name.textContent = f.name;
+    const meta = document.createElement('div');
+    meta.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
+    meta.textContent = f.serving + '  ·  ' + f.calories + ' cal  ·  ' + f.protein + 'g P';
+    info.appendChild(name);
+    info.appendChild(meta);
+
+    const arrow = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    arrow.setAttribute('width','14'); arrow.setAttribute('height','14');
+    arrow.setAttribute('viewBox','0 0 24 24');
+    arrow.style.cssText = 'fill:none;stroke:var(--text3);stroke-width:2;flex-shrink:0';
+    arrow.innerHTML = '<polyline points="9 18 15 12 9 6"/>';
+
+    row.appendChild(info);
+    row.appendChild(arrow);
+
+    (function(food) {
+      row.onclick = function() { selectMbFood(food); };
+    })(f);
+
+    el.appendChild(row);
+  });
+}
+
+// ── Quantity modal ──
+function selectMbFood(food) {
+  mbCurrentFood = food;
+  closeModal('modal-mb-vault');
+
+  const titleEl = document.getElementById('mb-qty-title');
+  const servingEl = document.getElementById('mb-qty-serving-label');
+  const qtyEl = document.getElementById('mb-qty-input');
+
+  if (titleEl) titleEl.textContent = food.name;
+  if (servingEl) servingEl.textContent = 'Serving size: ' + food.serving;
+  if (qtyEl) qtyEl.value = '1';
+
+  updateMbQtyPreview();
+  openModal('modal-mb-qty');
+}
+
+function closeMbQty() {
+  closeModal('modal-mb-qty');
+  openModal('modal-meal-builder');
+}
+
+function updateMbQtyPreview() {
+  if (!mbCurrentFood) return;
+  const qty = parseFloat(document.getElementById('mb-qty-input')?.value) || 1;
+  const set = function(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = Math.round(val);
+  };
+  set('mbq-cal', mbCurrentFood.calories * qty);
+  set('mbq-p',   mbCurrentFood.protein  * qty);
+  set('mbq-c',   mbCurrentFood.carbs    * qty);
+  set('mbq-f',   mbCurrentFood.fat      * qty);
+}
+
+function confirmMbIngredient() {
+  if (!mbCurrentFood) return;
+  const qty = parseFloat(document.getElementById('mb-qty-input')?.value) || 1;
+
+  mbIngredients.push({
+    name:       mbCurrentFood.name,
+    servingQty: qty + ' × ' + mbCurrentFood.serving,
+    calories:   Math.round(mbCurrentFood.calories * qty),
+    protein:    Math.round(mbCurrentFood.protein  * qty),
+    carbs:      Math.round(mbCurrentFood.carbs    * qty),
+    fat:        Math.round(mbCurrentFood.fat      * qty),
+  });
+
+  mbCurrentFood = null;
+  closeModal('modal-mb-qty');
+  openModal('modal-meal-builder');
+  renderMbIngredients();
+  updateMbTotals();
+}
+
+// ── Render ingredient list ──
+function renderMbIngredients() {
+  const el = document.getElementById('mb-ingredient-list');
+  if (!el) return;
+  el.innerHTML = '';
+
+  if (!mbIngredients.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;padding:12px 0';
+    empty.textContent = 'No ingredients yet — tap + Add Ingredient';
+    el.appendChild(empty);
+    return;
+  }
+
+  mbIngredients.forEach(function(item, i) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px';
+
+    const info = document.createElement('div');
+    info.style.flex = '1';
+    const iname = document.createElement('div');
+    iname.style.cssText = 'font-size:13px;color:var(--text);margin-bottom:2px';
+    iname.textContent = item.name;
+    const imeta = document.createElement('div');
+    imeta.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
+    imeta.textContent = item.servingQty + '  ·  ' + item.calories + ' cal  ·  ' + item.protein + 'g P';
+    info.appendChild(iname);
+    info.appendChild(imeta);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.style.cssText = 'background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 8px;font-size:16px;flex-shrink:0';
+    removeBtn.textContent = '×';
+    (function(idx) {
+      removeBtn.onclick = function() {
+        mbIngredients.splice(idx, 1);
+        renderMbIngredients();
+        updateMbTotals();
+      };
+    })(i);
+
+    row.appendChild(info);
+    row.appendChild(removeBtn);
+    el.appendChild(row);
+  });
+}
+
+// ── Update running totals ──
+function updateMbTotals() {
+  const totals = mbIngredients.reduce(function(acc, item) {
+    acc.cal += item.calories;
+    acc.p   += item.protein;
+    acc.c   += item.carbs;
+    acc.f   += item.fat;
+    return acc;
+  }, {cal:0, p:0, c:0, f:0});
+
+  const set = function(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = Math.round(val);
+  };
+  set('mb-total-cal', totals.cal);
+  set('mb-total-p',   totals.p);
+  set('mb-total-c',   totals.c);
+  set('mb-total-f',   totals.f);
+}
+
+// ── Save meal ──
+function saveMealFromBuilder() {
+  const name = (document.getElementById('mb-name')?.value || '').trim();
+  const slot = document.getElementById('mb-slot')?.value || 'dinner';
+
+  if (!name) { showToast('Give your meal a name first'); return; }
+  if (!mbIngredients.length) { showToast('Add at least one ingredient'); return; }
+
+  const totals = mbIngredients.reduce(function(acc, item) {
+    acc.cal += item.calories;
+    acc.p   += item.protein;
+    acc.c   += item.carbs;
+    acc.f   += item.fat;
+    return acc;
+  }, {cal:0, p:0, c:0, f:0});
+
+  const newMeal = {
+    id:           'sm_custom_' + Date.now(),
+    name:         name,
+    mealSlot:     slot,
+    tags:         ['custom'],
+    totalCals:    Math.round(totals.cal),
+    totalProtein: Math.round(totals.p),
+    totalCarbs:   Math.round(totals.c),
+    totalFat:     Math.round(totals.f),
+    items:        mbIngredients.slice(),
+  };
+
+  const meals = getSavedMeals();
+  meals.unshift(newMeal); // add to top
+  saveSavedMeals(meals);
+
+  closeModal('modal-meal-builder');
+  showToast(name + ' saved!');
+
+  // Reset
+  mbIngredients = [];
+  mbCurrentFood = null;
+}
 
 // ============================================================
 // FOOD CALENDAR + MEAL PLANNER
