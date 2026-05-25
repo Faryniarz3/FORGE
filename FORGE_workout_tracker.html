@@ -1314,7 +1314,16 @@ select.input { appearance: none; }
     </button>
   </div>
 
-    <!-- FOOD CALENDAR -->
+    <!-- SAVED MEALS LIST -->
+  <div class="section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="section-title" style="margin-bottom:0">Saved Meals</div>
+      <button onclick="openMealBuilder()" style="background:none;border:none;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);cursor:pointer;letter-spacing:0.06em">+ Build New</button>
+    </div>
+    <div id="food-saved-meals-list"></div>
+  </div>
+
+  <!-- FOOD CALENDAR -->
   <div class="section">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div class="section-title" style="margin-bottom:0">Meal Planner</div>
@@ -7155,6 +7164,224 @@ function applyTemplate(templateKey, mode) {
 
 
 
+
+// ── Saved meals homepage list ──
+function renderSavedMealsList() {
+  const el = document.getElementById('food-saved-meals-list');
+  if (!el) return;
+  el.innerHTML = '';
+
+  const meals = getSavedMeals();
+  if (!meals.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;padding:14px 0';
+    empty.textContent = 'No saved meals yet — tap + Build New';
+    el.appendChild(empty);
+    return;
+  }
+
+  const slotColors = {breakfast:'#ffb74d',lunch:'#47c8ff',dinner:'#ba68c8',snacks:'#81c784'};
+
+  meals.forEach(function(meal) {
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color 0.15s';
+    card.onmouseenter = function(){ card.style.borderColor = 'rgba(232,255,71,0.3)'; };
+    card.onmouseleave = function(){ card.style.borderColor = 'var(--border)'; };
+    card.onclick = function(){ openAddMealToDay(meal.id); };
+
+    // Top row: name + calories
+    const topRow = document.createElement('div');
+    topRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:5px';
+
+    const name = document.createElement('div');
+    name.style.cssText = 'font-weight:500;font-size:14px;color:var(--text);flex:1;margin-right:8px';
+    name.textContent = meal.name;
+
+    const cals = document.createElement('div');
+    cals.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:18px;color:var(--accent);letter-spacing:0.05em;flex-shrink:0';
+    cals.textContent = meal.totalCals + ' cal';
+
+    topRow.appendChild(name);
+    topRow.appendChild(cals);
+
+    // Bottom row: macros + slot badge
+    const bottomRow = document.createElement('div');
+    bottomRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between';
+
+    const macros = document.createElement('div');
+    macros.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
+    macros.textContent = meal.totalProtein + 'g P  ·  ' + meal.totalCarbs + 'g C  ·  ' + meal.totalFat + 'g F';
+
+    const slotBadge = document.createElement('div');
+    const slotColor = slotColors[meal.mealSlot] || 'var(--text3)';
+    slotBadge.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid ' + slotColor + ';color:' + slotColor + ';opacity:0.8;text-transform:uppercase;letter-spacing:0.06em';
+    slotBadge.textContent = meal.mealSlot || 'any';
+
+    bottomRow.appendChild(macros);
+    bottomRow.appendChild(slotBadge);
+
+    card.appendChild(topRow);
+    card.appendChild(bottomRow);
+    el.appendChild(card);
+  });
+}
+
+// ── Add meal to a specific day + slot ──
+function openAddMealToDay(mealId) {
+  const meals = getSavedMeals();
+  const meal = meals.find(function(m){ return m.id === mealId; });
+  if (!meal) return;
+
+  const body = document.getElementById('food-log-modal-body');
+  const title = document.getElementById('food-log-modal-title');
+  if (!body || !title) return;
+
+  title.textContent = meal.name;
+  body.innerHTML = '';
+
+  // Meal summary card
+  const summary = document.createElement('div');
+  summary.style.cssText = 'background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:16px';
+  const sumMacros = document.createElement('div');
+  sumMacros.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text3)';
+  sumMacros.textContent = meal.totalCals + ' cal  ·  ' + meal.totalProtein + 'g P  ·  ' + meal.totalCarbs + 'g C  ·  ' + meal.totalFat + 'g F  ·  ' + meal.items.length + ' ingredients';
+  summary.appendChild(sumMacros);
+  body.appendChild(summary);
+
+  // Day picker - 7 day strip
+  const dayLabel = document.createElement('div');
+  dayLabel.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px;text-transform:uppercase';
+  dayLabel.textContent = 'Select Day';
+  body.appendChild(dayLabel);
+
+  const dayStrip = document.createElement('div');
+  dayStrip.style.cssText = 'display:flex;gap:5px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px';
+
+  const today = new Date();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let selectedDay = foodSelectedDate;
+
+  const dayBtns = [];
+  for (let i = -1; i <= 6; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const dateStr = d.toISOString().slice(0,10);
+    const isSelected = dateStr === selectedDay;
+
+    const btn = document.createElement('button');
+    btn.dataset.date = dateStr;
+    btn.style.cssText = 'flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;width:44px;min-height:56px;border-radius:10px;cursor:pointer;transition:all 0.15s;gap:2px;' +
+      'background:' + (isSelected ? 'var(--accent)' : 'var(--surface)') + ';' +
+      'border:1px solid ' + (isSelected ? 'var(--accent)' : 'var(--border)') + ';';
+
+    const dname = document.createElement('div');
+    dname.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:' + (isSelected ? '#000' : 'var(--text3)');
+    dname.textContent = days[d.getDay()].toUpperCase();
+
+    const dnum = document.createElement('div');
+    dnum.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:18px;line-height:1;color:' + (isSelected ? '#000' : 'var(--text)');
+    dnum.textContent = d.getDate();
+
+    btn.appendChild(dname);
+    btn.appendChild(dnum);
+    dayBtns.push(btn);
+
+    (function(ds, b) {
+      b.onclick = function() {
+        selectedDay = ds;
+        dayBtns.forEach(function(ob) {
+          ob.style.background = ob.dataset.date === ds ? 'var(--accent)' : 'var(--surface)';
+          ob.style.borderColor = ob.dataset.date === ds ? 'var(--accent)' : 'var(--border)';
+          ob.querySelector('div').style.color = ob.dataset.date === ds ? '#000' : 'var(--text3)';
+          ob.querySelectorAll('div')[1].style.color = ob.dataset.date === ds ? '#000' : 'var(--text)';
+        });
+      };
+    })(dateStr, btn);
+
+    dayStrip.appendChild(btn);
+  }
+  body.appendChild(dayStrip);
+
+  // Meal slot picker
+  const slotLabel = document.createElement('div');
+  slotLabel.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px;text-transform:uppercase';
+  slotLabel.textContent = 'Add to Meal';
+  body.appendChild(slotLabel);
+
+  const slotGrid = document.createElement('div');
+  slotGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px';
+
+  const slotColors2 = {breakfast:'#ffb74d',lunch:'#47c8ff',dinner:'#ba68c8',snacks:'#81c784'};
+  const defaultSlot = meal.mealSlot || 'dinner';
+  let selectedSlot = defaultSlot;
+  const slotBtns = [];
+
+  MEALS.forEach(function(slot) {
+    const color = slotColors2[slot] || 'var(--text3)';
+    const isActive = slot === defaultSlot;
+    const btn = document.createElement('button');
+    btn.dataset.slot = slot;
+    btn.style.cssText = 'padding:10px;border-radius:8px;cursor:pointer;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.06em;transition:all 0.15s;' +
+      'background:' + (isActive ? 'rgba(' + hexToRgb(color) + ',0.15)' : 'var(--surface)') + ';' +
+      'border:1px solid ' + (isActive ? color : 'var(--border)') + ';' +
+      'color:' + (isActive ? color : 'var(--text3)') + ';';
+    btn.textContent = MEAL_LABELS[slot];
+    slotBtns.push(btn);
+
+    (function(s, b) {
+      b.onclick = function() {
+        selectedSlot = s;
+        slotBtns.forEach(function(ob) {
+          const oc = slotColors2[ob.dataset.slot] || 'var(--text3)';
+          const active = ob.dataset.slot === s;
+          ob.style.background = active ? 'rgba(' + hexToRgb(oc) + ',0.15)' : 'var(--surface)';
+          ob.style.borderColor = active ? oc : 'var(--border)';
+          ob.style.color = active ? oc : 'var(--text3)';
+        });
+      };
+    })(slot, btn);
+
+    slotGrid.appendChild(btn);
+  });
+  body.appendChild(slotGrid);
+
+  // Add button
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn btn-primary btn-full';
+  addBtn.style.marginBottom = '8px';
+  addBtn.textContent = 'Add to Plan';
+  addBtn.onclick = function() {
+    const logs = DB.get('foodLogs', {});
+    if (!logs[selectedDay]) logs[selectedDay] = {meals:{breakfast:[],lunch:[],dinner:[],snacks:[]},water:0};
+    if (!logs[selectedDay].meals[selectedSlot]) logs[selectedDay].meals[selectedSlot] = [];
+    meal.items.forEach(function(item) {
+      logs[selectedDay].meals[selectedSlot].push(Object.assign({}, item, {
+        id: Date.now().toString() + Math.random().toString(36).slice(2,5),
+        loggedAt: new Date().toISOString(),
+        fromSavedMeal: meal.id,
+      }));
+    });
+    DB.set('foodLogs', logs);
+    // Switch calendar to that day
+    foodSelectedDate = selectedDay;
+    closeModal('modal-food-log');
+    renderFoodCalendar();
+    renderFoodMeals();
+    renderFoodDaySummaryBar();
+    showToast(meal.name + ' added to ' + MEAL_LABELS[selectedSlot]);
+  };
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-ghost btn-full btn-sm';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = function(){ closeModal('modal-food-log'); };
+
+  body.appendChild(addBtn);
+  body.appendChild(cancelBtn);
+
+  openModal('modal-food-log');
+}
+
 // ============================================================
 // MEAL BUILDER
 // ============================================================
@@ -7393,6 +7620,7 @@ function saveMealFromBuilder() {
   saveSavedMeals(meals);
 
   closeModal('modal-meal-builder');
+  renderSavedMealsList();
   showToast(name + ' saved!');
 
   // Reset
@@ -9144,9 +9372,9 @@ function removeFoodLogItemByDate(meal, idx, dateStr) {
 
 // ── Main food page render ──
 function renderFoodPage() {
-  renderFoodProfile();
   renderFoodDaySummaryBar();
   renderFoodCalendar();
+  renderSavedMealsList();
   renderFoodMeals();
   getFoodVault();
   getSavedMeals();
