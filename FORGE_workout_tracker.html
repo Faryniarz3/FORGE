@@ -6877,7 +6877,7 @@ const FOOD_VAULT_SEED = [
   {id:'fv014',name:'Celery',serving:'1 stick',calories:6,protein:0,carbs:1,fat:0,category:'vegetables',portionType:'count'},
   {id:'fv015',name:'Mini-Cucumber',serving:'1 cucumber',calories:8,protein:0,carbs:2,fat:0,category:'vegetables',portionType:'count'},
   {id:'fv016',name:'Carrots',serving:'1 carrot',calories:25,protein:0,carbs:6,fat:0,category:'vegetables',portionType:'count'},
-  // PROTEIN POWDERS
+  // PROTEIN
   {id:'fv017',name:'Whey Protein',serving:'1/2 scoop',calories:65,protein:12.5,carbs:1.5,fat:1,category:'protein',portionType:'count'},
   {id:'fv018',name:'Casein Protein',serving:'1/2 scoop',calories:60,protein:12.5,carbs:1.5,fat:0.25,category:'protein',portionType:'count'},
   {id:'fv019',name:'Fruity Pebbles Shake',serving:'1 shake',calories:160,protein:30,carbs:2,fat:3,category:'protein',portionType:'count'},
@@ -9745,7 +9745,7 @@ function initDragReorder(container) {
 // One-time data reset — clears food vault, saved meals, food logs
 // Version key: if not set, wipe and set it
 function runDataReset() {
-  const RESET_KEY = 'forge_food_reset_v3';
+  const RESET_KEY = 'forge_food_reset_v4';
   if (!DB.get(RESET_KEY, false)) {
     DB.set('foodVault', null); // null triggers re-seed from FOOD_VAULT_SEED
     DB.set('savedMeals', null); // null triggers seed load
