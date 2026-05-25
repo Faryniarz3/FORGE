@@ -1377,7 +1377,7 @@ select.input { appearance: none; }
   <div class="section">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div class="section-title" style="margin-bottom:0">Meal Planner</div>
-      <button onclick="openLoadTemplateModal()" style="background:rgba(232,255,71,0.08);border:1px solid rgba(232,255,71,0.25);border-radius:6px;color:var(--accent);font-family:'DM Mono',monospace;font-size:10px;padding:5px 10px;cursor:pointer;letter-spacing:0.06em">📋 Template</button>
+
     </div>
     <!-- Week strip -->
     <div id="food-week-strip" style="display:flex;gap:5px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px"></div>
@@ -7255,7 +7255,7 @@ function renderFoodDaySummaryBar() {
 const SAVED_MEALS_SEED = [
   // ── TUESDAY ──
   {
-    id:'sm_tue_preworkout',
+    id:'sm_tue_preworkout',mealSlot:'breakfast',
     name:'Pre-Workout Shake',
     tags:['protein','supplement'],
     totalCals:130, totalProtein:25, totalCarbs:3, totalFat:2,
@@ -7265,7 +7265,7 @@ const SAVED_MEALS_SEED = [
     ]
   },
   {
-    id:'sm_tue_breakfast',
+    id:'sm_tue_breakfast',mealSlot:'breakfast',
     name:'Tue — Post-Workout Breakfast',
     tags:['protein','high-protein'],
     totalCals:620, totalProtein:86, totalCarbs:19, totalFat:24,
@@ -7279,7 +7279,7 @@ const SAVED_MEALS_SEED = [
     ]
   },
   {
-    id:'sm_tue_lunch',
+    id:'sm_tue_lunch',mealSlot:'lunch',
     name:'Tue — Pork & Cauliflower Lunch',
     tags:['protein','low-carb'],
     totalCals:569, totalProtein:58, totalCarbs:22, totalFat:28,
@@ -7291,7 +7291,7 @@ const SAVED_MEALS_SEED = [
     ]
   },
   {
-    id:'sm_tue_snack',
+    id:'sm_tue_snack',mealSlot:'snacks',
     name:'Tue — Afternoon Snack',
     tags:['snack'],
     totalCals:233, totalProtein:28, totalCarbs:3, totalFat:12,
@@ -7302,7 +7302,7 @@ const SAVED_MEALS_SEED = [
     ]
   },
   {
-    id:'sm_tue_dinner',
+    id:'sm_tue_dinner',mealSlot:'dinner',
     name:'Tue — Chicken Lettuce Wrap Dinner',
     tags:['protein','low-carb'],
     totalCals:492, totalProtein:63, totalCarbs:24, totalFat:18,
@@ -7318,7 +7318,7 @@ const SAVED_MEALS_SEED = [
 
   // ── WEDNESDAY ──
   {
-    id:'sm_wed_breakfast',
+    id:'sm_wed_breakfast',mealSlot:'breakfast',
     name:'Wed — Whey & Coffee Breakfast',
     tags:['supplement','quick'],
     totalCals:132, totalProtein:25, totalCarbs:3, totalFat:2,
@@ -7328,7 +7328,7 @@ const SAVED_MEALS_SEED = [
     ]
   },
   {
-    id:'sm_wed_lunch',
+    id:'sm_wed_lunch',mealSlot:'lunch',
     name:'Wed — Chicken & Cauli Lunch',
     tags:['protein','low-carb'],
     totalCals:457, totalProtein:61, totalCarbs:17, totalFat:18,
@@ -7340,7 +7340,7 @@ const SAVED_MEALS_SEED = [
     ]
   },
   {
-    id:'sm_wed_preworkout_snack',
+    id:'sm_wed_preworkout_snack',mealSlot:'snacks',
     name:'Wed — Pre-Workout Snack',
     tags:['snack','pre-workout'],
     totalCals:208, totalProtein:32, totalCarbs:4, totalFat:6,
@@ -7351,7 +7351,7 @@ const SAVED_MEALS_SEED = [
     ]
   },
   {
-    id:'sm_wed_dinner',
+    id:'sm_wed_dinner',mealSlot:'dinner',
     name:'Wed — Pork Lettuce Wrap Dinner',
     tags:['protein','low-carb'],
     totalCals:554, totalProtein:55, totalCarbs:19, totalFat:28,
@@ -7364,7 +7364,7 @@ const SAVED_MEALS_SEED = [
     ]
   },
   {
-    id:'sm_wed_protein_snack',
+    id:'sm_wed_protein_snack',mealSlot:'snacks',
     name:'Wed — Protein Snack (PM)',
     tags:['snack','high-protein'],
     totalCals:215, totalProtein:43, totalCarbs:4, totalFat:2,
@@ -7376,7 +7376,7 @@ const SAVED_MEALS_SEED = [
 
   // ── THURSDAY ──
   {
-    id:'sm_thu_breakfast',
+    id:'sm_thu_breakfast',mealSlot:'breakfast',
     name:'Thu — Bacon Egg Scramble',
     tags:['protein','high-protein'],
     totalCals:663, totalProtein:86, totalCarbs:19, totalFat:33,
@@ -7390,7 +7390,7 @@ const SAVED_MEALS_SEED = [
     ]
   },
   {
-    id:'sm_thu_lunch',
+    id:'sm_thu_lunch',mealSlot:'lunch',
     name:'Thu — Chicken Wrap Lunch',
     tags:['protein','low-carb'],
     totalCals:452, totalProtein:60, totalCarbs:16, totalFat:18,
@@ -7402,7 +7402,7 @@ const SAVED_MEALS_SEED = [
     ]
   },
   {
-    id:'sm_thu_snack',
+    id:'sm_thu_snack',mealSlot:'snacks',
     name:'Thu — Afternoon Snack',
     tags:['snack'],
     totalCals:233, totalProtein:28, totalCarbs:3, totalFat:12,
@@ -7413,7 +7413,7 @@ const SAVED_MEALS_SEED = [
     ]
   },
   {
-    id:'sm_thu_dinner',
+    id:'sm_thu_dinner',mealSlot:'dinner',
     name:'Thu — Pork & Cauli Dinner',
     tags:['protein','low-carb'],
     totalCals:443, totalProtein:48, totalCarbs:7, totalFat:25,
@@ -7426,7 +7426,531 @@ const SAVED_MEALS_SEED = [
 
   // ── DESSERT / UNIVERSAL ──
   {
-    id:'sm_dessert',
+    id:'sm_dessert',mealSlot:'snacks',
+    name:'Protein Dessert Bowl',
+    tags:['snack','dessert'],
+    totalCals:306, totalProtein:44, totalCarbs:16, totalFat:10,
+    items:[
+      {name:'Oikos Vanilla Greek Yogurt',servingQty:'1 container',calories:100,protein:15,carbs:10,fat:0},
+      {name:'Chocolate Whey Protein',servingQty:'1 scoop',calories:120,protein:25,carbs:3,fat:2},
+      {name:'Frozen Blueberries',servingQty:'1/2 cup',calories:42,protein:1,carbs:10,fat:0},
+      {name:'Peanut Butter',servingQty:'1 tbsp',calories:94,protein:4,carbs:3,fat:8},
+    ]
+  },
+];
+
+// ── Saved Meals DB ──
+function getSavedMeals() {
+  const stored = DB.get('savedMeals', null);
+  if (!stored || !stored.length) {
+    DB.set('savedMeals', SAVED_MEALS_SEED);
+    return SAVED_MEALS_SEED;
+  }
+  // Merge seed IDs not already stored
+  const ids = new Set(stored.map(function(m){return m.id;}));
+  const merged = stored.slice();
+  SAVED_MEALS_SEED.forEach(function(seed) {
+    if (!ids.has(seed.id)) merged.push(seed);
+  });
+  return merged;
+}
+
+function saveSavedMeals(meals) {
+  DB.set('savedMeals', meals);
+}
+
+// ── Add saved meal to food log ──
+function logSavedMeal(mealId, targetMealSlot) {
+  const meals = getSavedMeals();
+  const meal = meals.find(function(m){return m.id === mealId;});
+  if (!meal || !targetMealSlot) return;
+
+  const today = foodSelectedDate || new Date().toISOString().slice(0,10);
+  const logs = DB.get('foodLogs', {});
+  if (!logs[today]) logs[today] = {meals:{breakfast:[],lunch:[],dinner:[],snacks:[]},water:0};
+  if (!logs[today].meals[targetMealSlot]) logs[today].meals[targetMealSlot] = [];
+
+  meal.items.forEach(function(item) {
+    logs[today].meals[targetMealSlot].push({
+      id: Date.now().toString() + Math.random().toString(36).slice(2,5),
+      foodId: null,
+      name: item.name,
+      servingQty: item.servingQty,
+      calories: item.calories,
+      protein: item.protein,
+      carbs: item.carbs,
+      fat: item.fat,
+      loggedAt: new Date().toISOString(),
+      fromSavedMeal: mealId,
+    });
+  });
+
+  DB.set('foodLogs', logs);
+  renderFoodMeals();
+  renderFoodDaySummaryBar();
+  closeModal('modal-food-log');
+  showToast(meal.name + ' added to ' + MEAL_LABELS[targetMealSlot]);
+}
+
+// ── Open saved meals picker ──
+function openSavedMealsPicker(targetMealSlot) {
+  currentLogMeal = targetMealSlot;
+  const body = document.getElementById('food-log-modal-body');
+  const title = document.getElementById('food-log-modal-title');
+  if (!body || !title) return;
+  title.textContent = MEAL_LABELS[targetMealSlot] + ' Ideas';
+  body.innerHTML = '';
+
+  const meals = getSavedMeals();
+  const tagColors = {'high-protein':'#ff6b35','low-carb':'#81c784','snack':'#ffb74d','quick':'#47c8ff','pre-workout':'#e8ff47','supplement':'#ba68c8','protein':'#ff6b35','dessert':'#ffd54f'};
+
+  // Filter saved meals to this slot (or show all if none match)
+  const slotMeals = meals.filter(function(m) { return m.mealSlot === targetMealSlot; });
+  const otherMeals = meals.filter(function(m) { return m.mealSlot !== targetMealSlot; });
+  const orderedMeals = slotMeals.concat(otherMeals);
+
+  // Past meals from food log for this slot
+  const logs = DB.get('foodLogs', {});
+  const pastDates = Object.keys(logs)
+    .filter(function(d) { return d < foodSelectedDate && logs[d].meals[targetMealSlot] && logs[d].meals[targetMealSlot].length; })
+    .sort(function(a,b) { return b.localeCompare(a); })
+    .slice(0, 5);
+
+  // ── Section: Past meals ──
+  if (pastDates.length) {
+    const pastLabel = document.createElement('div');
+    pastLabel.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:#47c8ff;letter-spacing:0.1em;margin-bottom:8px;text-transform:uppercase';
+    pastLabel.textContent = 'Recent ' + MEAL_LABELS[targetMealSlot] + 's';
+    body.appendChild(pastLabel);
+
+    pastDates.forEach(function(date) {
+      const items = logs[date].meals[targetMealSlot];
+      const totalCals = items.reduce(function(s,i){return s+i.calories;},0);
+      const totalProt = items.reduce(function(s,i){return s+i.protein;},0);
+      const d = new Date(date + 'T12:00:00');
+      const dateLabel = d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+
+      const card = document.createElement('div');
+      card.style.cssText = 'background:rgba(71,200,255,0.05);border:1px solid rgba(71,200,255,0.2);border-radius:10px;padding:12px;margin-bottom:7px;cursor:pointer;transition:border-color 0.15s';
+      card.onmouseenter = function(){card.style.borderColor='rgba(71,200,255,0.5)';};
+      card.onmouseleave = function(){card.style.borderColor='rgba(71,200,255,0.2)';};
+
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:4px';
+      const dl = document.createElement('div');
+      dl.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:#47c8ff';
+      dl.textContent = dateLabel;
+      const cal = document.createElement('div');
+      cal.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:15px;color:var(--accent);letter-spacing:0.05em';
+      cal.textContent = totalCals + ' cal';
+      row.appendChild(dl); row.appendChild(cal);
+
+      const itemList = document.createElement('div');
+      itemList.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
+      itemList.textContent = items.slice(0,3).map(function(i){return i.name;}).join(', ') + (items.length > 3 ? ' +' + (items.length-3) + ' more' : '') + '  ·  ' + totalProt + 'g P';
+
+      card.appendChild(row);
+      card.appendChild(itemList);
+
+      // Re-add all items from that past day's meal
+      (function(dateItems) {
+        card.onclick = function() {
+          const dateStr = foodSelectedDate || new Date().toISOString().slice(0,10);
+          const logs2 = DB.get('foodLogs', {});
+          if (!logs2[dateStr]) logs2[dateStr] = {meals:{breakfast:[],lunch:[],dinner:[],snacks:[]},water:0};
+          dateItems.forEach(function(item) {
+            logs2[dateStr].meals[targetMealSlot].push(Object.assign({}, item, {
+              id: Date.now().toString() + Math.random().toString(36).slice(2,5),
+              loggedAt: new Date().toISOString()
+            }));
+          });
+          DB.set('foodLogs', logs2);
+          renderFoodMeals();
+          renderFoodCalendar();
+          renderFoodDaySummaryBar();
+          closeModal('modal-food-log');
+          showToast(MEAL_LABELS[targetMealSlot] + ' from ' + dateLabel + ' added');
+        };
+      })(items);
+
+      body.appendChild(card);
+    });
+
+    const sep = document.createElement('div');
+    sep.style.cssText = 'border-top:1px solid var(--border);margin:12px 0 10px';
+    body.appendChild(sep);
+  }
+
+  // ── Section: Saved meal templates ──
+  if (slotMeals.length) {
+    const savedLabel = document.createElement('div');
+    savedLabel.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:var(--accent);letter-spacing:0.1em;margin-bottom:8px;text-transform:uppercase';
+    savedLabel.textContent = 'Saved ' + MEAL_LABELS[targetMealSlot] + ' Templates';
+    body.appendChild(savedLabel);
+  }
+
+  orderedMeals.forEach(function(meal) {
+    const isSlotMatch = meal.mealSlot === targetMealSlot;
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface);border:1px solid ' + (isSlotMatch ? 'rgba(232,255,71,0.2)' : 'var(--border)') + ';border-radius:10px;padding:12px 14px;margin-bottom:7px;cursor:pointer;transition:border-color 0.15s';
+    card.onmouseenter = function(){card.style.borderColor=isSlotMatch?'rgba(232,255,71,0.5)':'rgba(255,255,255,0.2)';};
+    card.onmouseleave = function(){card.style.borderColor=isSlotMatch?'rgba(232,255,71,0.2)':'var(--border)';};
+    card.onclick = function(){logSavedMeal(meal.id, targetMealSlot);};
+
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:5px';
+    const name = document.createElement('div');
+    name.style.cssText = 'font-weight:500;font-size:13px;color:var(--text)';
+    name.textContent = meal.name;
+    const cals = document.createElement('div');
+    cals.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:15px;color:var(--accent);letter-spacing:0.05em';
+    cals.textContent = meal.totalCals + ' cal';
+    header.appendChild(name); header.appendChild(cals);
+
+    const macros = document.createElement('div');
+    macros.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
+    macros.textContent = meal.totalProtein + 'g P  ·  ' + meal.totalCarbs + 'g C  ·  ' + meal.totalFat + 'g F  ·  ' + meal.items.length + ' items';
+
+    card.appendChild(header);
+    card.appendChild(macros);
+    body.appendChild(card);
+  });
+
+  const sep2 = document.createElement('div');
+  sep2.style.cssText = 'border-top:1px solid var(--border);margin:10px 0 8px';
+  body.appendChild(sep2);
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-ghost btn-full btn-sm';
+  cancelBtn.textContent = '← Back to food log';
+  cancelBtn.onclick = function(){openFoodLogModal(targetMealSlot);};
+  body.appendChild(cancelBtn);
+
+  openModal('modal-food-log');
+}
+
+
+// ============================================================
+// FOOD CALENDAR + MEAL PLANNER
+// ============================================================
+
+function renderFoodCalendar() {
+  const strip = document.getElementById('food-week-strip');
+  if (!strip) return;
+  strip.innerHTML = '';
+
+  const today = new Date();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  // Show 7 days: 3 past + today + 3 future
+  for (let i = -3; i <= 6; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const dateStr = d.toISOString().slice(0,10);
+    const isToday = i === 0;
+    const isSelected = dateStr === foodSelectedDate;
+    const isPast = i < 0;
+    const isFuture = i > 0;
+
+    // Check if has logged food
+    const logs = DB.get('foodLogs', {});
+    const dayLog = logs[dateStr];
+    const hasFood = dayLog && Object.values(dayLog.meals || {}).some(function(m){return m.length > 0;});
+    const hasPlan = dayLog && dayLog.planned && Object.values(dayLog.planned || {}).some(function(m){return m.length > 0;});
+
+    const btn = document.createElement('button');
+    btn.style.cssText = 'flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;width:44px;min-height:60px;border-radius:10px;cursor:pointer;transition:all 0.15s;gap:3px;' +
+      'background:' + (isSelected ? 'var(--accent)' : isToday ? 'rgba(232,255,71,0.08)' : 'var(--surface)') + ';' +
+      'border:1px solid ' + (isSelected ? 'var(--accent)' : isToday ? 'rgba(232,255,71,0.3)' : 'var(--border)') + ';';
+
+    const dayName = document.createElement('div');
+    dayName.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;letter-spacing:0.06em;color:' + (isSelected ? '#000' : isToday ? 'var(--accent)' : 'var(--text3)');
+    dayName.textContent = days[d.getDay()].toUpperCase();
+
+    const dayNum = document.createElement('div');
+    dayNum.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:18px;letter-spacing:0.04em;line-height:1;color:' + (isSelected ? '#000' : isToday ? 'var(--accent)' : 'var(--text)');
+    dayNum.textContent = d.getDate();
+
+    // Dot indicator
+    const dot = document.createElement('div');
+    dot.style.cssText = 'width:5px;height:5px;border-radius:50%;background:' +
+      (hasFood ? (isSelected ? '#000' : 'var(--accent)') : hasPlan ? (isSelected ? '#000' : '#47c8ff') : 'transparent');
+
+    btn.appendChild(dayName);
+    btn.appendChild(dayNum);
+    btn.appendChild(dot);
+
+    (function(ds) {
+      btn.onclick = function() {
+        foodSelectedDate = ds;
+        renderFoodCalendar();
+        renderFoodDaySummaryBar();
+        renderFoodMeals();
+      };
+    })(dateStr);
+
+    strip.appendChild(btn);
+  }
+
+  // Update selected day label
+  const labelEl = document.getElementById('food-selected-day-label');
+  if (labelEl) {
+    const sel = new Date(foodSelectedDate + 'T12:00:00');
+    const todayStr = new Date().toISOString().slice(0,10);
+    const diff = Math.round((new Date(foodSelectedDate) - new Date(todayStr)) / 86400000);
+    let label = sel.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
+    if (diff === 0) label += '  —  TODAY';
+    else if (diff === 1) label += '  —  TOMORROW';
+    else if (diff === -1) label += '  —  YESTERDAY';
+    labelEl.textContent = label;
+  }
+}
+
+// Override getTodayFoodLog to use selected date
+function getSelectedDateFoodLog() {
+  const logs = DB.get('foodLogs', {});
+  return logs[foodSelectedDate] || {meals:{breakfast:[],lunch:[],dinner:[],snacks:[]},water:0};
+}
+
+function getSelectedDateTotals() {
+  const log = getSelectedDateFoodLog();
+  let cal=0, protein=0, carbs=0, fat=0;
+  Object.values(log.meals).forEach(function(meal) {
+    meal.forEach(function(item) {
+      cal     += item.calories || 0;
+      protein += item.protein  || 0;
+      carbs   += item.carbs    || 0;
+      fat     += item.fat      || 0;
+    });
+  });
+  return {cal:Math.round(cal), protein:Math.round(protein), carbs:Math.round(carbs), fat:Math.round(fat)};
+}
+
+// Override renderFoodDailySummary to use selected date
+function renderFoodDaySummaryBar() {
+  const targets = getTodayTargets();
+  const totals = getSelectedDateTotals();
+  const todayStr = new Date().toISOString().slice(0,10);
+  const isToday = foodSelectedDate === todayStr;
+
+  const badge = document.getElementById('food-day-type');
+  if (badge) {
+    if (isToday) {
+      const isTraining = isTodayTrainingDay();
+      badge.textContent = isTraining ? 'TRAINING DAY' : 'REST DAY';
+      badge.style.background = isTraining ? 'rgba(232,255,71,0.1)' : 'rgba(71,200,255,0.1)';
+      badge.style.color = isTraining ? 'var(--accent)' : '#47c8ff';
+    } else {
+      const sel = new Date(foodSelectedDate + 'T12:00:00');
+      const diff = Math.round((new Date(foodSelectedDate) - new Date(todayStr)) / 86400000);
+      badge.textContent = diff > 0 ? 'PLANNED' : 'PAST';
+      badge.style.background = diff > 0 ? 'rgba(71,200,255,0.1)' : 'rgba(255,255,255,0.05)';
+      badge.style.color = diff > 0 ? '#47c8ff' : 'var(--text3)';
+    }
+  }
+
+  const remaining = targets.calories - totals.cal;
+  const calEl = document.getElementById('food-cal-remaining');
+  if (calEl) {
+    calEl.textContent = remaining.toLocaleString();
+    calEl.style.color = remaining < 0 ? 'var(--danger)' : remaining < 200 ? '#ffb74d' : 'var(--text)';
+  }
+  const consumed = document.getElementById('food-cal-consumed');
+  const target = document.getElementById('food-cal-target');
+  if (consumed) consumed.textContent = totals.cal.toLocaleString() + ' eaten';
+  if (target) target.textContent = 'of ' + targets.calories.toLocaleString() + ' goal';
+
+  function setBar(barId, labelId, current, max, unit) {
+    const pct = Math.min(100, Math.round((current/max)*100));
+    const bar = document.getElementById(barId);
+    const lbl = document.getElementById(labelId);
+    if (bar) { bar.style.width = pct + '%'; bar.style.background = current > max ? 'var(--danger)' : undefined; }
+    if (lbl) lbl.textContent = current + '/' + max + unit;
+  }
+  setBar('food-protein-bar','food-protein-label',totals.protein,targets.protein,'g');
+  setBar('food-carbs-bar','food-carbs-label',totals.carbs,targets.carbs,'g');
+  setBar('food-fat-bar','food-fat-label',totals.fat,targets.fat,'g');
+}
+
+// ============================================================
+// SAVED MEALS
+// ============================================================
+
+const SAVED_MEALS_SEED = [
+  // ── TUESDAY ──
+  {
+    id:'sm_tue_preworkout',mealSlot:'breakfast',
+    name:'Pre-Workout Shake',
+    tags:['protein','supplement'],
+    totalCals:130, totalProtein:25, totalCarbs:3, totalFat:2,
+    items:[
+      {name:'Nutricost Whey Protein',servingQty:'1 scoop',calories:130,protein:25,carbs:3,fat:2},
+      {name:'Electrolyte Water',servingQty:'1 scoop in water',calories:5,protein:0,carbs:1,fat:0},
+    ]
+  },
+  {
+    id:'sm_tue_breakfast',mealSlot:'breakfast',
+    name:'Tue — Post-Workout Breakfast',
+    tags:['protein','high-protein'],
+    totalCals:620, totalProtein:86, totalCarbs:19, totalFat:24,
+    items:[
+      {name:'Ground Chicken',servingQty:'8oz (2 palms)',calories:298,protein:44,carbs:0,fat:14},
+      {name:'Egg Whites',servingQty:'1.5 cups',calories:130,protein:27,carbs:2,fat:0},
+      {name:'Whole Eggs',servingQty:'2 eggs',calories:140,protein:12,carbs:1,fat:10},
+      {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
+      {name:'Bell Peppers',servingQty:'Handful',calories:37,protein:1,carbs:9,fat:0},
+      {name:'Onion',servingQty:'Handful',calories:32,protein:1,carbs:7,fat:0},
+    ]
+  },
+  {
+    id:'sm_tue_lunch',mealSlot:'lunch',
+    name:'Tue — Pork & Cauliflower Lunch',
+    tags:['protein','low-carb'],
+    totalCals:569, totalProtein:58, totalCarbs:22, totalFat:28,
+    items:[
+      {name:'Braised Pork Shoulder',servingQty:'8oz (2 palms)',calories:460,protein:50,carbs:0,fat:28},
+      {name:'Cauliflower Rice',servingQty:'2 cups',calories:50,protein:4,carbs:10,fat:0},
+      {name:'Green Beans',servingQty:'2 handfuls',calories:44,protein:2,carbs:10,fat:0},
+      {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
+    ]
+  },
+  {
+    id:'sm_tue_snack',mealSlot:'snacks',
+    name:'Tue — Afternoon Snack',
+    tags:['snack'],
+    totalCals:233, totalProtein:28, totalCarbs:3, totalFat:12,
+    items:[
+      {name:'Babybel Cheese',servingQty:'2 wheels',calories:140,protein:10,carbs:0,fat:12},
+      {name:'Egg Whites',servingQty:'1 cup',calories:85,protein:18,carbs:1,fat:0},
+      {name:'Cucumbers',servingQty:'Handful',calories:8,protein:0,carbs:2,fat:0},
+    ]
+  },
+  {
+    id:'sm_tue_dinner',mealSlot:'dinner',
+    name:'Tue — Chicken Lettuce Wrap Dinner',
+    tags:['protein','low-carb'],
+    totalCals:492, totalProtein:63, totalCarbs:24, totalFat:18,
+    items:[
+      {name:'Ground Chicken',servingQty:'10oz (2.5 palms)',calories:373,protein:55,carbs:0,fat:18},
+      {name:'Lettuce Wraps',servingQty:'2 large leaves',calories:10,protein:1,carbs:1,fat:0},
+      {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
+      {name:'Bell Peppers',servingQty:'Handful',calories:37,protein:1,carbs:9,fat:0},
+      {name:'Onion',servingQty:'Handful',calories:32,protein:1,carbs:7,fat:0},
+      {name:'Cauliflower Rice',servingQty:'1 cup',calories:25,protein:2,carbs:5,fat:0},
+    ]
+  },
+
+  // ── WEDNESDAY ──
+  {
+    id:'sm_wed_breakfast',mealSlot:'breakfast',
+    name:'Wed — Whey & Coffee Breakfast',
+    tags:['supplement','quick'],
+    totalCals:132, totalProtein:25, totalCarbs:3, totalFat:2,
+    items:[
+      {name:'Nutricost Whey Protein',servingQty:'1 scoop',calories:130,protein:25,carbs:3,fat:2},
+      {name:'Black Coffee',servingQty:'1 cup',calories:2,protein:0,carbs:0,fat:0},
+    ]
+  },
+  {
+    id:'sm_wed_lunch',mealSlot:'lunch',
+    name:'Wed — Chicken & Cauli Lunch',
+    tags:['protein','low-carb'],
+    totalCals:457, totalProtein:61, totalCarbs:17, totalFat:18,
+    items:[
+      {name:'Ground Chicken',servingQty:'10oz (2.5 palms)',calories:373,protein:55,carbs:0,fat:18},
+      {name:'Cauliflower Rice',servingQty:'1 cup',calories:25,protein:2,carbs:5,fat:0},
+      {name:'Green Beans',servingQty:'2 handfuls',calories:44,protein:2,carbs:10,fat:0},
+      {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
+    ]
+  },
+  {
+    id:'sm_wed_preworkout_snack',mealSlot:'snacks',
+    name:'Wed — Pre-Workout Snack',
+    tags:['snack','pre-workout'],
+    totalCals:208, totalProtein:32, totalCarbs:4, totalFat:6,
+    items:[
+      {name:'Egg Whites',servingQty:'1.5 cups',calories:130,protein:27,carbs:2,fat:0},
+      {name:'Babybel Cheese',servingQty:'1 wheel',calories:70,protein:5,carbs:0,fat:6},
+      {name:'Cucumbers',servingQty:'Handful',calories:8,protein:0,carbs:2,fat:0},
+    ]
+  },
+  {
+    id:'sm_wed_dinner',mealSlot:'dinner',
+    name:'Wed — Pork Lettuce Wrap Dinner',
+    tags:['protein','low-carb'],
+    totalCals:554, totalProtein:55, totalCarbs:19, totalFat:28,
+    items:[
+      {name:'Braised Pork Shoulder',servingQty:'8oz (2 palms)',calories:460,protein:50,carbs:0,fat:28},
+      {name:'Lettuce Wraps',servingQty:'2 large leaves',calories:10,protein:1,carbs:1,fat:0},
+      {name:'Bell Peppers',servingQty:'Handful',calories:37,protein:1,carbs:9,fat:0},
+      {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
+      {name:'Onion',servingQty:'Handful',calories:32,protein:1,carbs:7,fat:0},
+    ]
+  },
+  {
+    id:'sm_wed_protein_snack',mealSlot:'snacks',
+    name:'Wed — Protein Snack (PM)',
+    tags:['snack','high-protein'],
+    totalCals:215, totalProtein:43, totalCarbs:4, totalFat:2,
+    items:[
+      {name:'Egg Whites',servingQty:'1 cup',calories:85,protein:18,carbs:1,fat:0},
+      {name:'Nutricost Whey Protein',servingQty:'1 scoop',calories:130,protein:25,carbs:3,fat:2},
+    ]
+  },
+
+  // ── THURSDAY ──
+  {
+    id:'sm_thu_breakfast',mealSlot:'breakfast',
+    name:'Thu — Bacon Egg Scramble',
+    tags:['protein','high-protein'],
+    totalCals:663, totalProtein:86, totalCarbs:19, totalFat:33,
+    items:[
+      {name:'Egg Whites',servingQty:'2 cups',calories:170,protein:36,carbs:2,fat:0},
+      {name:'Whole Eggs',servingQty:'2 eggs',calories:140,protein:12,carbs:1,fat:10},
+      {name:'Bacon',servingQty:'3 strips',calories:129,protein:9,carbs:0,fat:9},
+      {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
+      {name:'Onion',servingQty:'Handful',calories:32,protein:1,carbs:7,fat:0},
+      {name:'Bell Peppers',servingQty:'Handful',calories:37,protein:1,carbs:9,fat:0},
+    ]
+  },
+  {
+    id:'sm_thu_lunch',mealSlot:'lunch',
+    name:'Thu — Chicken Wrap Lunch',
+    tags:['protein','low-carb'],
+    totalCals:452, totalProtein:60, totalCarbs:16, totalFat:18,
+    items:[
+      {name:'Ground Chicken',servingQty:'10oz (2.5 palms)',calories:373,protein:55,carbs:0,fat:18},
+      {name:'Lettuce Wraps',servingQty:'2 large leaves',calories:10,protein:1,carbs:1,fat:0},
+      {name:'Cauliflower Rice',servingQty:'1 cup',calories:25,protein:2,carbs:5,fat:0},
+      {name:'Green Beans',servingQty:'2 handfuls',calories:44,protein:2,carbs:10,fat:0},
+    ]
+  },
+  {
+    id:'sm_thu_snack',mealSlot:'snacks',
+    name:'Thu — Afternoon Snack',
+    tags:['snack'],
+    totalCals:233, totalProtein:28, totalCarbs:3, totalFat:12,
+    items:[
+      {name:'Babybel Cheese',servingQty:'2 wheels',calories:140,protein:10,carbs:0,fat:12},
+      {name:'Egg Whites',servingQty:'1 cup',calories:85,protein:18,carbs:1,fat:0},
+      {name:'Cucumbers',servingQty:'Handful',calories:8,protein:0,carbs:2,fat:0},
+    ]
+  },
+  {
+    id:'sm_thu_dinner',mealSlot:'dinner',
+    name:'Thu — Pork & Cauli Dinner',
+    tags:['protein','low-carb'],
+    totalCals:443, totalProtein:48, totalCarbs:7, totalFat:25,
+    items:[
+      {name:'Braised Pork Shoulder',servingQty:'7oz (1.75 palms)',calories:403,protein:44,carbs:0,fat:25},
+      {name:'Mushrooms',servingQty:'Handful',calories:15,protein:2,carbs:2,fat:0},
+      {name:'Cauliflower Rice',servingQty:'1 cup',calories:25,protein:2,carbs:5,fat:0},
+    ]
+  },
+
+  // ── DESSERT / UNIVERSAL ──
+  {
+    id:'sm_dessert',mealSlot:'snacks',
     name:'Protein Dessert Bowl',
     tags:['snack','dessert'],
     totalCals:306, totalProtein:44, totalCarbs:16, totalFat:10,
@@ -7828,13 +8352,16 @@ function renderFoodMeals() {
     // Delete meal button (only show if items exist)
     if (items.length > 0) {
       const deleteBtn = document.createElement('button');
-      deleteBtn.style.cssText = 'background:none;border:none;color:var(--text3);cursor:pointer;padding:4px;font-size:14px;opacity:0.6';
-      deleteBtn.title = 'Delete all items in this meal';
+      deleteBtn.style.cssText = 'background:none;border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:var(--text3);cursor:pointer;padding:5px 7px;line-height:0;flex-shrink:0';
+      deleteBtn.title = 'Clear this meal';
       deleteBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
-      deleteBtn.onclick = function(e) {
-        e.stopPropagation();
-        confirmDeleteMeal(meal);
-      };
+      (function(m) {
+        deleteBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          confirmDeleteMeal(m);
+        }, true);
+      })(meal);
       rightSide.appendChild(deleteBtn);
     }
 
