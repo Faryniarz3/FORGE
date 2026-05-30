@@ -8476,7 +8476,21 @@ const SAVED_MEALS_SEED = [
       {name:'Peanut Butter',servingQty:'1 tbsp',calories:94,protein:4,carbs:3,fat:8},
     ]
   },
-];
+
+  {
+    id:'sm_morning_drink',
+    name:'Morning Drink',
+    mealSlot:'supplements',
+    tags:['supplements','custom'],
+    totalCals:25, totalProtein:0, totalCarbs:7, totalFat:0,
+    items:[
+      {name:'Creatine',servingQty:'1 serving (5g)',calories:0,protein:0,carbs:0,fat:0,fiber:0},
+      {name:'Psyllium Husk Powder',servingQty:'1 tbsp',calories:25,protein:0,carbs:7,fat:0,fiber:7},
+      {name:'Potassium Chloride',servingQty:'1/8 tsp',calories:0,protein:0,carbs:0,fat:0,fiber:0},
+      {name:'Pre-Workout Powder',servingQty:'1 scoop',calories:0,protein:0,carbs:0,fat:0,fiber:0},
+    ]
+  },
+];;
 
 // ── Saved Meals DB ──
 function getSavedMeals() {
@@ -10073,7 +10087,7 @@ function initDragReorder(container) {
 // One-time data reset — clears food vault, saved meals, food logs
 // Version key: if not set, wipe and set it
 function runDataReset() {
-  const RESET_KEY = 'forge_food_reset_v6';
+  const RESET_KEY = 'forge_food_reset_v7';
   if (!DB.get(RESET_KEY, false)) {
     DB.set('foodVault', null); // null triggers re-seed from FOOD_VAULT_SEED
     DB.set('savedMeals', null); // null triggers seed load
