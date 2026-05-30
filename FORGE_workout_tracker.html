@@ -4241,7 +4241,7 @@ async function syncToGist() {
   if (resultEl) resultEl.textContent = 'Pushing data...';
 
   const state = getState();
-  const data = { sessions: state.sessions, programs: state.programs, prs: state.prs, vault: getVault(), philosophy: getPhilosophy(), lastSync: new Date().toISOString() };
+  const data = { sessions: state.sessions, programs: state.programs, prs: state.prs, vault: getVault(), foodVault: getFoodVault(), savedMeals: getSavedMeals(), philosophy: getPhilosophy(), lastSync: new Date().toISOString() };
 
   try {
     let url = 'https://api.github.com/gists';
@@ -8089,7 +8089,7 @@ function autoSyncAfterFoodChange() {
   const state = getState();
   const payload = {
     sessions:state.sessions, programs:state.programs, prs:state.prs,
-    vault:getFoodVault(), savedMeals:getSavedMeals(),
+    vault:state.vault, foodVault:getFoodVault(), savedMeals:getSavedMeals(),
     philosophy:DB.get('philosophy',''), lastSync:new Date().toISOString()
   };
   fetch('https://api.github.com/gists/'+settings.gistId,{
