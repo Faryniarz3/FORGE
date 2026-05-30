@@ -1306,12 +1306,18 @@ select.input { appearance: none; }
     </div>
   </div>
 
-  <!-- MEAL BUILDER -->
+  <!-- MEAL BUILDER + VAULT BUTTONS -->
   <div class="section" style="padding-bottom:0">
-    <button onclick="openMealBuilder()" style="width:100%;background:rgba(232,255,71,0.08);border:1px solid rgba(232,255,71,0.25);border-radius:10px;padding:14px;font-family:'DM Mono',monospace;font-size:13px;color:var(--accent);cursor:pointer;letter-spacing:0.06em;display:flex;align-items:center;justify-content:center;gap:8px">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-      Build a Saved Meal
-    </button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="openMealBuilder()" style="background:rgba(232,255,71,0.08);border:1px solid rgba(232,255,71,0.25);border-radius:10px;padding:13px 10px;font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);cursor:pointer;letter-spacing:0.05em;display:flex;align-items:center;justify-content:center;gap:6px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Build Meal
+      </button>
+      <button onclick="openFoodVaultBrowser()" style="background:rgba(71,200,255,0.08);border:1px solid rgba(71,200,255,0.25);border-radius:10px;padding:13px 10px;font-family:'DM Mono',monospace;font-size:12px;color:#47c8ff;cursor:pointer;letter-spacing:0.05em;display:flex;align-items:center;justify-content:center;gap:6px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        Food Vault
+      </button>
+    </div>
   </div>
 
     <!-- SAVED MEALS FOLDER -->
@@ -1527,6 +1533,72 @@ select.input { appearance: none; }
 
     <!-- Save button -->
     <button onclick="saveMealFromBuilder()" class="btn btn-primary btn-full">Save Meal</button>
+  </div>
+</div>
+
+<!-- FOOD VAULT BROWSER MODAL -->
+<div id="modal-vault-browser" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="modal-title" style="margin-bottom:0">Food Vault</div>
+      <button onclick="closeModal('modal-vault-browser')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:0">✕</button>
+    </div>
+    <!-- Search -->
+    <input type="text" class="input" id="vb-search" placeholder="Search foods..." oninput="renderVaultBrowser(this.value)" style="margin-bottom:10px">
+    <!-- Category bubbles -->
+    <div id="vb-cat-bubbles" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px"></div>
+    <!-- Food list -->
+    <div id="vb-food-list"></div>
+  </div>
+</div>
+
+<!-- FOOD VAULT ITEM DETAIL MODAL -->
+<div id="modal-vault-item-detail" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button onclick="closeModal('modal-vault-item-detail');openFoodVaultBrowser()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:20px;padding:0;line-height:1">←</button>
+      <div class="modal-title" style="margin-bottom:0" id="vid-title"></div>
+    </div>
+    <!-- Macro summary per serving -->
+    <div id="vid-macro-bar" style="margin-bottom:16px"></div>
+    <!-- Quantity -->
+    <div class="input-group">
+      <label class="input-label" id="vid-qty-label">Quantity</label>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button onclick="vbAdjustQty(-0.5)" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;width:40px;height:40px;color:var(--text);cursor:pointer;font-size:20px;flex-shrink:0">−</button>
+        <input type="number" id="vid-qty" value="1" min="0.25" step="0.25" oninput="vbUpdatePreview()" style="flex:1;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:28px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--text)">
+        <button onclick="vbAdjustQty(0.5)" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;width:40px;height:40px;color:var(--accent);cursor:pointer;font-size:20px;flex-shrink:0">+</button>
+      </div>
+    </div>
+    <!-- Live macro preview -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">
+        <div id="vid-cal" style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent);letter-spacing:0.04em">0</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">CAL</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">
+        <div id="vid-p" style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text);letter-spacing:0.04em">0</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">PRO</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">
+        <div id="vid-c" style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text);letter-spacing:0.04em">0</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">CARB</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">
+        <div id="vid-f" style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text);letter-spacing:0.04em">0</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--text3)">FAT</div>
+      </div>
+    </div>
+    <!-- Meal slot selector -->
+    <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px;text-transform:uppercase">Add to Meal</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px" id="vid-slot-grid"></div>
+    <!-- Log buttons -->
+    <div style="display:flex;gap:8px">
+      <button onclick="vbLogFood('planned')" style="flex:1;background:rgba(71,200,255,0.1);border:1px solid rgba(71,200,255,0.3);border-radius:10px;padding:12px;font-family:'DM Mono',monospace;font-size:11px;color:#47c8ff;cursor:pointer;letter-spacing:0.06em">📅 Plan</button>
+      <button onclick="vbLogFood('logged')" style="flex:1;background:var(--accent);border:none;border-radius:10px;padding:12px;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:#000;cursor:pointer;letter-spacing:0.06em">✓ Log Now</button>
+    </div>
   </div>
 </div>
 
@@ -7508,6 +7580,245 @@ function openAddMealToDay(mealId) {
   body.appendChild(cancelBtn);
 
   openModal('modal-food-log');
+}
+
+
+// ============================================================
+// FOOD VAULT BROWSER
+// ============================================================
+let vbActiveCat = null;
+let vbSelectedFood = null;
+let vbSelectedSlot = 'breakfast';
+
+function openFoodVaultBrowser() {
+  vbActiveCat = null;
+  const searchEl = document.getElementById('vb-search');
+  if (searchEl) searchEl.value = '';
+  renderVaultBrowserBubbles();
+  renderVaultBrowser('');
+  openModal('modal-vault-browser');
+}
+
+function renderVaultBrowserBubbles() {
+  const el = document.getElementById('vb-cat-bubbles');
+  if (!el) return;
+  el.innerHTML = '';
+
+  // All bubble
+  const allBtn = document.createElement('button');
+  const allActive = vbActiveCat === null;
+  allBtn.style.cssText = 'padding:5px 13px;border-radius:20px;font-family:DM Mono,monospace;font-size:11px;cursor:pointer;transition:all 0.15s;' +
+    'border:1px solid ' + (allActive ? 'var(--accent)' : 'var(--border)') + ';' +
+    'background:' + (allActive ? 'rgba(232,255,71,0.12)' : 'var(--surface)') + ';' +
+    'color:' + (allActive ? 'var(--accent)' : 'var(--text3)') + ';';
+  allBtn.textContent = 'All';
+  allBtn.onclick = function() { vbActiveCat = null; renderVaultBrowserBubbles(); renderVaultBrowser(document.getElementById('vb-search')?.value || ''); };
+  el.appendChild(allBtn);
+
+  FOOD_CATEGORIES.forEach(function(cat) {
+    const isActive = vbActiveCat === cat;
+    const color = FOOD_CAT_COLORS[cat] || '#888';
+    const btn = document.createElement('button');
+    btn.style.cssText = 'padding:5px 13px;border-radius:20px;font-family:DM Mono,monospace;font-size:11px;cursor:pointer;transition:all 0.15s;' +
+      'border:1px solid ' + (isActive ? color : 'var(--border)') + ';' +
+      'background:' + (isActive ? 'rgba(' + hexToRgb(color) + ',0.15)' : 'var(--surface)') + ';' +
+      'color:' + (isActive ? color : 'var(--text3)') + ';';
+    btn.textContent = FOOD_CAT_LABELS[cat];
+    btn.onclick = function() {
+      vbActiveCat = isActive ? null : cat;
+      renderVaultBrowserBubbles();
+      renderVaultBrowser(document.getElementById('vb-search')?.value || '');
+    };
+    el.appendChild(btn);
+  });
+}
+
+function renderVaultBrowser(query) {
+  const el = document.getElementById('vb-food-list');
+  if (!el) return;
+  el.innerHTML = '';
+
+  const vault = getFoodVault();
+  const q = (query || '').toLowerCase();
+  const filtered = vault.filter(function(f) {
+    return f.name.toLowerCase().includes(q) &&
+      (vbActiveCat === null || f.category === vbActiveCat);
+  });
+
+  if (!filtered.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;padding:20px 0';
+    empty.textContent = 'No foods found';
+    el.appendChild(empty);
+    return;
+  }
+
+  // Group by category
+  const groups = {};
+  const catOrder = vbActiveCat ? [vbActiveCat] : FOOD_CATEGORIES;
+  catOrder.forEach(function(cat) { groups[cat] = []; });
+  filtered.forEach(function(f) {
+    if (groups[f.category]) groups[f.category].push(f);
+    else if (!vbActiveCat) { if (!groups['other']) groups['other'] = []; groups['other'].push(f); }
+  });
+
+  catOrder.forEach(function(cat) {
+    const foods = groups[cat] || [];
+    if (!foods.length) return;
+    const color = FOOD_CAT_COLORS[cat] || '#888';
+
+    // Category header
+    const catHeader = document.createElement('div');
+    catHeader.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:' + color + ';letter-spacing:0.1em;text-transform:uppercase;margin:12px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--border)';
+    catHeader.textContent = FOOD_CAT_LABELS[cat] || cat;
+    el.appendChild(catHeader);
+
+    foods.forEach(function(food) {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:11px 13px;margin-bottom:5px;cursor:pointer;transition:border-color 0.15s';
+      row.onmouseenter = function(){ row.style.borderColor = color; };
+      row.onmouseleave = function(){ row.style.borderColor = 'var(--border)'; };
+
+      const info = document.createElement('div');
+      info.style.flex = '1';
+      const fname = document.createElement('div');
+      fname.style.cssText = 'font-size:14px;color:var(--text);margin-bottom:2px';
+      fname.textContent = food.name;
+      const fmeta = document.createElement('div');
+      fmeta.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
+      fmeta.textContent = food.serving + '  ·  ' + food.calories + ' cal  ·  ' + food.protein + 'g P  ·  ' + food.carbs + 'g C  ·  ' + food.fat + 'g F';
+      info.appendChild(fname); info.appendChild(fmeta);
+
+      const arrow = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      arrow.setAttribute('width','14'); arrow.setAttribute('height','14');
+      arrow.setAttribute('viewBox','0 0 24 24');
+      arrow.style.cssText = 'fill:none;stroke:var(--text3);stroke-width:2;flex-shrink:0';
+      arrow.innerHTML = '<polyline points="9 18 15 12 9 6"/>';
+
+      row.appendChild(info); row.appendChild(arrow);
+      (function(f){ row.onclick = function(){ openVaultItemDetail(f); }; })(food);
+      el.appendChild(row);
+    });
+  });
+}
+
+function openVaultItemDetail(food) {
+  vbSelectedFood = food;
+  vbSelectedSlot = 'breakfast';
+
+  const titleEl = document.getElementById('vid-title');
+  if (titleEl) titleEl.textContent = food.name;
+
+  // Macro per serving bar
+  const macroBar = document.getElementById('vid-macro-bar');
+  if (macroBar) {
+    macroBar.innerHTML = '';
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface2);border-radius:8px;padding:10px 12px';
+    const servingLabel = document.createElement('div');
+    servingLabel.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3);margin-bottom:6px';
+    servingLabel.textContent = 'Per ' + food.serving;
+    const macroRow = document.createElement('div');
+    macroRow.style.cssText = 'display:flex;gap:16px';
+    [{label:'CAL',val:food.calories,color:'var(--accent)'},{label:'PRO',val:food.protein,color:'var(--text)'},{label:'CARB',val:food.carbs,color:'#47c8ff'},{label:'FAT',val:food.fat,color:'#ffb74d'}].forEach(function(m){
+      const item = document.createElement('div');
+      item.style.textAlign = 'center';
+      const v = document.createElement('div');
+      v.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:18px;color:' + m.color + ';letter-spacing:0.04em';
+      v.textContent = m.val;
+      const l = document.createElement('div');
+      l.style.cssText = 'font-family:DM Mono,monospace;font-size:8px;color:var(--text3)';
+      l.textContent = m.label;
+      item.appendChild(v); item.appendChild(l);
+      macroRow.appendChild(item);
+    });
+    card.appendChild(servingLabel); card.appendChild(macroRow);
+    macroBar.appendChild(card);
+  }
+
+  // Qty label
+  const qtyLabel = document.getElementById('vid-qty-label');
+  if (qtyLabel) qtyLabel.textContent = 'Quantity  ×  ' + food.serving;
+
+  // Reset qty
+  const qtyEl = document.getElementById('vid-qty');
+  if (qtyEl) qtyEl.value = '1';
+
+  // Update preview
+  vbUpdatePreview();
+
+  // Slot grid
+  const slotGrid = document.getElementById('vid-slot-grid');
+  if (slotGrid) {
+    slotGrid.innerHTML = '';
+    const slotColors = {breakfast:'#ffb74d',lunch:'#47c8ff',dinner:'#ba68c8',snacks:'#81c784'};
+    MEALS.forEach(function(slot) {
+      const color = slotColors[slot] || 'var(--text3)';
+      const isActive = slot === vbSelectedSlot;
+      const btn = document.createElement('button');
+      btn.id = 'vid-slot-' + slot;
+      btn.style.cssText = 'padding:10px;border-radius:8px;cursor:pointer;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.06em;transition:all 0.15s;' +
+        'background:' + (isActive ? 'rgba(' + hexToRgb(color) + ',0.15)' : 'var(--surface)') + ';' +
+        'border:1px solid ' + (isActive ? color : 'var(--border)') + ';' +
+        'color:' + (isActive ? color : 'var(--text3)') + ';';
+      btn.textContent = MEAL_LABELS[slot];
+      btn.onclick = function() {
+        vbSelectedSlot = slot;
+        MEALS.forEach(function(s) {
+          const b = document.getElementById('vid-slot-' + s);
+          if (!b) return;
+          const c = slotColors[s] || 'var(--text3)';
+          const active = s === slot;
+          b.style.background = active ? 'rgba(' + hexToRgb(c) + ',0.15)' : 'var(--surface)';
+          b.style.borderColor = active ? c : 'var(--border)';
+          b.style.color = active ? c : 'var(--text3)';
+        });
+      };
+      slotGrid.appendChild(btn);
+    });
+  }
+
+  closeModal('modal-vault-browser');
+  openModal('modal-vault-item-detail');
+}
+
+function vbAdjustQty(delta) {
+  const el = document.getElementById('vid-qty');
+  if (!el) return;
+  const newVal = Math.max(0.25, (parseFloat(el.value) || 1) + delta);
+  el.value = Math.round(newVal * 4) / 4;
+  vbUpdatePreview();
+}
+
+function vbUpdatePreview() {
+  if (!vbSelectedFood) return;
+  const qty = parseFloat(document.getElementById('vid-qty')?.value) || 1;
+  const set = function(id, val) { const el = document.getElementById(id); if (el) el.textContent = Math.round(val * 10) / 10; };
+  set('vid-cal', vbSelectedFood.calories * qty);
+  set('vid-p',   vbSelectedFood.protein  * qty);
+  set('vid-c',   vbSelectedFood.carbs    * qty);
+  set('vid-f',   vbSelectedFood.fat      * qty);
+}
+
+function vbLogFood(status) {
+  if (!vbSelectedFood || !vbSelectedSlot) return;
+  const qty = parseFloat(document.getElementById('vid-qty')?.value) || 1;
+  const entry = {
+    id: Date.now().toString() + Math.random().toString(36).slice(2,5),
+    foodId: vbSelectedFood.id,
+    name: vbSelectedFood.name,
+    servingQty: qty + ' × ' + vbSelectedFood.serving,
+    calories: Math.round(vbSelectedFood.calories * qty),
+    protein:  Math.round(vbSelectedFood.protein  * qty * 10) / 10,
+    carbs:    Math.round(vbSelectedFood.carbs    * qty * 10) / 10,
+    fat:      Math.round(vbSelectedFood.fat      * qty * 10) / 10,
+    loggedAt: new Date().toISOString(),
+    mealStatus: status,
+  };
+  saveFoodLogEntry(vbSelectedSlot, entry);
+  closeModal('modal-vault-item-detail');
+  const statusLabel = status === 'logged' ? 'logged' : 'planned';
+  showToast(vbSelectedFood.name + ' ' + statusLabel + ' for ' + MEAL_LABELS[vbSelectedSlot]);
 }
 
 // ============================================================
