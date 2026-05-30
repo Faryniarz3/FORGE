@@ -1379,11 +1379,11 @@ select.input { appearance: none; }
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <div class="input-group" style="margin-bottom:0">
         <label class="input-label">Food Name</label>
-        <input type="text" class="input" id="fi-name" placeholder="e.g. Chicken Breast">
+        <input type="text" class="input" id="fi-name" placeholder="e.g. Chicken Breast" oninput="aiMacroDebounce()">
       </div>
       <div class="input-group" style="margin-bottom:0">
         <label class="input-label">Serving Size</label>
-        <input type="text" class="input" id="fi-serving" placeholder="e.g. 1/2 breast">
+        <input type="text" class="input" id="fi-serving" placeholder="e.g. 1/2 breast" oninput="aiMacroDebounce()">
       </div>
     </div>
 
@@ -1494,11 +1494,11 @@ select.input { appearance: none; }
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
         <div class="input-group" style="margin-bottom:0">
           <label class="input-label">Food Name</label>
-          <input type="text" class="input" id="mb-new-name" placeholder="e.g. Avocado">
+          <input type="text" class="input" id="mb-new-name" placeholder="e.g. Avocado" oninput="aiMbMacroDebounce()">
         </div>
         <div class="input-group" style="margin-bottom:0">
           <label class="input-label">Serving</label>
-          <input type="text" class="input" id="mb-new-serving" placeholder="e.g. 1/2 avocado">
+          <input type="text" class="input" id="mb-new-serving" placeholder="e.g. 1/2 avocado" oninput="aiMbMacroDebounce()">
         </div>
       </div>
       <button onclick="aiCalculateMbMacros()" id="mb-ai-btn" style="width:100%;background:rgba(186,104,200,0.1);border:1px solid rgba(186,104,200,0.3);border-radius:7px;padding:8px;font-family:'DM Mono',monospace;font-size:11px;color:#ba68c8;cursor:pointer;margin-bottom:8px">
@@ -8153,6 +8153,43 @@ function autoSyncAfterFoodChange() {
 
 
 
+
+// ── Auto-calculate macros with debounce ──
+let _aiMacroTimer = null;
+let _aiMbMacroTimer = null;
+
+function aiMacroDebounce() {
+  const name    = (document.getElementById('fi-name')?.value    || '').trim();
+  const serving = (document.getElementById('fi-serving')?.value || '').trim();
+
+  // Need both fields filled before firing
+  if (!name || !serving) return;
+
+  // Show subtle "calculating..." state
+  const btnLabel = document.getElementById('fi-ai-btn-label');
+  if (btnLabel) btnLabel.textContent = '⏳ Calculating...';
+
+  clearTimeout(_aiMacroTimer);
+  _aiMacroTimer = setTimeout(function() {
+    aiCalculateMacros();
+  }, 900); // 900ms pause after last keystroke
+}
+
+function aiMbMacroDebounce() {
+  const name    = (document.getElementById('mb-new-name')?.value    || '').trim();
+  const serving = (document.getElementById('mb-new-serving')?.value || '').trim();
+
+  if (!name || !serving) return;
+
+  const btnLabel = document.getElementById('mb-ai-btn-label');
+  if (btnLabel) btnLabel.textContent = '⏳ Calculating...';
+
+  clearTimeout(_aiMbMacroTimer);
+  _aiMbMacroTimer = setTimeout(function() {
+    aiCalculateMbMacros();
+  }, 900);
+}
+
 // ============================================================
 // AI MACRO CALCULATOR
 // ============================================================
@@ -8210,14 +8247,14 @@ async function aiCalculateMacros() {
       noteEl.innerHTML = '<span style="color:' + confColor + ';font-weight:600">' + (macros.confidence||'').toUpperCase() + ' confidence</span> — ' + (macros.note || 'Review macros before saving');
     }
 
-    if (btnLabel) btnLabel.textContent = '✦ Recalculate Macros';
+    if (btnLabel) btnLabel.textContent = '✦ Recalculate';
 
   } catch(e) {
     if (noteEl) {
       noteEl.style.display = 'block';
       noteEl.textContent = '⚠ Could not calculate — please enter macros manually. (' + e.message + ')';
     }
-    if (btnLabel) btnLabel.textContent = '✦ Calculate Macros with AI';
+    if (btnLabel) btnLabel.textContent = '✦ Calculate';
   }
 
   if (btn) btn.disabled = false;
