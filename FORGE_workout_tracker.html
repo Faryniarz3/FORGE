@@ -7427,7 +7427,7 @@ async function afCalculateMacros() {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({model:'claude-sonnet-4-20250514', max_tokens:300,
-        messages:[{role:'user', content:'Return ONLY a JSON object with keys: calories, protein, carbs, fat, confidence (high/medium/low), note. Numbers only. No markdown. Food: ' + name + ' Serving: ' + serving}]})
+        messages:[{role:'user', content:'You are a nutrition database with knowledge of branded food products. Return ONLY a valid JSON object with keys: calories, protein, carbs, fat, confidence (high/medium/low), note. All values numbers. For branded products like Oikos, Chobani, Quest, etc use the actual nutrition label data. Note should explain source. No markdown, no extra text. Food: ' + name + ' Serving: ' + serving}]})
     });
     if (!res.ok) throw new Error('API ' + res.status);
     const data = await res.json();
@@ -7478,6 +7478,32 @@ function afLogFood(status) {
   saveFoodLogEntry(afSelectedSlot, entry);
   closeModal('modal-add-food');
   showToast(name+' '+(status==='logged'?'logged':'planned')+' for '+MEAL_LABELS[afSelectedSlot]);
+}
+
+function afSaveVaultOnly() {
+  const name    = (document.getElementById('af-name')?.value    || '').trim();
+  const serving = (document.getElementById('af-serving')?.value || '').trim();
+  const cal     = parseFloat(document.getElementById('af-cal')?.value)     || 0;
+  const protein = parseFloat(document.getElementById('af-protein')?.value) || 0;
+  const carbs   = parseFloat(document.getElementById('af-carbs')?.value)   || 0;
+  const fat     = parseFloat(document.getElementById('af-fat')?.value)     || 0;
+  if (!name) { showToast('Enter a food name first'); return; }
+  const newFood = {
+    id: 'fv_'+Date.now(), name,
+    serving: serving || '1 serving',
+    calories: cal, protein, carbs, fat,
+    category: afSelectedCat, portionType: 'count'
+  };
+  const vault = getFoodVault();
+  if (vault.find(function(f){return f.name.toLowerCase()===name.toLowerCase();})) {
+    showToast(name + ' is already in your vault');
+    return;
+  }
+  vault.push(newFood);
+  saveFoodVault(vault);
+  autoSyncAfterFoodChange();
+  closeModal('modal-add-food');
+  showToast(name + ' saved to vault!');
 }
 
 // ============================================================
@@ -8105,7 +8131,7 @@ async function aiCalculateMacros() {
   if (btn) btn.disabled = true;
   if (noteEl) noteEl.style.display = 'none';
 
-  const prompt = 'Return ONLY a JSON object with keys: calories, protein, carbs, fat, confidence (high/medium/low), note. Numbers only. No markdown. Food: ' + name + ' Serving: ' + (serving || '1 serving');
+  const prompt = 'You are a nutrition database with knowledge of branded products like Oikos, Chobani, Dymatize, etc. Return ONLY a JSON object with keys: calories, protein, carbs, fat, confidence (high/medium/low), note. Numbers only, no markdown. Use actual label data for branded items. Food: ' + name + ' Serving: ' + (serving || '1 serving');
 
 
   try {
@@ -8171,7 +8197,7 @@ async function aiCalculateMbMacros() {
   if (btn) btn.disabled = true;
   if (noteEl) noteEl.style.display = 'none';
 
-  const prompt = 'Return ONLY a JSON object with keys: calories, protein, carbs, fat, confidence (high/medium/low), note. Numbers only. No markdown. Food: ' + name + ' Serving: ' + (serving || '1 serving');
+  const prompt = 'You are a nutrition database with knowledge of branded products like Oikos, Chobani, Dymatize, etc. Return ONLY a JSON object with keys: calories, protein, carbs, fat, confidence (high/medium/low), note. Numbers only, no markdown. Use actual label data for branded items. Food: ' + name + ' Serving: ' + (serving || '1 serving');
 
 
   try {
@@ -10365,10 +10391,11 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
 
     <!-- Action buttons -->
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;margin-bottom:8px">
       <button onclick="afLogFood('planned')" style="flex:1;background:rgba(71,200,255,0.1);border:1px solid rgba(71,200,255,0.3);border-radius:10px;padding:12px;font-family:'DM Mono',monospace;font-size:11px;color:#47c8ff;cursor:pointer;letter-spacing:0.06em">📅 Plan</button>
       <button onclick="afLogFood('logged')" style="flex:1;background:var(--accent);border:none;border-radius:10px;padding:12px;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:#000;cursor:pointer;letter-spacing:0.06em">✓ Log Now</button>
     </div>
+    <button onclick="afSaveVaultOnly()" style="width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:11px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);cursor:pointer;letter-spacing:0.06em">+ Save to Vault Only</button>
   </div>
 </div>
 
