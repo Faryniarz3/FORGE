@@ -4369,6 +4369,8 @@ async function pullFromGist() {
     DB.set('programs', merged.programs);
     DB.set('prs', merged.prs);
     DB.set('vault', merged.vault);
+    if (remote.foodVault && remote.foodVault.length) DB.set('foodVault', remote.foodVault);
+    if (remote.savedMeals && remote.savedMeals.length) DB.set('savedMeals', remote.savedMeals);
     if (remote.philosophy) DB.set('philosophy', remote.philosophy);
 
     setSyncStatus('synced', 'Pulled ' + new Date().toLocaleTimeString());
