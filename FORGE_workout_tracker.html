@@ -1275,7 +1275,7 @@ select.input { appearance: none; }
       </div>
     </div>
     <!-- Macro progress bars -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:16px">
       <div>
         <div style="display:flex;justify-content:space-between;margin-bottom:4px">
           <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--accent)">PROTEIN</div>
@@ -1287,7 +1287,7 @@ select.input { appearance: none; }
       </div>
       <div>
         <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-          <div style="font-family:'DM Mono',monospace;font-size:9px;color:#47c8ff">CARBS</div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:#47c8ff">NET CARBS</div>
           <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)" id="food-carbs-label">0/--g</div>
         </div>
         <div style="background:var(--surface2);border-radius:3px;height:6px;overflow:hidden">
@@ -1301,6 +1301,15 @@ select.input { appearance: none; }
         </div>
         <div style="background:var(--surface2);border-radius:3px;height:6px;overflow:hidden">
           <div id="food-fat-bar" style="height:100%;background:#ffb74d;border-radius:3px;width:0%;transition:width 0.4s ease"></div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:#a5d6a7">FIBER</div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)" id="food-fiber-label">0g</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:3px;height:6px;overflow:hidden">
+          <div id="food-fiber-bar" style="height:100%;background:#a5d6a7;border-radius:3px;width:0%;transition:width 0.4s ease"></div>
         </div>
       </div>
     </div>
@@ -7426,16 +7435,27 @@ async function afCalculateMacros() {
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({model:'claude-sonnet-4-20250514', max_tokens:300,
-        messages:[{role:'user', content:'You are a nutrition database with knowledge of branded food products. Return ONLY a valid JSON object with keys: calories, protein, carbs, fat, confidence (high/medium/low), note. All values numbers. For branded products like Oikos, Chobani, Quest, etc use the actual nutrition label data. Note should explain source. No markdown, no extra text. Food: ' + name + ' Serving: ' + serving}]})
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:600,
+        tools:[{type:'web_search_20250305', name:'web_search'}],
+        messages:[{role:'user', content:'Look up the exact nutrition facts for: ' + name + ', serving size: ' + serving + '. Return ONLY a JSON object with keys: calories, protein, carbs, fat, fiber, confidence (high/medium/low), note. All numbers. No markdown or extra text.'}]
+      })
     });
     if (!res.ok) throw new Error('API ' + res.status);
     const data = await res.json();
-    const text = (data.content||[]).map(function(b){return b.text||'';}).join('').trim();
+    // Extract text from all content blocks (web search may add tool_use blocks)
+    const text = (data.content||[])
+      .filter(function(b){ return b.type === 'text'; })
+      .map(function(b){ return b.text||''; })
+      .join('').trim();
     const macros = JSON.parse(text.replace(/```json|```/g,'').trim());
-    const set = function(id,val){const el=document.getElementById(id);if(el)el.value=Math.round(val*10)/10;};
+    const set = function(id,val){
+      const el=document.getElementById(id);
+      if(el && val !== undefined && val !== null) el.value=Math.round(val*10)/10;
+    };
     set('af-cal',macros.calories); set('af-protein',macros.protein);
     set('af-carbs',macros.carbs); set('af-fat',macros.fat);
+    set('af-fiber',macros.fiber);
     if (statusEl) {
       const confColor = macros.confidence==='high'?'#81c784':macros.confidence==='medium'?'#ffb74d':'#ff6b6b';
       statusEl.style.display = 'block'; statusEl.style.color = confColor;
@@ -7458,11 +7478,12 @@ function afLogFood(status) {
   const protein = parseFloat(document.getElementById('af-protein')?.value) || 0;
   const carbs   = parseFloat(document.getElementById('af-carbs')?.value)   || 0;
   const fat     = parseFloat(document.getElementById('af-fat')?.value)     || 0;
+  const fiber   = parseFloat(document.getElementById('af-fiber')?.value)   || 0;
   const qty     = parseFloat(document.getElementById('af-qty')?.value)     || 1;
   const saveToVault = document.getElementById('af-save-vault')?.checked;
   if (!name) { showToast('Enter a food name first'); return; }
   if (saveToVault && serving) {
-    const newFood = {id:'fv_'+Date.now(), name, serving, calories:cal, protein, carbs, fat, category:afSelectedCat, portionType:'count'};
+    const newFood = {id:'fv_'+Date.now(), name, serving, calories:cal, protein, carbs, fat, fiber, category:afSelectedCat, portionType:'count'};
     const vault = getFoodVault();
     if (!vault.find(function(f){return f.name.toLowerCase()===name.toLowerCase();})) {
       vault.push(newFood); saveFoodVault(vault); autoSyncAfterFoodChange();
@@ -7473,6 +7494,7 @@ function afLogFood(status) {
     foodId:null, name, servingQty:qty+' × '+(serving||'1 serving'),
     calories:Math.round(cal*qty), protein:Math.round(protein*qty*10)/10,
     carbs:Math.round(carbs*qty*10)/10, fat:Math.round(fat*qty*10)/10,
+    fiber:Math.round(fiber*qty*10)/10,
     loggedAt:new Date().toISOString(), mealStatus:status,
   };
   saveFoodLogEntry(afSelectedSlot, entry);
@@ -7488,10 +7510,11 @@ function afSaveVaultOnly() {
   const carbs   = parseFloat(document.getElementById('af-carbs')?.value)   || 0;
   const fat     = parseFloat(document.getElementById('af-fat')?.value)     || 0;
   if (!name) { showToast('Enter a food name first'); return; }
+  const fiber   = parseFloat(document.getElementById('af-fiber')?.value)   || 0;
   const newFood = {
     id: 'fv_'+Date.now(), name,
     serving: serving || '1 serving',
-    calories: cal, protein, carbs, fat,
+    calories: cal, protein, carbs, fat, fiber,
     category: afSelectedCat, portionType: 'count'
   };
   const vault = getFoodVault();
@@ -8363,16 +8386,21 @@ function getSelectedDateFoodLog() {
 
 function getSelectedDateTotals() {
   const log = getSelectedDateFoodLog();
-  let cal=0, protein=0, carbs=0, fat=0;
+  let cal=0, protein=0, carbs=0, fat=0, fiber=0;
   Object.values(log.meals).forEach(function(meal) {
     meal.forEach(function(item) {
       cal     += item.calories || 0;
       protein += item.protein  || 0;
       carbs   += item.carbs    || 0;
       fat     += item.fat      || 0;
+      fiber   += item.fiber    || 0;
     });
   });
-  return {cal:Math.round(cal), protein:Math.round(protein), carbs:Math.round(carbs), fat:Math.round(fat)};
+  return {
+    cal:Math.round(cal), protein:Math.round(protein),
+    carbs:Math.round(carbs), fat:Math.round(fat), fiber:Math.round(fiber*10)/10,
+    netCarbs: Math.max(0, Math.round(carbs - fiber))
+  };
 }
 
 // Override renderFoodDailySummary to use selected date
@@ -8409,16 +8437,25 @@ function renderFoodDaySummaryBar() {
   if (consumed) consumed.textContent = totals.cal.toLocaleString() + ' eaten';
   if (target) target.textContent = 'of ' + targets.calories.toLocaleString() + ' goal';
 
-  function setBar(barId, labelId, current, max, unit) {
-    const pct = Math.min(100, Math.round((current/max)*100));
+  function setBar(barId, labelId, current, max, unit, color) {
+    const pct = max ? Math.min(100, Math.round((current/max)*100)) : 0;
     const bar = document.getElementById(barId);
     const lbl = document.getElementById(labelId);
-    if (bar) { bar.style.width = pct + '%'; bar.style.background = current > max ? 'var(--danger)' : undefined; }
+    if (bar) {
+      bar.style.width = pct + '%';
+      if (color) bar.style.background = color;
+      if (current > max && max > 0) bar.style.background = 'var(--danger)';
+    }
     if (lbl) lbl.textContent = current + '/' + max + unit;
   }
   setBar('food-protein-bar','food-protein-label',totals.protein,targets.protein,'g');
-  setBar('food-carbs-bar','food-carbs-label',totals.carbs,targets.carbs,'g');
-  setBar('food-fat-bar','food-fat-label',totals.fat,targets.fat,'g');
+  setBar('food-carbs-bar','food-carbs-label',totals.netCarbs,targets.carbs,'g','#47c8ff');
+  setBar('food-fat-bar','food-fat-label',totals.fat,targets.fat,'g','#ffb74d');
+  // Fiber bar — no target, just show accumulation (25g daily reference)
+  const fiberBar = document.getElementById('food-fiber-bar');
+  const fiberLbl = document.getElementById('food-fiber-label');
+  if (fiberBar) fiberBar.style.width = Math.min(100, Math.round((totals.fiber/25)*100)) + '%';
+  if (fiberLbl) fiberLbl.textContent = totals.fiber + 'g';
 }
 
 // ============================================================
@@ -8709,16 +8746,21 @@ function getSelectedDateFoodLog() {
 
 function getSelectedDateTotals() {
   const log = getSelectedDateFoodLog();
-  let cal=0, protein=0, carbs=0, fat=0;
+  let cal=0, protein=0, carbs=0, fat=0, fiber=0;
   Object.values(log.meals).forEach(function(meal) {
     meal.forEach(function(item) {
       cal     += item.calories || 0;
       protein += item.protein  || 0;
       carbs   += item.carbs    || 0;
       fat     += item.fat      || 0;
+      fiber   += item.fiber    || 0;
     });
   });
-  return {cal:Math.round(cal), protein:Math.round(protein), carbs:Math.round(carbs), fat:Math.round(fat)};
+  return {
+    cal:Math.round(cal), protein:Math.round(protein),
+    carbs:Math.round(carbs), fat:Math.round(fat), fiber:Math.round(fiber*10)/10,
+    netCarbs: Math.max(0, Math.round(carbs - fiber))
+  };
 }
 
 // Override renderFoodDailySummary to use selected date
@@ -8755,16 +8797,25 @@ function renderFoodDaySummaryBar() {
   if (consumed) consumed.textContent = totals.cal.toLocaleString() + ' eaten';
   if (target) target.textContent = 'of ' + targets.calories.toLocaleString() + ' goal';
 
-  function setBar(barId, labelId, current, max, unit) {
-    const pct = Math.min(100, Math.round((current/max)*100));
+  function setBar(barId, labelId, current, max, unit, color) {
+    const pct = max ? Math.min(100, Math.round((current/max)*100)) : 0;
     const bar = document.getElementById(barId);
     const lbl = document.getElementById(labelId);
-    if (bar) { bar.style.width = pct + '%'; bar.style.background = current > max ? 'var(--danger)' : undefined; }
+    if (bar) {
+      bar.style.width = pct + '%';
+      if (color) bar.style.background = color;
+      if (current > max && max > 0) bar.style.background = 'var(--danger)';
+    }
     if (lbl) lbl.textContent = current + '/' + max + unit;
   }
   setBar('food-protein-bar','food-protein-label',totals.protein,targets.protein,'g');
-  setBar('food-carbs-bar','food-carbs-label',totals.carbs,targets.carbs,'g');
-  setBar('food-fat-bar','food-fat-label',totals.fat,targets.fat,'g');
+  setBar('food-carbs-bar','food-carbs-label',totals.netCarbs,targets.carbs,'g','#47c8ff');
+  setBar('food-fat-bar','food-fat-label',totals.fat,targets.fat,'g','#ffb74d');
+  // Fiber bar — no target, just show accumulation (25g daily reference)
+  const fiberBar = document.getElementById('food-fiber-bar');
+  const fiberLbl = document.getElementById('food-fiber-label');
+  if (fiberBar) fiberBar.style.width = Math.min(100, Math.round((totals.fiber/25)*100)) + '%';
+  if (fiberLbl) fiberLbl.textContent = totals.fiber + 'g';
 }
 
 // ============================================================
@@ -9072,7 +9123,8 @@ function saveFoodItem() {
     protein:  parseFloat(document.getElementById('fi-protein').value) || 0,
     carbs:    parseFloat(document.getElementById('fi-carbs').value) || 0,
     fat:      parseFloat(document.getElementById('fi-fat').value) || 0,
-    category: document.getElementById('fi-category').value || 'other',
+    category: document.getElementById('fi-category').value || 'other'
+    fiber: parseFloat(document.getElementById('fi-fiber')?.value) || 0,,
     portionType: document.getElementById('fi-portion-type')?.value || 'dairy',
   };
   const vault = getFoodVault();
@@ -10138,6 +10190,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <label class="input-label">Fat (g)</label>
         <input type="number" class="input" id="fi-fat" placeholder="0" style="text-align:center">
       </div>
+      <div class="input-group" style="margin-bottom:0">
+        <label class="input-label">Fiber (g)</label>
+        <input type="number" class="input" id="fi-fiber" placeholder="0" style="text-align:center">
+      </div>
     </div>
 
     <!-- Category -->
@@ -10343,7 +10399,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <div id="af-ai-status" style="display:none;font-family:'DM Mono',monospace;font-size:10px;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);margin-bottom:10px"></div>
 
     <!-- Macro fields -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px">
       <div class="input-group" style="margin-bottom:0">
         <label class="input-label">Cal</label>
         <input type="number" class="input" id="af-cal" placeholder="0" style="text-align:center;padding:8px">
@@ -10359,6 +10415,10 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="input-group" style="margin-bottom:0">
         <label class="input-label">Fat</label>
         <input type="number" class="input" id="af-fat" placeholder="0" style="text-align:center;padding:8px">
+      </div>
+      <div class="input-group" style="margin-bottom:0">
+        <label class="input-label">Fiber</label>
+        <input type="number" class="input" id="af-fiber" placeholder="0" style="text-align:center;padding:8px">
       </div>
     </div>
 
