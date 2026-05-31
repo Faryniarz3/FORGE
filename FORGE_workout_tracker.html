@@ -7453,44 +7453,6 @@ function afDebounce() {
   _afTimer = setTimeout(afCalculateMacros, 900);
 }
 
-async function afCalculateMacros() {
-  const name    = (document.getElementById('af-name')?.value    || '').trim();
-  const serving = (document.getElementById('af-serving')?.value || '').trim();
-  const statusEl = document.getElementById('af-ai-status');
-  if (!name || !serving) return;
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:600,
-        tools:[{type:'web_search_20250305', name:'web_search'}],
-        messages:[{role:'user', content:'Look up the exact nutrition facts for: ' + name + ', serving size: ' + serving + '. Return ONLY a JSON object with keys: calories, protein, carbs, fat, fiber, confidence (high/medium/low), note. All numbers. No markdown or extra text.'}]
-      })
-    });
-    if (!res.ok) throw new Error('API ' + res.status);
-    const data = await res.json();
-    // Extract text from all content blocks (web search may add tool_use blocks)
-    const text = (data.content||[])
-      .filter(function(b){ return b.type === 'text'; })
-      .map(function(b){ return b.text||''; })
-      .join('').trim();
-    const macros = JSON.parse(text.replace(/```json|```/g,'').trim());
-    const set = function(id,val){
-      const el=document.getElementById(id);
-      if(el && val !== undefined && val !== null) el.value=Math.round(val*10)/10;
-    };
-    set('af-cal',macros.calories); set('af-protein',macros.protein);
-    set('af-carbs',macros.carbs); set('af-fat',macros.fat);
-    set('af-fiber',macros.fiber);
-    if (statusEl) {
-      const confColor = macros.confidence==='high'?'#81c784':macros.confidence==='medium'?'#ffb74d':'#ff6b6b';
-      statusEl.style.display = 'block'; statusEl.style.color = confColor;
-      statusEl.innerHTML = '<strong>'+(macros.confidence||'').toUpperCase()+'</strong> confidence — '+(macros.note||'Review before saving');
-    }
-  } catch(e) {
-    if (statusEl) { statusEl.style.display='block'; statusEl.style.color='#ff6b6b'; statusEl.textContent='⚠ Could not calculate — enter macros manually'; }
-  }
-}
 
 function afAdjustQty(delta) {
   const el = document.getElementById('af-qty'); if (!el) return;
@@ -8333,37 +8295,6 @@ async function aiCalculateMbMacros() {
 }
 
 // ── Vault add/edit calculator (food item modal) ──
-async function aiCalculateMacros() {
-  const name    = (document.getElementById('fi-name')?.value    || '').trim();
-  const serving = (document.getElementById('fi-serving')?.value || '').trim();
-  const btnLabel = document.getElementById('fi-ai-btn-label');
-  const noteEl   = document.getElementById('fi-ai-note');
-  if (!name) { showToast('Enter a food name first'); return; }
-  if (btnLabel) btnLabel.textContent = '⏳ Looking up...';
-
-  const result = await usdaLookup(name, serving);
-
-  if (result.error === 'no_key') {
-    if (noteEl) { noteEl.style.display='block'; noteEl.textContent='Add USDA API key in Settings (or use DEMO_KEY)'; }
-    if (btnLabel) btnLabel.textContent = '✦ Lookup Macros';
-    return;
-  }
-  if (result.error) {
-    if (noteEl) { noteEl.style.display='block'; noteEl.textContent='Not found — enter macros manually'; }
-    if (btnLabel) btnLabel.textContent = '✦ Lookup Macros';
-    return;
-  }
-
-  const set = function(id, val) { const el = document.getElementById(id); if (el) el.value = val; };
-  set('fi-cal',     result.calories);
-  set('fi-protein', result.protein);
-  set('fi-carbs',   result.carbs);
-  set('fi-fat',     result.fat);
-  set('fi-fiber',   result.fiber);
-
-  if (noteEl) { noteEl.style.display='block'; noteEl.style.color='#81c784'; noteEl.innerHTML='✓ USDA — ' + result.foodName + ' (' + result.note + ')'; }
-  if (btnLabel) btnLabel.textContent = '✦ Re-lookup';
-}
 
 // Keep debounce functions for fi- fields
 function aiMacroDebounce() {
