@@ -8183,30 +8183,64 @@ async function usdaLookup(name, serving) {
   const settings = DB.get('settings', {});
   const apiKey = settings.usdaApiKey || 'DEMO_KEY';
   try {
+    // Search USDA - include serving in query for better branded matches
     const query = encodeURIComponent(name + (serving ? ' ' + serving : ''));
     const url = 'https://api.nal.usda.gov/fdc/v1/foods/search?api_key=' + apiKey +
-      '&query=' + query + '&pageSize=1&dataType=Survey%20(FNDDS),SR%20Legacy,Branded';
+      '&query=' + query + '&pageSize=1';
     const res = await fetch(url);
-    if (!res.ok) throw new Error('USDA error: ' + res.status);
+    if (!res.ok) throw new Error('USDA API error ' + res.status);
     const data = await res.json();
     if (!data.foods || !data.foods.length) return {error: 'not_found'};
+
     const food = data.foods[0];
     const nutrients = food.foodNutrients || [];
+
+    // Helper: get nutrient value by ID
     const get = function(ids) {
-      for (var i=0;i<ids.length;i++) {
-        const n = nutrients.find(function(n){return n.nutrientId===ids[i];});
-        if (n && n.value) return Math.round(n.value * 10) / 10;
+      for (var i = 0; i < ids.length; i++) {
+        var n = nutrients.find(function(n) { return n.nutrientId === ids[i]; });
+        if (n && n.value !== undefined && n.value !== null) return n.value;
       }
       return 0;
     };
+
+    // Raw values from API (branded = per serving, SR Legacy = per 100g)
+    var rawCal    = get([1008, 2047, 2048]);
+    var rawProt   = get([1003]);
+    var rawCarbs  = get([1005]);
+    var rawFat    = get([1004]);
+    var rawFiber  = get([1079]);
+
+    var servingSize = food.servingSize || 100;
+    var servingUnit = (food.servingSizeUnit || 'g').toLowerCase();
+    var dataType    = food.dataType || '';
+    var noteText    = '';
+
+    // For SR Legacy / Foundation foods: values are per 100g, scale to serving
+    // For Branded: values are already per serving
+    if (dataType === 'SR Legacy' || dataType === 'Foundation') {
+      // Scale from per 100g to per serving
+      var factor = servingSize / 100;
+      rawCal   = rawCal   * factor;
+      rawProt  = rawProt  * factor;
+      rawCarbs = rawCarbs * factor;
+      rawFat   = rawFat   * factor;
+      rawFiber = rawFiber * factor;
+      noteText = 'Per ' + servingSize + servingUnit + ' serving (USDA SR Legacy)';
+    } else {
+      noteText = 'Per ' + servingSize + servingUnit + ' serving (USDA Branded)';
+    }
+
     return {
-      calories: Math.round(get([1008,2047,2048])),
-      protein:  get([1003]),
-      carbs:    get([1005]),
-      fat:      get([1004]),
-      fiber:    get([1079]),
+      calories: Math.round(rawCal),
+      protein:  Math.round(rawProt  * 10) / 10,
+      carbs:    Math.round(rawCarbs  * 10) / 10,
+      fat:      Math.round(rawFat   * 10) / 10,
+      fiber:    Math.round(rawFiber * 10) / 10,
       foodName: food.description,
-      note: 'Per 100g — adjust quantity to match your serving',
+      servingSize: servingSize,
+      servingUnit: servingUnit,
+      note: noteText,
     };
   } catch(e) {
     return {error: e.message};
@@ -8252,7 +8286,7 @@ async function afCalculateMacros() {
   if (statusEl) {
     statusEl.style.display = 'block';
     statusEl.style.color = '#81c784';
-    statusEl.innerHTML = '✓ <strong>Nutritionix</strong> — ' + result.name + ' (' + result.serving + ')';
+    statusEl.innerHTML = '✓ <strong>USDA</strong> — ' + result.foodName + '<br><span style="font-size:9px;color:var(--text3)">' + result.note + '</span>';
   }
 }
 
@@ -8278,7 +8312,7 @@ async function aiCalculateMbMacros() {
   const result = await usdaLookup(name, serving);
 
   if (result.error === 'no_key') {
-    if (noteEl) { noteEl.style.display='block'; noteEl.textContent='Add Nutritionix API key in Settings'; }
+    if (noteEl) { noteEl.style.display='block'; noteEl.textContent='Add USDA API key in Settings (or use DEMO_KEY)'; }
     if (btnLabel) btnLabel.textContent = '✦ Lookup Macros';
     return;
   }
@@ -8294,7 +8328,7 @@ async function aiCalculateMbMacros() {
   set('mb-new-carbs',   result.carbs);
   set('mb-new-fat',     result.fat);
 
-  if (noteEl) { noteEl.style.display='block'; noteEl.style.color='#81c784'; noteEl.innerHTML='✓ Nutritionix — ' + result.name; }
+  if (noteEl) { noteEl.style.display='block'; noteEl.style.color='#81c784'; noteEl.innerHTML='✓ USDA — ' + result.foodName + ' (' + result.note + ')'; }
   if (btnLabel) btnLabel.textContent = '✦ Re-lookup';
 }
 
@@ -8310,7 +8344,7 @@ async function aiCalculateMacros() {
   const result = await usdaLookup(name, serving);
 
   if (result.error === 'no_key') {
-    if (noteEl) { noteEl.style.display='block'; noteEl.textContent='Add Nutritionix API key in Settings'; }
+    if (noteEl) { noteEl.style.display='block'; noteEl.textContent='Add USDA API key in Settings (or use DEMO_KEY)'; }
     if (btnLabel) btnLabel.textContent = '✦ Lookup Macros';
     return;
   }
@@ -8327,7 +8361,7 @@ async function aiCalculateMacros() {
   set('fi-fat',     result.fat);
   set('fi-fiber',   result.fiber);
 
-  if (noteEl) { noteEl.style.display='block'; noteEl.style.color='#81c784'; noteEl.innerHTML='✓ Nutritionix — ' + result.name + ' (' + result.serving + ')'; }
+  if (noteEl) { noteEl.style.display='block'; noteEl.style.color='#81c784'; noteEl.innerHTML='✓ USDA — ' + result.foodName + ' (' + result.note + ')'; }
   if (btnLabel) btnLabel.textContent = '✦ Re-lookup';
 }
 
