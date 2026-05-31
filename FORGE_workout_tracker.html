@@ -8225,30 +8225,44 @@ async function afCalculateMacros() {
   const name    = (document.getElementById('af-name')?.value    || '').trim();
   const serving = (document.getElementById('af-serving')?.value || '').trim();
   const statusEl = document.getElementById('af-ai-status');
+
   if (!name || !serving) return;
 
-  const result = await usdaLookup(name, serving);
+  // Show loading
+  if (statusEl) { statusEl.style.display='block'; statusEl.style.color='var(--text3)'; statusEl.textContent='⏳ Looking up ' + name + '...'; }
 
-  if (result.error === 'no_key') {
-    if (statusEl) { statusEl.style.display='block'; statusEl.style.color='#ffb74d'; statusEl.innerHTML='⚠ Get a free USDA API key at fdc.nal.usda.gov — or it will use DEMO_KEY (rate limited)'; }
-    return;
-  }
-  if (result.error) {
-    if (statusEl) { statusEl.style.display='block'; statusEl.style.color='#ff6b6b'; statusEl.textContent='⚠ Not found — enter macros manually'; }
-    return;
-  }
+  try {
+    const result = await usdaLookup(name, serving);
 
-  const set = function(id, val) { const el = document.getElementById(id); if (el) el.value = val; };
-  set('af-cal',     result.calories);
-  set('af-protein', result.protein);
-  set('af-carbs',   result.carbs);
-  set('af-fat',     result.fat);
-  set('af-fiber',   result.fiber);
+    if (result.error) {
+      const msg = result.error === 'not_found'
+        ? '⚠ Not found in USDA — enter macros manually'
+        : '⚠ Error: ' + result.error;
+      if (statusEl) { statusEl.style.display='block'; statusEl.style.color='#ff6b6b'; statusEl.textContent=msg; }
+      return;
+    }
 
-  if (statusEl) {
-    statusEl.style.display = 'block';
-    statusEl.style.color = '#81c784';
-    statusEl.innerHTML = '✓ <strong>USDA</strong> — ' + result.foodName + '<br><span style="font-size:9px;color:var(--text3)">' + result.note + '</span>';
+    // Fill macro fields
+    const fields = {
+      'af-cal':     result.calories,
+      'af-protein': result.protein,
+      'af-carbs':   result.carbs,
+      'af-fat':     result.fat,
+      'af-fiber':   result.fiber,
+    };
+    Object.keys(fields).forEach(function(id) {
+      const el = document.getElementById(id);
+      if (el) el.value = fields[id];
+    });
+
+    if (statusEl) {
+      statusEl.style.display = 'block';
+      statusEl.style.color = '#81c784';
+      statusEl.innerHTML = '✓ <strong>USDA</strong> — ' + result.foodName + '<br><small style="color:var(--text3)">' + result.note + '</small>';
+    }
+
+  } catch(e) {
+    if (statusEl) { statusEl.style.display='block'; statusEl.style.color='#ff6b6b'; statusEl.textContent='⚠ Lookup failed: ' + e.message; }
   }
 }
 
