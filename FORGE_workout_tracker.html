@@ -1376,6 +1376,21 @@ select.input { appearance: none; }
   </div>
 
   <!-- TRAINING PHILOSOPHY -->
+  <!-- NUTRITIONIX SETTINGS -->
+  <div class="section">
+    <div class="section-title" style="color:#ba68c8">Nutritionix Food Database</div>
+    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:12px">Free API for accurate food macros. Get your key at nutritionix.com/business/api</div>
+    <div class="input-group">
+      <label class="input-label">App ID</label>
+      <input type="text" class="input" id="nix-app-id" placeholder="e.g. a1b2c3d4" autocomplete="off">
+    </div>
+    <div class="input-group">
+      <label class="input-label">API Key</label>
+      <input type="password" class="input" id="nix-api-key" placeholder="e.g. abc123def456..." autocomplete="off">
+    </div>
+    <button class="btn btn-secondary btn-full" onclick="saveNixSettings()">Save Nutritionix Settings</button>
+  </div>
+
   <div class="section">
     <div class="section-title">Training Philosophy</div>
     <p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:14px">This philosophy is fed directly to the AI every time it builds a program. Be specific — the more detail you provide, the more precisely it programs for you.</p>
@@ -8152,6 +8167,804 @@ function aiMbMacroDebounce() {
 }
 
 // ============================================================
+// NUTRITIONIX MACRO CALCULATOR
+// ============================================================
+
+function saveNixSettings() {
+  const appId  = (document.getElementById('nix-app-id')?.value  || '').trim();
+  const apiKey = (document.getElementById('nix-api-key')?.value || '').trim();
+  const settings = DB.get('settings', {});
+  settings.nixAppId  = appId;
+  settings.nixApiKey = apiKey;
+  DB.set('settings', settings);
+  showToast('Nutritionix settings saved!');
+}
+
+function prefillNixSettings() {
+  const settings = DB.get('settings', {});
+  const appIdEl  = document.getElementById('nix-app-id');
+  const apiKeyEl = document.getElementById('nix-api-key');
+  if (appIdEl  && settings.nixAppId)  appIdEl.value  = settings.nixAppId;
+  if (apiKeyEl && settings.nixApiKey) apiKeyEl.value = settings.nixApiKey;
+}
+
+async function nixLookup(name, serving) {
+  const settings = DB.get('settings', {});
+  if (!settings.nixAppId || !settings.nixApiKey) {
+    return {error: 'no_key'};
+  }
+
+  try {
+    const res = await fetch('https://trackapi.nutritionix.com/v2/natural/nutrients', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-app-id':  settings.nixAppId,
+        'x-app-key': settings.nixApiKey,
+      },
+      body: JSON.stringify({ query: serving ? name + ' ' + serving : name })
+    });
+
+    if (!res.ok) throw new Error('Nutritionix API error: ' + res.status);
+    const data = await res.json();
+    const food = data.foods && data.foods[0];
+    if (!food) return {error: 'not_found'};
+
+    return {
+      calories: Math.round(food.nf_calories       || 0),
+      protein:  Math.round((food.nf_protein        || 0) * 10) / 10,
+      carbs:    Math.round((food.nf_total_carbohydrate || 0) * 10) / 10,
+      fat:      Math.round((food.nf_total_fat      || 0) * 10) / 10,
+      fiber:    Math.round((food.nf_dietary_fiber  || 0) * 10) / 10,
+      name:     food.food_name,
+      serving:  food.serving_qty + ' ' + food.serving_unit,
+    };
+  } catch(e) {
+    return {error: e.message};
+  }
+}
+
+// ── Debounce for Add Food modal ──
+let _afTimer = null;
+
+function afDebounce() {
+  const name    = (document.getElementById('af-name')?.value    || '').trim();
+  const serving = (document.getElementById('af-serving')?.value || '').trim();
+  if (!name || !serving) return;
+  const statusEl = document.getElementById('af-ai-status');
+  if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = '⏳ Looking up macros...'; statusEl.style.color = 'var(--text3)'; }
+  clearTimeout(_afTimer);
+  _afTimer = setTimeout(afCalculateMacros, 900);
+}
+
+async function afCalculateMacros() {
+  const name    = (document.getElementById('af-name')?.value    || '').trim();
+  const serving = (document.getElementById('af-serving')?.value || '').trim();
+  const statusEl = document.getElementById('af-ai-status');
+  if (!name || !serving) return;
+
+  const result = await nixLookup(name, serving);
+
+  if (result.error === 'no_key') {
+    if (statusEl) { statusEl.style.display='block'; statusEl.style.color='#ffb74d'; statusEl.innerHTML='⚠ Add your Nutritionix API key in <strong>Settings</strong> to enable auto-lookup'; }
+    return;
+  }
+  if (result.error) {
+    if (statusEl) { statusEl.style.display='block'; statusEl.style.color='#ff6b6b'; statusEl.textContent='⚠ Not found — enter macros manually'; }
+    return;
+  }
+
+  const set = function(id, val) { const el = document.getElementById(id); if (el) el.value = val; };
+  set('af-cal',     result.calories);
+  set('af-protein', result.protein);
+  set('af-carbs',   result.carbs);
+  set('af-fat',     result.fat);
+  set('af-fiber',   result.fiber);
+
+  if (statusEl) {
+    statusEl.style.display = 'block';
+    statusEl.style.color = '#81c784';
+    statusEl.innerHTML = '✓ <strong>Nutritionix</strong> — ' + result.name + ' (' + result.serving + ')';
+  }
+}
+
+// ── Debounce for Meal Builder quick-add ──
+let _aiMbMacroTimer = null;
+
+function aiMbMacroDebounce() {
+  const name    = (document.getElementById('mb-new-name')?.value    || '').trim();
+  const serving = (document.getElementById('mb-new-serving')?.value || '').trim();
+  if (!name || !serving) return;
+  const btnLabel = document.getElementById('mb-ai-btn-label');
+  if (btnLabel) btnLabel.textContent = '⏳ Looking up...';
+  clearTimeout(_aiMbMacroTimer);
+  _aiMbMacroTimer = setTimeout(aiCalculateMbMacros, 900);
+}
+
+async function aiCalculateMbMacros() {
+  const name    = (document.getElementById('mb-new-name')?.value    || '').trim();
+  const serving = (document.getElementById('mb-new-serving')?.value || '').trim();
+  const btnLabel = document.getElementById('mb-ai-btn-label');
+  const noteEl   = document.getElementById('mb-ai-note');
+  if (!name || !serving) return;
+
+  const result = await nixLookup(name, serving);
+
+  if (result.error === 'no_key') {
+    if (noteEl) { noteEl.style.display='block'; noteEl.textContent='Add Nutritionix API key in Settings'; }
+    if (btnLabel) btnLabel.textContent = '✦ Lookup Macros';
+    return;
+  }
+  if (result.error) {
+    if (noteEl) { noteEl.style.display='block'; noteEl.textContent='Not found — enter macros manually'; }
+    if (btnLabel) btnLabel.textContent = '✦ Lookup Macros';
+    return;
+  }
+
+  const set = function(id, val) { const el = document.getElementById(id); if (el) el.value = val; };
+  set('mb-new-cal',     result.calories);
+  set('mb-new-protein', result.protein);
+  set('mb-new-carbs',   result.carbs);
+  set('mb-new-fat',     result.fat);
+
+  if (noteEl) { noteEl.style.display='block'; noteEl.style.color='#81c784'; noteEl.innerHTML='✓ Nutritionix — ' + result.name; }
+  if (btnLabel) btnLabel.textContent = '✦ Re-lookup';
+}
+
+// ── Vault add/edit calculator (food item modal) ──
+async function aiCalculateMacros() {
+  const name    = (document.getElementById('fi-name')?.value    || '').trim();
+  const serving = (document.getElementById('fi-serving')?.value || '').trim();
+  const btnLabel = document.getElementById('fi-ai-btn-label');
+  const noteEl   = document.getElementById('fi-ai-note');
+  if (!name) { showToast('Enter a food name first'); return; }
+  if (btnLabel) btnLabel.textContent = '⏳ Looking up...';
+
+  const result = await nixLookup(name, serving);
+
+  if (result.error === 'no_key') {
+    if (noteEl) { noteEl.style.display='block'; noteEl.textContent='Add Nutritionix API key in Settings'; }
+    if (btnLabel) btnLabel.textContent = '✦ Lookup Macros';
+    return;
+  }
+  if (result.error) {
+    if (noteEl) { noteEl.style.display='block'; noteEl.textContent='Not found — enter macros manually'; }
+    if (btnLabel) btnLabel.textContent = '✦ Lookup Macros';
+    return;
+  }
+
+  const set = function(id, val) { const el = document.getElementById(id); if (el) el.value = val; };
+  set('fi-cal',     result.calories);
+  set('fi-protein', result.protein);
+  set('fi-carbs',   result.carbs);
+  set('fi-fat',     result.fat);
+  set('fi-fiber',   result.fiber);
+
+  if (noteEl) { noteEl.style.display='block'; noteEl.style.color='#81c784'; noteEl.innerHTML='✓ Nutritionix — ' + result.name + ' (' + result.serving + ')'; }
+  if (btnLabel) btnLabel.textContent = '✦ Re-lookup';
+}
+
+// Keep debounce functions for fi- fields
+let _aiMacroTimer = null;
+function aiMacroDebounce() {
+  const name    = (document.getElementById('fi-name')?.value    || '').trim();
+  const serving = (document.getElementById('fi-serving')?.value || '').trim();
+  if (!name || !serving) return;
+  const btnLabel = document.getElementById('fi-ai-btn-label');
+  if (btnLabel) btnLabel.textContent = '⏳ Looking up...';
+  clearTimeout(_aiMacroTimer);
+  _aiMacroTimer = setTimeout(aiCalculateMacros, 900);
+}
+
+
+// ============================================================
+// FOOD VAULT BROWSER
+// ============================================================
+let vbActiveCat = null;
+let vbSelectedFood = null;
+let vbSelectedSlot = 'breakfast';
+
+function openFoodVaultBrowser() {
+  vbActiveCat = null;
+  const searchEl = document.getElementById('vb-search');
+  if (searchEl) searchEl.value = '';
+  renderVaultBrowserBubbles();
+  renderVaultBrowser('');
+  openModal('modal-vault-browser');
+}
+
+function renderVaultBrowserBubbles() {
+  const el = document.getElementById('vb-cat-bubbles');
+  if (!el) return;
+  el.innerHTML = '';
+
+  // All bubble
+  const allBtn = document.createElement('button');
+  const allActive = vbActiveCat === null;
+  allBtn.style.cssText = 'padding:5px 13px;border-radius:20px;font-family:DM Mono,monospace;font-size:11px;cursor:pointer;transition:all 0.15s;' +
+    'border:1px solid ' + (allActive ? 'var(--accent)' : 'var(--border)') + ';' +
+    'background:' + (allActive ? 'rgba(232,255,71,0.12)' : 'var(--surface)') + ';' +
+    'color:' + (allActive ? 'var(--accent)' : 'var(--text3)') + ';';
+  allBtn.textContent = 'All';
+  allBtn.onclick = function() { vbActiveCat = null; renderVaultBrowserBubbles(); renderVaultBrowser(document.getElementById('vb-search')?.value || ''); };
+  el.appendChild(allBtn);
+
+  FOOD_CATEGORIES.forEach(function(cat) {
+    const isActive = vbActiveCat === cat;
+    const color = FOOD_CAT_COLORS[cat] || '#888';
+    const btn = document.createElement('button');
+    btn.style.cssText = 'padding:5px 13px;border-radius:20px;font-family:DM Mono,monospace;font-size:11px;cursor:pointer;transition:all 0.15s;' +
+      'border:1px solid ' + (isActive ? color : 'var(--border)') + ';' +
+      'background:' + (isActive ? 'rgba(' + hexToRgb(color) + ',0.15)' : 'var(--surface)') + ';' +
+      'color:' + (isActive ? color : 'var(--text3)') + ';';
+    btn.textContent = FOOD_CAT_LABELS[cat];
+    btn.onclick = function() {
+      vbActiveCat = isActive ? null : cat;
+      renderVaultBrowserBubbles();
+      renderVaultBrowser(document.getElementById('vb-search')?.value || '');
+    };
+    el.appendChild(btn);
+  });
+}
+
+function renderVaultBrowser(query) {
+  const el = document.getElementById('vb-food-list');
+  if (!el) return;
+  el.innerHTML = '';
+
+  const vault = getFoodVault();
+  const q = (query || '').toLowerCase();
+  const filtered = vault.filter(function(f) {
+    return f.name.toLowerCase().includes(q) &&
+      (vbActiveCat === null || f.category === vbActiveCat);
+  });
+
+  if (!filtered.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;padding:20px 0';
+    empty.textContent = 'No foods found';
+    el.appendChild(empty);
+    return;
+  }
+
+  // Group by category
+  const groups = {};
+  const catOrder = vbActiveCat ? [vbActiveCat] : FOOD_CATEGORIES;
+  catOrder.forEach(function(cat) { groups[cat] = []; });
+  filtered.forEach(function(f) {
+    if (groups[f.category]) groups[f.category].push(f);
+    else if (!vbActiveCat) { if (!groups['other']) groups['other'] = []; groups['other'].push(f); }
+  });
+
+  catOrder.forEach(function(cat) {
+    const foods = groups[cat] || [];
+    if (!foods.length) return;
+    const color = FOOD_CAT_COLORS[cat] || '#888';
+
+    // Category header
+    const catHeader = document.createElement('div');
+    catHeader.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:' + color + ';letter-spacing:0.1em;text-transform:uppercase;margin:12px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--border)';
+    catHeader.textContent = FOOD_CAT_LABELS[cat] || cat;
+    el.appendChild(catHeader);
+
+    foods.forEach(function(food) {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:11px 13px;margin-bottom:5px;cursor:pointer;transition:border-color 0.15s';
+      row.onmouseenter = function(){ row.style.borderColor = color; };
+      row.onmouseleave = function(){ row.style.borderColor = 'var(--border)'; };
+
+      const info = document.createElement('div');
+      info.style.flex = '1';
+      const fname = document.createElement('div');
+      fname.style.cssText = 'font-size:14px;color:var(--text);margin-bottom:2px';
+      fname.textContent = food.name;
+      const fmeta = document.createElement('div');
+      fmeta.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
+      fmeta.textContent = food.serving + '  ·  ' + food.calories + ' cal  ·  ' + food.protein + 'g P  ·  ' + food.carbs + 'g C  ·  ' + food.fat + 'g F';
+      info.appendChild(fname); info.appendChild(fmeta);
+
+      const arrow = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      arrow.setAttribute('width','14'); arrow.setAttribute('height','14');
+      arrow.setAttribute('viewBox','0 0 24 24');
+      arrow.style.cssText = 'fill:none;stroke:var(--text3);stroke-width:2;flex-shrink:0';
+      arrow.innerHTML = '<polyline points="9 18 15 12 9 6"/>';
+
+      row.appendChild(info); row.appendChild(arrow);
+      (function(f){ row.onclick = function(){ openVaultItemDetail(f); }; })(food);
+      el.appendChild(row);
+    });
+  });
+}
+
+function openVaultItemDetail(food) {
+  vbSelectedFood = food;
+  vbSelectedSlot = 'breakfast';
+
+  const titleEl = document.getElementById('vid-title');
+  if (titleEl) titleEl.textContent = food.name;
+
+  // Macro per serving bar
+  const macroBar = document.getElementById('vid-macro-bar');
+  if (macroBar) {
+    macroBar.innerHTML = '';
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface2);border-radius:8px;padding:10px 12px';
+    const servingLabel = document.createElement('div');
+    servingLabel.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3);margin-bottom:6px';
+    servingLabel.textContent = 'Per ' + food.serving;
+    const macroRow = document.createElement('div');
+    macroRow.style.cssText = 'display:flex;gap:16px';
+    [{label:'CAL',val:food.calories,color:'var(--accent)'},{label:'PRO',val:food.protein,color:'var(--text)'},{label:'CARB',val:food.carbs,color:'#47c8ff'},{label:'FAT',val:food.fat,color:'#ffb74d'}].forEach(function(m){
+      const item = document.createElement('div');
+      item.style.textAlign = 'center';
+      const v = document.createElement('div');
+      v.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:18px;color:' + m.color + ';letter-spacing:0.04em';
+      v.textContent = m.val;
+      const l = document.createElement('div');
+      l.style.cssText = 'font-family:DM Mono,monospace;font-size:8px;color:var(--text3)';
+      l.textContent = m.label;
+      item.appendChild(v); item.appendChild(l);
+      macroRow.appendChild(item);
+    });
+    card.appendChild(servingLabel); card.appendChild(macroRow);
+    macroBar.appendChild(card);
+  }
+
+  // Qty label
+  const qtyLabel = document.getElementById('vid-qty-label');
+  if (qtyLabel) qtyLabel.textContent = 'Quantity  ×  ' + food.serving;
+
+  // Reset qty
+  const qtyEl = document.getElementById('vid-qty');
+  if (qtyEl) qtyEl.value = '1';
+
+  // Update preview
+  vbUpdatePreview();
+
+  // Slot grid
+  const slotGrid = document.getElementById('vid-slot-grid');
+  if (slotGrid) {
+    slotGrid.innerHTML = '';
+    const slotColors = {breakfast:'#ffb74d',lunch:'#47c8ff',dinner:'#ba68c8',snacks:'#81c784'};
+    MEALS.forEach(function(slot) {
+      const color = slotColors[slot] || 'var(--text3)';
+      const isActive = slot === vbSelectedSlot;
+      const btn = document.createElement('button');
+      btn.id = 'vid-slot-' + slot;
+      btn.style.cssText = 'padding:10px;border-radius:8px;cursor:pointer;font-family:DM Mono,monospace;font-size:11px;letter-spacing:0.06em;transition:all 0.15s;' +
+        'background:' + (isActive ? 'rgba(' + hexToRgb(color) + ',0.15)' : 'var(--surface)') + ';' +
+        'border:1px solid ' + (isActive ? color : 'var(--border)') + ';' +
+        'color:' + (isActive ? color : 'var(--text3)') + ';';
+      btn.textContent = MEAL_LABELS[slot];
+      btn.onclick = function() {
+        vbSelectedSlot = slot;
+        MEALS.forEach(function(s) {
+          const b = document.getElementById('vid-slot-' + s);
+          if (!b) return;
+          const c = slotColors[s] || 'var(--text3)';
+          const active = s === slot;
+          b.style.background = active ? 'rgba(' + hexToRgb(c) + ',0.15)' : 'var(--surface)';
+          b.style.borderColor = active ? c : 'var(--border)';
+          b.style.color = active ? c : 'var(--text3)';
+        });
+      };
+      slotGrid.appendChild(btn);
+    });
+  }
+
+  closeModal('modal-vault-browser');
+  openModal('modal-vault-item-detail');
+}
+
+function vbAdjustQty(delta) {
+  const el = document.getElementById('vid-qty');
+  if (!el) return;
+  const newVal = Math.max(0.25, (parseFloat(el.value) || 1) + delta);
+  el.value = Math.round(newVal * 4) / 4;
+  vbUpdatePreview();
+}
+
+function vbUpdatePreview() {
+  if (!vbSelectedFood) return;
+  const qty = parseFloat(document.getElementById('vid-qty')?.value) || 1;
+  const set = function(id, val) { const el = document.getElementById(id); if (el) el.textContent = Math.round(val * 10) / 10; };
+  set('vid-cal', vbSelectedFood.calories * qty);
+  set('vid-p',   vbSelectedFood.protein  * qty);
+  set('vid-c',   vbSelectedFood.carbs    * qty);
+  set('vid-f',   vbSelectedFood.fat      * qty);
+}
+
+function vbLogFood(status) {
+  if (!vbSelectedFood || !vbSelectedSlot) return;
+  const qty = parseFloat(document.getElementById('vid-qty')?.value) || 1;
+  const entry = {
+    id: Date.now().toString() + Math.random().toString(36).slice(2,5),
+    foodId: vbSelectedFood.id,
+    name: vbSelectedFood.name,
+    servingQty: qty + ' × ' + vbSelectedFood.serving,
+    calories: Math.round(vbSelectedFood.calories * qty),
+    protein:  Math.round(vbSelectedFood.protein  * qty * 10) / 10,
+    carbs:    Math.round(vbSelectedFood.carbs    * qty * 10) / 10,
+    fat:      Math.round(vbSelectedFood.fat      * qty * 10) / 10,
+    loggedAt: new Date().toISOString(),
+    mealStatus: status,
+  };
+  saveFoodLogEntry(vbSelectedSlot, entry);
+  closeModal('modal-vault-item-detail');
+  const statusLabel = status === 'logged' ? 'logged' : 'planned';
+  showToast(vbSelectedFood.name + ' ' + statusLabel + ' for ' + MEAL_LABELS[vbSelectedSlot]);
+}
+
+// ============================================================
+// MEAL BUILDER
+// ============================================================
+let mbIngredients = [];
+let mbCurrentFood = null;
+let mbExpandedCat = null; // which category panel is open
+
+function openMealBuilder(editId) {
+  mbIngredients = [];
+  mbCurrentFood = null;
+  mbExpandedCat = null;
+  window._editingMealId = editId || null;
+
+  const nameEl = document.getElementById('mb-name');
+  const slotEl = document.getElementById('mb-slot');
+  if (nameEl) nameEl.value = '';
+  if (slotEl) slotEl.value = 'breakfast';
+
+  if (editId) {
+    const meal = getSavedMeals().find(function(m){return m.id===editId;});
+    if (meal) {
+      if (nameEl) nameEl.value = meal.name;
+      if (slotEl) slotEl.value = meal.mealSlot || 'breakfast';
+      mbIngredients = meal.items.map(function(i){return Object.assign({},i);});
+    }
+    const saveBtn = document.querySelector('#modal-meal-builder .btn-primary');
+    if (saveBtn) saveBtn.textContent = 'Update Meal';
+  } else {
+    const saveBtn = document.querySelector('#modal-meal-builder .btn-primary');
+    if (saveBtn) saveBtn.textContent = 'Save Meal';
+  }
+
+  renderMbCategoryPanels();
+  renderMbIngredients();
+  updateMbTotals();
+  openModal('modal-meal-builder');
+}
+
+// ── Category panels ──
+function renderMbCategoryPanels() {
+  const el = document.getElementById('mb-category-panels');
+  if (!el) return;
+  el.innerHTML = '';
+
+  FOOD_CATEGORIES.forEach(function(cat) {
+    const color = FOOD_CAT_COLORS[cat] || '#888';
+    const isOpen = mbExpandedCat === cat;
+    const vault = getFoodVault().filter(function(f){return f.category===cat;});
+
+    // Category header button
+    const header = document.createElement('button');
+    header.style.cssText = 'width:100%;display:flex;align-items:center;justify-content:space-between;' +
+      'padding:10px 14px;border-radius:' + (isOpen?'8px 8px 0 0':'8px') + ';cursor:pointer;' +
+      'background:' + (isOpen?'rgba('+hexToRgb(color)+',0.15)':'var(--surface)') + ';' +
+      'border:1px solid ' + (isOpen?color:'var(--border)') + ';' +
+      'margin-bottom:' + (isOpen?'0':'6px') + ';transition:all 0.15s';
+
+    const leftPart = document.createElement('div');
+    leftPart.style.cssText = 'display:flex;align-items:center;gap:8px';
+    const catLabel = document.createElement('div');
+    catLabel.style.cssText = 'font-family:DM Mono,monospace;font-size:12px;font-weight:600;color:' + color + ';letter-spacing:0.04em';
+    catLabel.textContent = FOOD_CAT_LABELS[cat];
+    const countBadge = document.createElement('div');
+    countBadge.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:var(--text3);background:var(--surface2);padding:2px 6px;border-radius:8px';
+    countBadge.textContent = vault.length + ' foods';
+    leftPart.appendChild(catLabel);
+    leftPart.appendChild(countBadge);
+
+    const chevron = document.createElement('svg');
+    chevron.setAttribute('width','14'); chevron.setAttribute('height','14');
+    chevron.setAttribute('viewBox','0 0 24 24');
+    chevron.style.cssText = 'fill:none;stroke:var(--text3);stroke-width:2;transition:transform 0.2s;' +
+      'transform:' + (isOpen?'rotate(180deg)':'rotate(0deg)');
+    chevron.innerHTML = '<polyline points="6 9 12 15 18 9"/>';
+    header.appendChild(leftPart);
+    header.appendChild(chevron);
+
+    (function(c) {
+      header.onclick = function() {
+        mbExpandedCat = mbExpandedCat === c ? null : c;
+        renderMbCategoryPanels();
+      };
+    })(cat);
+
+    el.appendChild(header);
+
+    // Expanded food list
+    if (isOpen) {
+      const panel = document.createElement('div');
+      panel.style.cssText = 'border:1px solid ' + color + ';border-top:none;border-radius:0 0 8px 8px;' +
+        'padding:10px;margin-bottom:6px;background:var(--bg)';
+
+      if (!vault.length) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text3);padding:8px 0;text-align:center';
+        empty.textContent = 'No foods in this category yet';
+        panel.appendChild(empty);
+      } else {
+        vault.forEach(function(food) {
+          const isSelected = mbIngredients.some(function(i){return i.foodId===food.id;});
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;' +
+            'padding:8px 10px;border-radius:8px;margin-bottom:4px;transition:all 0.15s;' +
+            'background:' + (isSelected?'rgba('+hexToRgb(color)+',0.12)':'var(--surface)') + ';' +
+            'border:1px solid ' + (isSelected?color:'var(--border)') + ';cursor:pointer';
+
+          const info = document.createElement('div');
+          info.style.flex = '1';
+          const fname = document.createElement('div');
+          fname.style.cssText = 'font-size:13px;color:var(--text);margin-bottom:1px';
+          fname.textContent = food.name;
+          const fmeta = document.createElement('div');
+          fmeta.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
+          fmeta.textContent = food.serving + '  ·  ' + food.calories + ' cal  ·  ' + food.protein + 'g P';
+          info.appendChild(fname); info.appendChild(fmeta);
+
+          // Inline quantity stepper (only shown when selected)
+          const qtyControl = document.createElement('div');
+          qtyControl.style.cssText = 'display:' + (isSelected?'flex':'none') + ';align-items:center;gap:6px;margin-left:10px';
+
+          const minusBtn = document.createElement('button');
+          minusBtn.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-radius:5px;width:26px;height:26px;color:var(--text);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0';
+          minusBtn.textContent = '−';
+
+          const qtyInput = document.createElement('input');
+          qtyInput.type = 'number';
+          qtyInput.style.cssText = 'width:40px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:3px;color:var(--text);font-family:Bebas Neue,sans-serif;font-size:16px;text-align:center';
+          qtyInput.min = '0.25'; qtyInput.step = '0.25';
+
+          const plusBtn = document.createElement('button');
+          plusBtn.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-radius:5px;width:26px;height:26px;color:var(--accent);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0';
+          plusBtn.textContent = '+';
+
+          // Set current qty if already selected
+          const existingIdx = mbIngredients.findIndex(function(i){return i.foodId===food.id;});
+          if (existingIdx > -1) {
+            qtyInput.value = mbIngredients[existingIdx].qty;
+          } else {
+            qtyInput.value = '1';
+          }
+
+          (function(f, qi, idx) {
+            minusBtn.onclick = function(e) {
+              e.stopPropagation();
+              const newQty = Math.max(0.25, parseFloat(qi.value||1) - 0.25);
+              qi.value = newQty;
+              updateMbIngredientQty(f.id, newQty);
+            };
+            plusBtn.onclick = function(e) {
+              e.stopPropagation();
+              const newQty = parseFloat(qi.value||1) + 0.25;
+              qi.value = newQty;
+              updateMbIngredientQty(f.id, newQty);
+            };
+            qi.oninput = function(e) {
+              e.stopPropagation();
+              updateMbIngredientQty(f.id, parseFloat(qi.value)||1);
+            };
+          })(food, qtyInput, existingIdx);
+
+          qtyControl.appendChild(minusBtn);
+          qtyControl.appendChild(qtyInput);
+          qtyControl.appendChild(plusBtn);
+
+          row.appendChild(info);
+          row.appendChild(qtyControl);
+
+          // Toggle select/deselect on row click
+          (function(f, qc, qi) {
+            row.onclick = function(e) {
+              if (e.target === minusBtn || e.target === plusBtn || e.target === qtyInput) return;
+              const idx2 = mbIngredients.findIndex(function(i){return i.foodId===f.id;});
+              if (idx2 > -1) {
+                mbIngredients.splice(idx2, 1);
+              } else {
+                mbIngredients.push({
+                  foodId: f.id,
+                  name: f.name,
+                  servingQty: '1 × ' + f.serving,
+                  qty: 1,
+                  baseCalories: f.calories,
+                  baseProtein: f.protein,
+                  baseCarbs: f.carbs,
+                  baseFat: f.fat,
+                  serving: f.serving,
+                  calories: f.calories,
+                  protein: f.protein,
+                  carbs: f.carbs,
+                  fat: f.fat,
+                });
+                qi.value = '1';
+              }
+              renderMbCategoryPanels();
+              renderMbIngredients();
+              updateMbTotals();
+            };
+          })(food, qtyControl, qtyInput);
+
+          panel.appendChild(row);
+        });
+      }
+      el.appendChild(panel);
+    }
+  });
+}
+
+function updateMbIngredientQty(foodId, qty) {
+  const idx = mbIngredients.findIndex(function(i){return i.foodId===foodId;});
+  if (idx === -1) return;
+  const item = mbIngredients[idx];
+  const q = Math.max(0.25, qty);
+  item.qty = q;
+  item.servingQty = q + ' × ' + item.serving;
+  item.calories = Math.round(item.baseCalories * q * 10) / 10;
+  item.protein  = Math.round(item.baseProtein  * q * 10) / 10;
+  item.carbs    = Math.round(item.baseCarbs    * q * 10) / 10;
+  item.fat      = Math.round(item.baseFat      * q * 10) / 10;
+  renderMbIngredients();
+  updateMbTotals();
+}
+
+// ── Ingredient summary list ──
+function renderMbIngredients() {
+  const el = document.getElementById('mb-ingredient-list');
+  if (!el) return;
+  el.innerHTML = '';
+
+  if (!mbIngredients.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;padding:10px 0';
+    empty.textContent = 'Tap a category above to add ingredients';
+    el.appendChild(empty);
+    return;
+  }
+
+  const label = document.createElement('div');
+  label.style.cssText = 'font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.1em;margin-bottom:7px;text-transform:uppercase';
+  label.textContent = 'Selected (' + mbIngredients.length + ')';
+  el.appendChild(label);
+
+  mbIngredients.forEach(function(item) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;' +
+      'padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:7px;margin-bottom:4px';
+
+    const info = document.createElement('div');
+    info.style.flex = '1';
+    const iname = document.createElement('div');
+    iname.style.cssText = 'font-size:12px;color:var(--text)';
+    iname.textContent = item.name;
+    const imeta = document.createElement('div');
+    imeta.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:var(--text3)';
+    imeta.textContent = item.servingQty + '  ·  ' + item.calories + ' cal  ·  ' + item.protein + 'g P';
+    info.appendChild(iname); info.appendChild(imeta);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.style.cssText = 'background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 6px;font-size:14px;flex-shrink:0';
+    removeBtn.textContent = '×';
+    (function(fid) {
+      removeBtn.onclick = function() {
+        mbIngredients = mbIngredients.filter(function(i){return i.foodId!==fid;});
+        renderMbCategoryPanels();
+        renderMbIngredients();
+        updateMbTotals();
+      };
+    })(item.foodId);
+
+    row.appendChild(info);
+    row.appendChild(removeBtn);
+    el.appendChild(row);
+  });
+}
+
+// ── Running totals ──
+function updateMbTotals() {
+  const t = mbIngredients.reduce(function(acc,i){
+    acc.cal+=i.calories; acc.p+=i.protein; acc.c+=i.carbs; acc.f+=i.fat;
+    return acc;
+  },{cal:0,p:0,c:0,f:0});
+  const set = function(id,val){const el=document.getElementById(id);if(el)el.textContent=Math.round(val);};
+  set('mb-total-cal',t.cal); set('mb-total-p',t.p); set('mb-total-c',t.c); set('mb-total-f',t.f);
+}
+
+// ── Save / Update ──
+function saveMealFromBuilder() {
+  const name = (document.getElementById('mb-name')?.value||'').trim();
+  const slot = document.getElementById('mb-slot')?.value||'dinner';
+  if (!name) { showToast('Give your meal a name first'); return; }
+  if (!mbIngredients.length) { showToast('Add at least one ingredient'); return; }
+  const t = mbIngredients.reduce(function(acc,i){acc.cal+=i.calories;acc.p+=i.protein;acc.c+=i.carbs;acc.f+=i.fat;return acc;},{cal:0,p:0,c:0,f:0});
+  const meals = getSavedMeals();
+  const editId = window._editingMealId||null;
+  const mealItems = mbIngredients.map(function(i){
+    return {name:i.name,servingQty:i.servingQty,calories:i.calories,protein:i.protein,carbs:i.carbs,fat:i.fat};
+  });
+  if (editId) {
+    const idx = meals.findIndex(function(m){return m.id===editId;});
+    if (idx>-1) Object.assign(meals[idx],{name,mealSlot:slot,totalCals:Math.round(t.cal),totalProtein:Math.round(t.p),totalCarbs:Math.round(t.c),totalFat:Math.round(t.f),items:mealItems});
+    window._editingMealId=null;
+    showToast(name+' updated!');
+  } else {
+    meals.unshift({id:'sm_custom_'+Date.now(),name,mealSlot:slot,tags:['custom'],totalCals:Math.round(t.cal),totalProtein:Math.round(t.p),totalCarbs:Math.round(t.c),totalFat:Math.round(t.f),items:mealItems});
+    showToast(name+' saved!');
+  }
+  saveSavedMeals(meals);
+  const saveBtn=document.querySelector('#modal-meal-builder .btn-primary');
+  if(saveBtn)saveBtn.textContent='Save Meal';
+  closeModal('modal-meal-builder');
+  renderSavedMealsList();
+  autoSyncAfterFoodChange();
+}
+
+// ── Auto-push to Gist after food changes ──
+function autoSyncAfterFoodChange() {
+  const settings = DB.get('settings',{});
+  if (!settings.ghToken||!settings.gistId) return;
+  const state = getState();
+  const payload = {
+    sessions:state.sessions, programs:state.programs, prs:state.prs,
+    vault:state.vault, foodVault:getFoodVault(), savedMeals:getSavedMeals(),
+    philosophy:DB.get('philosophy',''), lastSync:new Date().toISOString()
+  };
+  fetch('https://api.github.com/gists/'+settings.gistId,{
+    method:'PATCH',
+    headers:{Authorization:'token '+settings.ghToken,'Content-Type':'application/json'},
+    body:JSON.stringify({files:{'forge_data.json':{content:JSON.stringify(payload)}}})
+  }).then(function(){setSyncStatus('synced','Auto-synced '+new Date().toLocaleTimeString());})
+    .catch(function(e){console.warn('Auto-sync failed:',e);});
+}
+
+
+
+
+// ── Auto-calculate macros with debounce ──
+let _aiMacroTimer = null;
+let _aiMbMacroTimer = null;
+
+function aiMacroDebounce() {
+  const name    = (document.getElementById('fi-name')?.value    || '').trim();
+  const serving = (document.getElementById('fi-serving')?.value || '').trim();
+
+  // Need both fields filled before firing
+  if (!name || !serving) return;
+
+  // Show subtle "calculating..." state
+  const btnLabel = document.getElementById('fi-ai-btn-label');
+  if (btnLabel) btnLabel.textContent = '⏳ Calculating...';
+
+  clearTimeout(_aiMacroTimer);
+  _aiMacroTimer = setTimeout(function() {
+    aiCalculateMacros();
+  }, 900); // 900ms pause after last keystroke
+}
+
+function aiMbMacroDebounce() {
+  const name    = (document.getElementById('mb-new-name')?.value    || '').trim();
+  const serving = (document.getElementById('mb-new-serving')?.value || '').trim();
+
+  if (!name || !serving) return;
+
+  const btnLabel = document.getElementById('mb-ai-btn-label');
+  if (btnLabel) btnLabel.textContent = '⏳ Calculating...';
+
+  clearTimeout(_aiMbMacroTimer);
+  _aiMbMacroTimer = setTimeout(function() {
+    aiCalculateMbMacros();
+  }, 900);
+}
+
+// ============================================================
 // AI MACRO CALCULATOR
 // ============================================================
 async function aiCalculateMacros() {
@@ -8271,7 +9084,7 @@ async function aiCalculateMbMacros() {
     if (btnLabel) btnLabel.textContent = '✦ Recalculate';
   } catch(e) {
     if (noteEl) { noteEl.style.display = 'block'; noteEl.textContent = '⚠ Could not calculate — enter manually'; }
-    if (btnLabel) btnLabel.textContent = '✦ Calculate Macros with AI';
+    if (btnLabel) btnLabel.textContent = '✦ Lookup Macros';
   }
   if (btn) btn.disabled = false;
 }
@@ -10123,6 +10936,7 @@ function runDataReset() {
 }
 
 function prefillGitHubSettings() {
+  prefillNixSettings();
   const settings = DB.get('settings', {});
   const tokenInput = document.getElementById('gh-token');
   const gistInput = document.getElementById('gh-gist-id');
@@ -10205,7 +11019,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <!-- AI Calculate button -->
     <button onclick="aiCalculateMacros()" id="fi-ai-btn" style="width:100%;background:rgba(186,104,200,0.12);border:1px solid rgba(186,104,200,0.35);border-radius:8px;padding:10px;font-family:'DM Mono',monospace;font-size:11px;color:#ba68c8;cursor:pointer;margin-bottom:12px;letter-spacing:0.06em;display:flex;align-items:center;justify-content:center;gap:6px">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><circle cx="18" cy="6" r="3" fill="#ba68c8" stroke="none"/></svg>
-      <span id="fi-ai-btn-label">✦ Calculate Macros with AI</span>
+      <span id="fi-ai-btn-label">✦ Lookup Macros</span>
     </button>
 
     <!-- AI confidence note -->
@@ -10319,7 +11133,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       </div>
       <button onclick="aiCalculateMbMacros()" id="mb-ai-btn" style="width:100%;background:rgba(186,104,200,0.1);border:1px solid rgba(186,104,200,0.3);border-radius:7px;padding:8px;font-family:'DM Mono',monospace;font-size:11px;color:#ba68c8;cursor:pointer;margin-bottom:8px">
-        <span id="mb-ai-btn-label">✦ Calculate Macros with AI</span>
+        <span id="mb-ai-btn-label">✦ Lookup Macros</span>
       </button>
       <div id="mb-ai-note" style="display:none;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:8px;padding:7px 9px;background:var(--bg);border-radius:6px;border:1px solid var(--border)"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px">
