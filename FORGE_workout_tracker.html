@@ -10092,13 +10092,24 @@ function initDragReorder(container) {
 // One-time data reset — clears food vault, saved meals, food logs
 // Version key: if not set, wipe and set it
 function runDataReset() {
-  const RESET_KEY = 'forge_food_reset_v10';
+  const RESET_KEY = 'forge_vault_clean_v1';
   if (!DB.get(RESET_KEY, false)) {
-    DB.set('foodVault', null); // null triggers re-seed from FOOD_VAULT_SEED
-    DB.set('savedMeals', null); // null triggers seed load
-    DB.set('foodLogs', {});
+    // Clean food items out of exercise vault
+    const exerciseVault = DB.get('vault', []);
+    const cleanVault = exerciseVault.filter(function(item) {
+      // Exercise vault items have exercise-specific fields, not food fields
+      return item.muscles || item.equipment || item.type || item.tags ||
+             (!item.calories && !item.protein && !item.category);
+    });
+    if (cleanVault.length !== exerciseVault.length) {
+      DB.set('vault', cleanVault);
+      console.log('FORGE: removed ' + (exerciseVault.length - cleanVault.length) + ' food items from exercise vault');
+    }
+    // Reset food data to re-seed cleanly
+    DB.set('foodVault', null);
+    DB.set('savedMeals', null);
     DB.set(RESET_KEY, true);
-    console.log('FORGE: food data reset to v2');
+    console.log('FORGE: vault clean complete');
   }
 }
 
