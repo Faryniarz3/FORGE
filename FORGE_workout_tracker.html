@@ -8268,7 +8268,7 @@ async function afCalculateMacros() {
   const result = await usdaLookup(name, serving);
 
   if (result.error === 'no_key') {
-    if (statusEl) { statusEl.style.display='block'; statusEl.style.color='#ffb74d'; statusEl.innerHTML='⚠ Add your Nutritionix API key in <strong>Settings</strong> to enable auto-lookup'; }
+    if (statusEl) { statusEl.style.display='block'; statusEl.style.color='#ffb74d'; statusEl.innerHTML='⚠ Get a free USDA API key at fdc.nal.usda.gov — or it will use DEMO_KEY (rate limited)'; }
     return;
   }
   if (result.error) {
