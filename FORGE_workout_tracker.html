@@ -6370,14 +6370,24 @@ function mergePRs(local, remote) {
 // ── Vault ──
 // Union of both sides by id. Local edits win on conflict.
 // New exercises on either side are always added.
+function isExercise(item) {
+  // Food items have calories/protein or food category tags
+  const foodCats = ['meat','vegetables','protein','supplements','snacks','fats'];
+  if ('calories' in item || 'protein' in item) return false;
+  if (foodCats.includes(item.category)) return false;
+  return true;
+}
+
 function mergeVault(local, remote) {
   const map = {};
 
-  // Index by id
-  remote.forEach(ex => { map[ex.id] = ex; });
+  // Strip food items from both sides before merging
+  const cleanRemote = remote.filter(isExercise);
+  const cleanLocal  = local.filter(isExercise);
 
-  // Local always overwrites remote on conflict
-  local.forEach(ex => { map[ex.id] = ex; });
+  // Index by id — remote first, local overwrites on conflict
+  cleanRemote.forEach(ex => { map[ex.id] = ex; });
+  cleanLocal.forEach(ex =>  { map[ex.id] = ex; });
 
   return Object.values(map).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 }
