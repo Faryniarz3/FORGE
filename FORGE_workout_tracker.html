@@ -8913,68 +8913,34 @@ function aiMbMacroDebounce() {
 async function aiCalculateMacros() {
   const name    = (document.getElementById('fi-name')?.value    || '').trim();
   const serving = (document.getElementById('fi-serving')?.value || '').trim();
-
-  if (!name) { showToast('Enter a food name first'); return; }
-
-  const btn      = document.getElementById('fi-ai-btn');
   const btnLabel = document.getElementById('fi-ai-btn-label');
   const noteEl   = document.getElementById('fi-ai-note');
-
-  // Loading state
-  if (btnLabel) btnLabel.textContent = '⏳ Calculating...';
-  if (btn) btn.disabled = true;
+  if (!name) { showToast('Enter a food name first'); return; }
+  if (btnLabel) btnLabel.textContent = '⏳ Looking up...';
   if (noteEl) noteEl.style.display = 'none';
 
-  const prompt = 'You are a nutrition database with knowledge of branded products like Oikos, Chobani, Dymatize, etc. Return ONLY a JSON object with keys: calories, protein, carbs, fat, confidence (high/medium/low), note. Numbers only, no markdown. Use actual label data for branded items. Food: ' + name + ' Serving: ' + (serving || '1 serving');
+  const result = await usdaLookup(name, serving);
 
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 300,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-
-    if (!response.ok) throw new Error('API error: ' + response.status);
-    const data = await response.json();
-    const text = (data.content || []).map(function(b){ return b.text || ''; }).join('').trim();
-
-    // Parse JSON response
-    const clean = text.replace(/```json|```/g, '').trim();
-    const macros = JSON.parse(clean);
-
-    // Fill in fields
-    const setField = function(id, val) {
-      const el = document.getElementById(id);
-      if (el && val !== undefined) el.value = Math.round(val * 10) / 10;
-    };
-    setField('fi-cal',     macros.calories);
-    setField('fi-protein', macros.protein);
-    setField('fi-carbs',   macros.carbs);
-    setField('fi-fat',     macros.fat);
-
-    // Show confidence note
-    if (noteEl) {
-      const confColor = macros.confidence === 'high' ? 'var(--success)' : macros.confidence === 'medium' ? '#ffb74d' : 'var(--danger)';
-      noteEl.style.display = 'block';
-      noteEl.innerHTML = '<span style="color:' + confColor + ';font-weight:600">' + (macros.confidence||'').toUpperCase() + ' confidence</span> — ' + (macros.note || 'Review macros before saving');
-    }
-
-    if (btnLabel) btnLabel.textContent = '✦ Recalculate';
-
-  } catch(e) {
-    if (noteEl) {
-      noteEl.style.display = 'block';
-      noteEl.textContent = '⚠ Could not calculate — please enter macros manually. (' + e.message + ')';
-    }
-    if (btnLabel) btnLabel.textContent = '✦ Calculate';
+  if (result.error === 'not_found') {
+    if (noteEl) { noteEl.style.display='block'; noteEl.style.color='#ff6b6b'; noteEl.textContent='Not found — enter macros manually'; }
+    if (btnLabel) btnLabel.textContent = '✦ Lookup Macros';
+    return;
+  }
+  if (result.error) {
+    if (noteEl) { noteEl.style.display='block'; noteEl.style.color='#ff6b6b'; noteEl.textContent='Error: ' + result.error; }
+    if (btnLabel) btnLabel.textContent = '✦ Lookup Macros';
+    return;
   }
 
-  if (btn) btn.disabled = false;
+  const set = function(id, val) { const el = document.getElementById(id); if (el) el.value = val; };
+  set('fi-cal',     result.calories);
+  set('fi-protein', result.protein);
+  set('fi-carbs',   result.carbs);
+  set('fi-fat',     result.fat);
+  set('fi-fiber',   result.fiber);
+
+  if (noteEl) { noteEl.style.display='block'; noteEl.style.color='#81c784'; noteEl.innerHTML='✓ USDA — ' + result.foodName + ' (' + result.note + ')'; }
+  if (btnLabel) btnLabel.textContent = '✦ Re-lookup';
 }
 
 // AI macro calc for meal builder new ingredient
