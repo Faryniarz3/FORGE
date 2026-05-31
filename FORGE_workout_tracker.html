@@ -7443,15 +7443,6 @@ function afRenderSlotGrid() {
   });
 }
 
-function afDebounce() {
-  const name    = (document.getElementById('af-name')?.value    || '').trim();
-  const serving = (document.getElementById('af-serving')?.value || '').trim();
-  if (!name || !serving) return;
-  const statusEl = document.getElementById('af-ai-status');
-  if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = '⏳ Calculating macros...'; statusEl.style.color = 'var(--text3)'; }
-  clearTimeout(_afTimer);
-  _afTimer = setTimeout(afCalculateMacros, 1500);
-}
 
 
 function afAdjustQty(delta) {
@@ -8283,35 +8274,6 @@ function aiMbMacroDebounce() {
   _aiMbMacroTimer = setTimeout(aiCalculateMbMacros, 1500);
 }
 
-async function aiCalculateMbMacros() {
-  const name    = (document.getElementById('mb-new-name')?.value    || '').trim();
-  const serving = (document.getElementById('mb-new-serving')?.value || '').trim();
-  const btnLabel = document.getElementById('mb-ai-btn-label');
-  const noteEl   = document.getElementById('mb-ai-note');
-  if (!name || !serving) return;
-
-  const result = await usdaLookup(name, serving);
-
-  if (result.error === 'no_key') {
-    if (noteEl) { noteEl.style.display='block'; noteEl.textContent='Add USDA API key in Settings (or use DEMO_KEY)'; }
-    if (btnLabel) btnLabel.textContent = '✦ Lookup Macros';
-    return;
-  }
-  if (result.error) {
-    if (noteEl) { noteEl.style.display='block'; noteEl.textContent='Not found — enter macros manually'; }
-    if (btnLabel) btnLabel.textContent = '✦ Lookup Macros';
-    return;
-  }
-
-  const set = function(id, val) { const el = document.getElementById(id); if (el) el.value = val; };
-  set('mb-new-cal',     result.calories);
-  set('mb-new-protein', result.protein);
-  set('mb-new-carbs',   result.carbs);
-  set('mb-new-fat',     result.fat);
-
-  if (noteEl) { noteEl.style.display='block'; noteEl.style.color='#81c784'; noteEl.innerHTML='✓ USDA — ' + result.foodName + ' (' + result.note + ')'; }
-  if (btnLabel) btnLabel.textContent = '✦ Re-lookup';
-}
 
 // ── Vault add/edit calculator (food item modal) ──
 
@@ -8966,55 +8928,34 @@ async function aiCalculateMacros() {
 async function aiCalculateMbMacros() {
   const name    = (document.getElementById('mb-new-name')?.value    || '').trim();
   const serving = (document.getElementById('mb-new-serving')?.value || '').trim();
-  if (!name) { showToast('Enter a food name first'); return; }
-
-  const btn      = document.getElementById('mb-ai-btn');
   const btnLabel = document.getElementById('mb-ai-btn-label');
   const noteEl   = document.getElementById('mb-ai-note');
-
-  if (btnLabel) btnLabel.textContent = '⏳ Calculating...';
-  if (btn) btn.disabled = true;
+  if (!name || !serving) return;
+  if (btnLabel) btnLabel.textContent = '⏳ Looking up...';
   if (noteEl) noteEl.style.display = 'none';
 
-  const prompt = 'You are a nutrition database with knowledge of branded products like Oikos, Chobani, Dymatize, etc. Return ONLY a JSON object with keys: calories, protein, carbs, fat, confidence (high/medium/low), note. Numbers only, no markdown. Use actual label data for branded items. Food: ' + name + ' Serving: ' + (serving || '1 serving');
-
-
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 300,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    if (!response.ok) throw new Error('API error: ' + response.status);
-    const data = await response.json();
-    const text = (data.content || []).map(function(b){ return b.text || ''; }).join('').trim();
-    const clean = text.replace(/```json|```/g, '').trim();
-    const macros = JSON.parse(clean);
-
-    const setField = function(id, val) {
-      const el = document.getElementById(id);
-      if (el && val !== undefined) el.value = Math.round(val * 10) / 10;
-    };
-    setField('mb-new-cal',     macros.calories);
-    setField('mb-new-protein', macros.protein);
-    setField('mb-new-carbs',   macros.carbs);
-    setField('mb-new-fat',     macros.fat);
-
-    if (noteEl) {
-      const confColor = macros.confidence === 'high' ? 'var(--success)' : macros.confidence === 'medium' ? '#ffb74d' : 'var(--danger)';
-      noteEl.style.display = 'block';
-      noteEl.innerHTML = '<span style="color:' + confColor + ';font-weight:600">' + (macros.confidence||'').toUpperCase() + ' confidence</span> — ' + (macros.note || 'Review before saving');
+    const result = await usdaLookup(name, serving);
+    if (result.error) {
+      var msg = result.error === 'not_found' ? 'Not found — enter manually'
+              : result.error === 'rate_limit_demo' ? 'Rate limited — add USDA key in Settings'
+              : result.error === 'rate_limit' ? 'Rate limited — wait and retry'
+              : result.error;
+      if (noteEl) { noteEl.style.display='block'; noteEl.style.color='#ff6b6b'; noteEl.textContent='⚠ ' + msg; }
+      if (btnLabel) btnLabel.textContent = '✦ Lookup Macros';
+      return;
     }
-    if (btnLabel) btnLabel.textContent = '✦ Recalculate';
+    const set = function(id, val) { const el = document.getElementById(id); if (el) el.value = val; };
+    set('mb-new-cal',     result.calories);
+    set('mb-new-protein', result.protein);
+    set('mb-new-carbs',   result.carbs);
+    set('mb-new-fat',     result.fat);
+    if (noteEl) { noteEl.style.display='block'; noteEl.style.color='#81c784'; noteEl.innerHTML='✓ USDA — ' + result.foodName + ' (' + result.note + ')'; }
+    if (btnLabel) btnLabel.textContent = '✦ Re-lookup';
   } catch(e) {
-    if (noteEl) { noteEl.style.display = 'block'; noteEl.textContent = '⚠ Could not calculate — enter manually'; }
+    if (noteEl) { noteEl.style.display='block'; noteEl.style.color='#ff6b6b'; noteEl.textContent='⚠ ' + e.message; }
     if (btnLabel) btnLabel.textContent = '✦ Lookup Macros';
   }
-  if (btn) btn.disabled = false;
 }
 
 // Save new food from meal builder quick-add
