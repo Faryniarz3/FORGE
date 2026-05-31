@@ -8268,7 +8268,6 @@ async function afCalculateMacros() {
 }
 
 // ── Debounce for Meal Builder quick-add ──
-let _aiMbMacroTimer = null;
 
 function aiMbMacroDebounce() {
   const name    = (document.getElementById('mb-new-name')?.value    || '').trim();
@@ -8344,7 +8343,6 @@ async function aiCalculateMacros() {
 }
 
 // Keep debounce functions for fi- fields
-let _aiMacroTimer = null;
 function aiMacroDebounce() {
   const name    = (document.getElementById('fi-name')?.value    || '').trim();
   const serving = (document.getElementById('fi-serving')?.value || '').trim();
@@ -8928,8 +8926,6 @@ function autoSyncAfterFoodChange() {
 
 
 // ── Auto-calculate macros with debounce ──
-let _aiMacroTimer = null;
-let _aiMbMacroTimer = null;
 
 function aiMacroDebounce() {
   const name    = (document.getElementById('fi-name')?.value    || '').trim();
