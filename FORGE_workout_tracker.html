@@ -4309,8 +4309,9 @@ function saveGitHubSettings() {
   const token = document.getElementById('gh-token').value.trim();
   const gistId = document.getElementById('gh-gist-id').value.trim();
   if (!token) { alert('Enter your GitHub token.'); return; }
-  DB.set('settings', { ghToken: token, gistId });
-  syncToGist();
+  const existing = DB.get('settings', {});
+  DB.set('settings', Object.assign({}, existing, { ghToken: token, gistId }));
+  showToast('Settings saved — use Pull to restore data');
 }
 
 async function syncToGist() {
