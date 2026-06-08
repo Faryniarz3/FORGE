@@ -1483,8 +1483,8 @@ select.input { appearance: none; }
     <div class="input-group" style="margin-bottom:16px">
       <label class="input-label">Scale</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <button id="scale-btn-home" class="btn btn-primary" onclick="selectBodyScale('home')">🏠 Home</button>
-        <button id="scale-btn-gym" class="btn btn-secondary" onclick="selectBodyScale('gym')">🏋 Gym</button>
+        <button type="button" id="scale-btn-home" class="btn btn-primary" onclick="selectBodyScale('home')">🏠 Home</button>
+        <button type="button" id="scale-btn-gym" class="btn btn-secondary" onclick="selectBodyScale('gym')">🏋 Gym</button>
       </div>
     </div>
     <button class="btn btn-primary btn-full" onclick="saveWeightEntry()">Save Entry</button>
@@ -9019,6 +9019,7 @@ function selectBodyScale(scale) {
   const gym  = document.getElementById('scale-btn-gym');
   if (home) home.className = 'btn ' + (scale === 'home' ? 'btn-primary' : 'btn-secondary');
   if (gym)  gym.className  = 'btn ' + (scale === 'gym'  ? 'btn-primary' : 'btn-secondary');
+  renderBodyChart(); renderBodyStats(); renderBodyHistory();
 }
 
 function updateBMIPreview() {
@@ -9100,7 +9101,9 @@ function setBodyWindow(days, btn) {
 }
 
 function getFilteredWeightLog() {
-  const log = getWeightLog();
+  let log = getWeightLog();
+  // filter by selected scale
+  log = log.filter(function(e) { return (e.scale || 'home') === selectedBodyScale; });
   if (bodyWindowDays === 0) return log;
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - bodyWindowDays);
@@ -9170,7 +9173,7 @@ function renderBodyStats() {
 function renderBodyHistory() {
   const el = document.getElementById('body-history-list');
   if (!el) return;
-  const log = getWeightLog().slice().reverse();
+  const log = getFilteredWeightLog().slice().reverse();
   if (!log.length) {
     el.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;padding:16px 0">No entries yet</div>';
     return;
