@@ -1465,23 +1465,27 @@ select.input { appearance: none; }
   <!-- Weight Entry Form -->
   <div class="section">
     <div class="section-title">Log Weight</div>
-    <div class="input-group">
-      <label class="input-label">Date</label>
-      <input type="date" class="input" id="body-date">
-    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="input-group">
-        <label class="input-label">Weight (lbs)</label>
-        <input type="number" class="input" id="body-weight" placeholder="190.5" step="0.1" min="0" max="999">
+        <label class="input-label">Date</label>
+        <input type="date" class="input" id="body-date">
       </div>
       <div class="input-group">
-        <label class="input-label">Body Fat % (opt)</label>
-        <input type="number" class="input" id="body-fat" placeholder="15.0" step="0.1" min="0" max="60">
+        <label class="input-label">Time</label>
+        <input type="time" class="input" id="body-time">
       </div>
     </div>
     <div class="input-group">
-      <label class="input-label">Notes (optional)</label>
-      <input type="text" class="input" id="body-notes" placeholder="e.g. Morning, fasted">
+      <label class="input-label">Weight (lbs)</label>
+      <input type="number" class="input" id="body-weight" placeholder="190.5" step="0.1" min="0" max="999" oninput="updateBMIPreview()">
+    </div>
+    <div id="body-bmi-preview" style="display:none;font-family:DM Mono,monospace;font-size:11px;color:var(--accent);margin:-6px 0 12px;padding:6px 10px;background:rgba(232,255,71,0.07);border-radius:6px">BMI: —</div>
+    <div class="input-group" style="margin-bottom:16px">
+      <label class="input-label">Scale</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button id="scale-btn-home" class="btn btn-primary" onclick="selectBodyScale('home')">🏠 Home</button>
+        <button id="scale-btn-gym" class="btn btn-secondary" onclick="selectBodyScale('gym')">🏋 Gym</button>
+      </div>
     </div>
     <button class="btn btn-primary btn-full" onclick="saveWeightEntry()">Save Entry</button>
   </div>
@@ -9007,11 +9011,42 @@ let bodyWindowDays = 30;
 function getWeightLog() { return DB.get('weightLog', []); }
 function saveWeightLog(log) { DB.set('weightLog', log); }
 
+let selectedBodyScale = 'home';
+
+function selectBodyScale(scale) {
+  selectedBodyScale = scale;
+  const home = document.getElementById('scale-btn-home');
+  const gym  = document.getElementById('scale-btn-gym');
+  if (home) home.className = 'btn ' + (scale === 'home' ? 'btn-primary' : 'btn-secondary');
+  if (gym)  gym.className  = 'btn ' + (scale === 'gym'  ? 'btn-primary' : 'btn-secondary');
+}
+
+function updateBMIPreview() {
+  const w = parseFloat(document.getElementById('body-weight')?.value);
+  const el = document.getElementById('body-bmi-preview');
+  if (!el) return;
+  if (!isNaN(w) && w > 0) {
+    const bmi = (w * 703) / (72 * 72);
+    el.textContent = 'BMI: ' + bmi.toFixed(1);
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
 function renderBodyPage() {
   // Set date default to today
   const dateEl = document.getElementById('body-date');
   if (dateEl && !dateEl.value) {
     dateEl.value = new Date().toISOString().slice(0, 10);
+  }
+  // Set time default to now (local)
+  const timeEl = document.getElementById('body-time');
+  if (timeEl && !timeEl.value) {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    timeEl.value = hh + ':' + mm;
   }
   renderBodyChart();
   renderBodyStats();
@@ -9020,39 +9055,37 @@ function renderBodyPage() {
 
 function saveWeightEntry() {
   const dateEl   = document.getElementById('body-date');
+  const timeEl   = document.getElementById('body-time');
   const weightEl = document.getElementById('body-weight');
-  const fatEl    = document.getElementById('body-fat');
-  const notesEl  = document.getElementById('body-notes');
 
   const date   = dateEl ? dateEl.value : '';
   const weight = weightEl ? parseFloat(weightEl.value) : NaN;
 
-  if (!date) { showToast('Please select a date'); return; }
+  if (!date)                        { showToast('Please select a date'); return; }
   if (isNaN(weight) || weight <= 0) { showToast('Please enter a valid weight'); return; }
 
-  const log = getWeightLog();
-  // Remove any existing entry for the same date
+  const bmi   = parseFloat(((weight * 703) / (72 * 72)).toFixed(1));
+  const time  = timeEl ? timeEl.value : '';
+  const scale = selectedBodyScale || 'home';
+
+  const log      = getWeightLog();
   const filtered = log.filter(function(e) { return e.date !== date; });
-  const entry = { date: date, weight: weight };
-  const fat = fatEl ? parseFloat(fatEl.value) : NaN;
-  if (!isNaN(fat) && fat > 0) entry.fat = fat;
-  const notes = notesEl ? notesEl.value.trim() : '';
-  if (notes) entry.notes = notes;
+  const entry    = { date: date, weight: weight, bmi: bmi, scale: scale };
+  if (time) entry.time = time;
+
   filtered.push(entry);
   filtered.sort(function(a, b) { return a.date.localeCompare(b.date); });
   saveWeightLog(filtered);
 
-  // Clear inputs (keep date)
+  // Clear weight (keep date/time/scale for quick back-to-back logging)
   if (weightEl) weightEl.value = '';
-  if (fatEl) fatEl.value = '';
-  if (notesEl) notesEl.value = '';
+  const preview = document.getElementById('body-bmi-preview');
+  if (preview) preview.style.display = 'none';
 
   showToast('Weight saved ✓');
   renderBodyChart();
   renderBodyStats();
   renderBodyHistory();
-
-  // Auto-sync
   autoSyncAfterFoodChange();
 }
 
@@ -9137,21 +9170,31 @@ function renderBodyStats() {
 function renderBodyHistory() {
   const el = document.getElementById('body-history-list');
   if (!el) return;
-  const log = getWeightLog().slice().reverse(); // newest first
+  const log = getWeightLog().slice().reverse();
   if (!log.length) {
     el.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;padding:16px 0">No entries yet</div>';
     return;
   }
   el.innerHTML = log.slice(0, 30).map(function(e) {
     const d = new Date(e.date + 'T12:00:00');
-    const dateStr = d.toLocaleDateString('en-US', {weekday:'short',month:'short',day:'numeric'});
-    const fatStr  = e.fat ? ' · ' + e.fat + '% bf' : '';
-    const notes   = e.notes ? '<div style="font-size:10px;color:var(--text3);margin-top:2px">' + e.notes + '</div>' : '';
+    const dateStr  = d.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+    const timeStr  = e.time ? ' · ' + (function(t){
+      const [h,m] = t.split(':').map(Number);
+      return (h % 12 || 12) + ':' + String(m).padStart(2,'0') + (h < 12 ? ' am' : ' pm');
+    })(e.time) : '';
+    const scaleBadge = e.scale ? '<span style="font-size:9px;padding:2px 5px;border-radius:4px;margin-left:4px;background:rgba(255,255,255,0.06);color:var(--text3)">' + (e.scale === 'gym' ? '🏋 Gym' : '🏠 Home') + '</span>' : '';
+    const bmiStr   = e.bmi ? 'BMI ' + e.bmi : '';
+    const legacyBmi = (!e.bmi && e.weight) ? 'BMI ' + ((e.weight * 703) / 5184).toFixed(1) : '';
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">' +
-      '<div><div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text2)">' + dateStr + '</div>' + notes + '</div>' +
-      '<div style="text-align:right"><div style="font-family:Bebas Neue,sans-serif;font-size:18px;color:var(--accent);letter-spacing:0.04em">' + e.weight.toFixed(1) + ' lbs</div>' +
-      '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">' + fatStr + '</div></div>' +
-      '</div>';
+      '<div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text2)">' + dateStr + timeStr + scaleBadge + '</div>' +
+        '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3);margin-top:2px">' + (bmiStr || legacyBmi) + '</div>' +
+      '</div>' +
+      '<div style="text-align:right">' +
+        '<div style="font-family:Bebas Neue,sans-serif;font-size:18px;color:var(--accent);letter-spacing:0.04em">' + e.weight.toFixed(1) + ' lbs</div>' +
+        '<button data-date="' + e.date + '" onclick="deleteWeightEntry(this.dataset.date)" style="background:none;border:none;color:var(--text3);font-size:10px;cursor:pointer;padding:0">✕ delete</button>' +
+      '</div>' +
+    '</div>';
   }).join('');
 }
 
