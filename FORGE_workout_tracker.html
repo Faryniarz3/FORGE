@@ -885,7 +885,11 @@ select.input { appearance: none; }
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
     Food
   </button>
-  <button class="nav-btn" onclick="showPage('settings')" id="nav-settings">
+  <button class="nav-btn" onclick="showPage('body')" id="nav-body">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="7" r="4"/><path d="M5.5 21v-2a6.5 6.5 0 0113 0v2"/><path d="M17 14l1.5 4M7 14L5.5 18"/></svg>
+    Body
+  </button>
+    <button class="nav-btn" onclick="showPage('settings')" id="nav-settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     Settings
   </button>
@@ -1457,6 +1461,57 @@ select.input { appearance: none; }
   </div>
 </div>
 
+<!-- ===== BODY PAGE ===== -->
+<div id="page-body" class="page">
+  <div class="header">
+    <div class="logo">BODY</div>
+  </div>
+
+  <!-- Weight Entry Form -->
+  <div class="section">
+    <div class="section-title">Log Weight</div>
+    <div class="input-group">
+      <label class="input-label">Date</label>
+      <input type="date" class="input" id="body-date">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="input-group">
+        <label class="input-label">Weight (lbs)</label>
+        <input type="number" class="input" id="body-weight" placeholder="190.5" step="0.1" min="0" max="999">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Body Fat % (opt)</label>
+        <input type="number" class="input" id="body-fat" placeholder="15.0" step="0.1" min="0" max="60">
+      </div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Notes (optional)</label>
+      <input type="text" class="input" id="body-notes" placeholder="e.g. Morning, fasted">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveWeightEntry()">Save Entry</button>
+  </div>
+
+  <!-- Trend + Stats -->
+  <div class="section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="section-title" style="margin-bottom:0">Trend</div>
+      <div style="display:flex;gap:6px">
+        <button class="vault-filter-pill active" id="body-win-30" onclick="setBodyWindow(30,this)">30d</button>
+        <button class="vault-filter-pill" id="body-win-90" onclick="setBodyWindow(90,this)">90d</button>
+        <button class="vault-filter-pill" id="body-win-all" onclick="setBodyWindow(0,this)">All</button>
+      </div>
+    </div>
+    <div id="body-chart-container" style="margin-bottom:16px;min-height:80px"></div>
+    <div id="body-stats-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px"></div>
+  </div>
+
+  <!-- History Log -->
+  <div class="section">
+    <div class="section-title">History</div>
+    <div id="body-history-list"></div>
+  </div>
+</div>
+
 <!-- ===== MODALS ===== -->
 
 <!-- LOG SESSION MODAL -->
@@ -1727,6 +1782,7 @@ function showPage(name) {
   if (name === 'live') liveInit();
   if (name === 'food') renderFoodPage();
   if (name === 'settings') loadSettingsPage();
+  if (name === 'body') renderBodyPage();
 }
 
 // ============================================================
@@ -4245,7 +4301,7 @@ async function syncToGist() {
   if (resultEl) resultEl.textContent = 'Pushing data...';
 
   const state = getState();
-  const data = { sessions: state.sessions, programs: state.programs, prs: state.prs, vault: getVault(), foodVault: getFoodVault(), savedMeals: getSavedMeals(), philosophy: getPhilosophy(), lastSync: new Date().toISOString() };
+  const data = { sessions: state.sessions, programs: state.programs, prs: state.prs, vault: getVault(), foodVault: getFoodVault(), savedMeals: getSavedMeals(), philosophy: getPhilosophy(), weightLog: DB.get('weightLog', []), lastSync: new Date().toISOString() };
 
   try {
     let url = 'https://api.github.com/gists';
@@ -4268,6 +4324,7 @@ async function syncToGist() {
       if (gistInput) gistInput.value = json.id;
     }
 
+    DB.set('lastSync', new Date().toISOString());
     setSyncStatus('synced', 'Synced ' + new Date().toLocaleTimeString());
     if (resultEl) resultEl.textContent = '✓ Pushed to Gist: ' + json.id;
     showToast('Synced to GitHub!');
@@ -4357,6 +4414,20 @@ async function pullFromGist() {
     if (!remoteContent) throw new Error('No forge_data.json in Gist');
     const remote = JSON.parse(remoteContent);
 
+    // Conflict detection: warn if local data is newer than cloud
+    const localLastSync = DB.get('lastSync', null);
+    const remoteLastSync = remote.lastSync || null;
+    if (localLastSync && remoteLastSync && localLastSync > remoteLastSync) {
+      const localTime = new Date(localLastSync).toLocaleString();
+      const remoteTime = new Date(remoteLastSync).toLocaleString();
+      const proceed = confirm('\u26a0\ufe0f Local data is newer than cloud.\n\nLocal: ' + localTime + '\nCloud: ' + remoteTime + '\n\nPull anyway? Local changes will be overwritten.');
+      if (!proceed) {
+        setSyncStatus('idle', 'Pull cancelled');
+        if (resultEl) resultEl.textContent = '\u2014 Pull cancelled (local is newer)';
+        return;
+      }
+    }
+
     // Merge remote into local — never overwrite, always combine
     const local = {
       sessions: getState().sessions,
@@ -4376,6 +4447,7 @@ async function pullFromGist() {
     if (remote.foodVault && remote.foodVault.length) DB.set('foodVault', remote.foodVault);
     if (remote.savedMeals && remote.savedMeals.length) DB.set('savedMeals', remote.savedMeals);
     if (remote.philosophy) DB.set('philosophy', remote.philosophy);
+    if (remote.weightLog && remote.weightLog.length) DB.set('weightLog', remote.weightLog);
 
     setSyncStatus('synced', 'Pulled ' + new Date().toLocaleTimeString());
     if (resultEl) resultEl.textContent = '✓ ' + summary + ' — ' + new Date().toLocaleTimeString();
@@ -9903,6 +9975,24 @@ function prefillGitHubSettings() {
 }
 document.addEventListener('DOMContentLoaded', () => {
 
+  // PWA Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/FORGE/sw.js').then(function(reg) {
+      reg.addEventListener('updatefound', function() {
+        const nw = reg.installing;
+        nw.addEventListener('statechange', function() {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            const banner = document.createElement('div');
+            banner.id = 'sw-update-banner';
+            banner.style.cssText = 'position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:10px 16px;z-index:9999;display:flex;align-items:center;gap:10px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,0.4)';
+            banner.innerHTML = '<span>\u2726 Update available</span><button onclick="window.location.reload()" style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:5px 12px;font-family:DM Mono,monospace;font-size:11px;cursor:pointer;font-weight:700">RELOAD</button><button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;padding:0 2px">&times;</button>';
+            document.body.appendChild(banner);
+          }
+        });
+      });
+    }).catch(function(err) { console.log('SW registration failed:', err); });
+  }
+
   // Seed vault if empty — merges seed with any existing entries, no duplicates
   const existingVault = DB.get('vault', []);
   if (existingVault.length === 0) {
@@ -9922,6 +10012,174 @@ document.addEventListener('DOMContentLoaded', () => {
   // Date header
   const now = new Date();
   document.getElementById('dash-date').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+
+// ============================================================
+// BODY / WEIGHT LOG
+// ============================================================
+let bodyWindowDays = 30;
+
+function getWeightLog() { return DB.get('weightLog', []); }
+function saveWeightLog(log) { DB.set('weightLog', log); }
+
+function renderBodyPage() {
+  // Set date default to today
+  const dateEl = document.getElementById('body-date');
+  if (dateEl && !dateEl.value) {
+    dateEl.value = new Date().toISOString().slice(0, 10);
+  }
+  renderBodyChart();
+  renderBodyStats();
+  renderBodyHistory();
+}
+
+function saveWeightEntry() {
+  const dateEl   = document.getElementById('body-date');
+  const weightEl = document.getElementById('body-weight');
+  const fatEl    = document.getElementById('body-fat');
+  const notesEl  = document.getElementById('body-notes');
+
+  const date   = dateEl ? dateEl.value : '';
+  const weight = weightEl ? parseFloat(weightEl.value) : NaN;
+
+  if (!date) { showToast('Please select a date'); return; }
+  if (isNaN(weight) || weight <= 0) { showToast('Please enter a valid weight'); return; }
+
+  const log = getWeightLog();
+  // Remove any existing entry for the same date
+  const filtered = log.filter(function(e) { return e.date !== date; });
+  const entry = { date: date, weight: weight };
+  const fat = fatEl ? parseFloat(fatEl.value) : NaN;
+  if (!isNaN(fat) && fat > 0) entry.fat = fat;
+  const notes = notesEl ? notesEl.value.trim() : '';
+  if (notes) entry.notes = notes;
+  filtered.push(entry);
+  filtered.sort(function(a, b) { return a.date.localeCompare(b.date); });
+  saveWeightLog(filtered);
+
+  // Clear inputs (keep date)
+  if (weightEl) weightEl.value = '';
+  if (fatEl) fatEl.value = '';
+  if (notesEl) notesEl.value = '';
+
+  showToast('Weight saved ✓');
+  renderBodyChart();
+  renderBodyStats();
+  renderBodyHistory();
+
+  // Auto-sync
+  autoSyncAfterFoodChange();
+}
+
+function setBodyWindow(days, btn) {
+  bodyWindowDays = days;
+  document.querySelectorAll('#page-body .vault-filter-pill').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  if (btn) btn.classList.add('active');
+  renderBodyChart();
+  renderBodyStats();
+}
+
+function getFilteredWeightLog() {
+  const log = getWeightLog();
+  if (bodyWindowDays === 0) return log;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - bodyWindowDays);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+  return log.filter(function(e) { return e.date >= cutoffStr; });
+}
+
+function renderBodyChart() {
+  const container = document.getElementById('body-chart-container');
+  if (!container) return;
+  const entries = getFilteredWeightLog();
+  if (!entries.length) {
+    container.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;padding:24px 0">No entries yet</div>';
+    return;
+  }
+
+  const weights = entries.map(function(e) { return e.weight; });
+  const minW = Math.min.apply(null, weights);
+  const maxW = Math.max.apply(null, weights);
+  const range = maxW - minW || 1;
+  const H = 80; // chart height px
+  const W = container.offsetWidth || 300;
+  const n = entries.length;
+  const barW = Math.max(2, Math.floor((W - n * 2) / n));
+
+  let bars = '';
+  entries.forEach(function(e, i) {
+    const pct = (e.weight - minW) / range;
+    const barH = Math.max(4, Math.round(pct * (H - 16)));
+    const x = i * (barW + 2);
+    const isLast = i === n - 1;
+    bars += '<rect x="' + x + '" y="' + (H - barH) + '" width="' + barW + '" height="' + barH + '" rx="2" fill="' + (isLast ? 'var(--accent)' : 'var(--border)') + '"/>';
+    if (isLast) {
+      bars += '<text x="' + (x + barW / 2) + '" y="' + (H - barH - 4) + '" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="var(--accent)">' + e.weight.toFixed(1) + '</text>';
+    }
+  });
+
+  // Min/max labels
+  const firstDate = new Date(entries[0].date + 'T12:00:00').toLocaleDateString('en-US', {month:'short',day:'numeric'});
+  const lastDate  = new Date(entries[n-1].date + 'T12:00:00').toLocaleDateString('en-US', {month:'short',day:'numeric'});
+
+  container.innerHTML = '<svg width="100%" height="' + (H + 16) + '" viewBox="0 0 ' + W + ' ' + (H + 16) + '" preserveAspectRatio="none">' + bars + '<text x="2" y="' + (H + 14) + '" font-family="DM Mono,monospace" font-size="9" fill="var(--text3)">' + firstDate + '</text><text x="' + (W - 2) + '" y="' + (H + 14) + '" text-anchor="end" font-family="DM Mono,monospace" font-size="9" fill="var(--text3)">' + lastDate + '</text></svg>';
+}
+
+function renderBodyStats() {
+  const el = document.getElementById('body-stats-row');
+  if (!el) return;
+  const entries = getFilteredWeightLog();
+  if (!entries.length) { el.innerHTML = ''; return; }
+
+  const weights = entries.map(function(e) { return e.weight; });
+  const latest  = weights[weights.length - 1];
+  const first   = weights[0];
+  const change  = latest - first;
+  const changeStr = (change > 0 ? '+' : '') + change.toFixed(1) + ' lbs';
+  const changeColor = change < 0 ? 'var(--accent2)' : change > 0 ? 'var(--danger)' : 'var(--text2)';
+  const min = Math.min.apply(null, weights);
+  const max = Math.max.apply(null, weights);
+
+  function statCard(label, value, color) {
+    return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center"><div style="font-family:DM Mono,monospace;font-size:9px;color:var(--text3);letter-spacing:0.08em;margin-bottom:4px">' + label + '</div><div style="font-family:Bebas Neue,sans-serif;font-size:20px;letter-spacing:0.04em;color:' + (color || 'var(--text)') + '">' + value + '</div></div>';
+  }
+
+  el.innerHTML = statCard('CURRENT', latest.toFixed(1) + ' lbs') + statCard('CHANGE', changeStr, changeColor) + statCard('LOW / HIGH', min.toFixed(1) + ' / ' + max.toFixed(1));
+}
+
+function renderBodyHistory() {
+  const el = document.getElementById('body-history-list');
+  if (!el) return;
+  const log = getWeightLog().slice().reverse(); // newest first
+  if (!log.length) {
+    el.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text3);text-align:center;padding:16px 0">No entries yet</div>';
+    return;
+  }
+  el.innerHTML = log.slice(0, 30).map(function(e) {
+    const d = new Date(e.date + 'T12:00:00');
+    const dateStr = d.toLocaleDateString('en-US', {weekday:'short',month:'short',day:'numeric'});
+    const fatStr  = e.fat ? ' · ' + e.fat + '% bf' : '';
+    const notes   = e.notes ? '<div style="font-size:10px;color:var(--text3);margin-top:2px">' + e.notes + '</div>' : '';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">' +
+      '<div><div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text2)">' + dateStr + '</div>' + notes + '</div>' +
+      '<div style="text-align:right"><div style="font-family:Bebas Neue,sans-serif;font-size:18px;color:var(--accent);letter-spacing:0.04em">' + e.weight.toFixed(1) + ' lbs</div>' +
+      '<div style="font-family:DM Mono,monospace;font-size:10px;color:var(--text3)">' + fatStr + '</div></div>' +
+      '</div>';
+  }).join('');
+}
+
+function deleteWeightEntry(date) {
+  const log = getWeightLog().filter(function(e) { return e.date !== date; });
+  saveWeightLog(log);
+  showToast('Entry deleted');
+  renderBodyChart();
+  renderBodyStats();
+  renderBodyHistory();
+  autoSyncAfterFoodChange();
+}
+
 });
 </script>
 
