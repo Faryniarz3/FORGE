@@ -1447,6 +1447,25 @@ select.input { appearance: none; }
   </div>
 
   <div class="section">
+    <div class="section-title" style="color:#47c8ff">Anthropic API Key</div>
+    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:12px">Required for AI Program Builder and Nutrition Label Scanner. Get your key at console.anthropic.com</div>
+    <div class="input-group">
+      <label class="input-label">API Key</label>
+      <input type="password" class="input" id="anthropic-api-key" placeholder="sk-ant-xxxxxxxxxxxx" autocomplete="off">
+    </div>
+    <button class="btn btn-secondary btn-full" onclick="saveAnthropicSettings()">Save API Key</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title" style="color:#e8ff47">Export &amp; Backup</div>
+    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:14px">Download a full snapshot of all your FORGE data as a JSON file. Use this to back up or migrate your data.</div>
+    <button class="btn btn-secondary btn-full" onclick="exportBackup()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;vertical-align:middle"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download Backup (.json)
+    </button>
+  </div>
+
+  <div class="section">
     <div class="section-title">App Info</div>
     <div style="font-family:DM Mono,monospace;font-size:12px;color:var(--text2);line-height:1.8">
       <div>Version: 1.0.0</div>
@@ -3626,7 +3645,7 @@ JSON structure:
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': (DB.get('settings',{}).anthropicKey||''), 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-calls': 'true' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
@@ -4208,6 +4227,8 @@ function loadSettingsPage() {
   const gistInput = document.getElementById('gh-gist-id');
   if (tokenInput && settings.ghToken) tokenInput.value = settings.ghToken;
   if (gistInput && settings.gistId) gistInput.value = settings.gistId;
+  const anthropicEl = document.getElementById('anthropic-api-key');
+  if (anthropicEl && settings.anthropicKey) anthropicEl.value = settings.anthropicKey;
 
   // Load philosophy
   const philosophy = DB.get('philosophy', '');
@@ -10015,6 +10036,209 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // ============================================================
+// ANTHROPIC SETTINGS
+// ============================================================
+function saveAnthropicSettings() {
+  const key = (document.getElementById('anthropic-api-key')?.value || '').trim();
+  const settings = DB.get('settings', {});
+  settings.anthropicKey = key;
+  DB.set('settings', settings);
+  showToast(key ? 'Anthropic API key saved!' : 'API key cleared');
+}
+
+// ============================================================
+// EXPORT / BACKUP
+// ============================================================
+function exportBackup() {
+  const data = {
+    _export_version: 1,
+    _exported_at: new Date().toISOString(),
+    _app: 'FORGE',
+    vault:       DB.get('vault', []),
+    foodVault:   DB.get('foodVault', []),
+    weightLog:   DB.get('weightLog', []),
+    foodLog:     DB.get('foodLog', {}),
+    workoutLog:  DB.get('workoutLog', {}),
+    programs:    DB.get('programs', []),
+    philosophy:  DB.get('philosophy', ''),
+    settings:    (function() {
+      const s = Object.assign({}, DB.get('settings', {}));
+      // Strip sensitive keys before download
+      delete s.ghToken;
+      delete s.anthropicKey;
+      return s;
+    })(),
+    lastSync:    DB.get('lastSync', null),
+  };
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const ts   = new Date().toISOString().slice(0, 10);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'FORGE_backup_' + ts + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+  showToast('Backup downloaded ✓');
+}
+
+// ============================================================
+// LABEL SCANNER (Claude Vision)
+// ============================================================
+function openLabelScanner() {
+  const settings = DB.get('settings', {});
+  if (!settings.anthropicKey) {
+    showToast('Add Anthropic API key in Settings first');
+    return;
+  }
+
+  // Build overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'label-scanner-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:10000;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-end';
+
+  const video = document.createElement('video');
+  video.autoplay = true;
+  video.playsInline = true;
+  video.muted = true;
+  video.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover';
+
+  const canvas = document.createElement('canvas');
+  canvas.style.display = 'none';
+
+  // Guide frame
+  const guide = document.createElement('div');
+  guide.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);width:80%;aspect-ratio:4/3;border:2px solid rgba(71,200,255,0.7);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.45)';
+
+  const hint = document.createElement('div');
+  hint.style.cssText = 'position:absolute;top:calc(40% + 8px);width:100%;text-align:center;font-family:DM Mono,monospace;font-size:11px;color:rgba(255,255,255,0.7);letter-spacing:0.08em';
+  hint.textContent = 'Frame the nutrition facts label';
+
+  // Controls bar
+  const bar = document.createElement('div');
+  bar.style.cssText = 'position:relative;z-index:1;background:rgba(0,0,0,0.7);padding:24px 24px 40px;display:flex;align-items:center;justify-content:space-between';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.style.cssText = 'background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:10px 18px;font-family:DM Mono,monospace;font-size:12px;cursor:pointer';
+
+  const captureBtn = document.createElement('button');
+  captureBtn.style.cssText = 'width:64px;height:64px;border-radius:50%;background:#fff;border:4px solid #47c8ff;cursor:pointer;flex-shrink:0';
+
+  const helpText = document.createElement('div');
+  helpText.style.cssText = 'font-family:DM Mono,monospace;font-size:10px;color:rgba(255,255,255,0.5);text-align:right;width:80px';
+  helpText.textContent = 'Hold steady tap to capture';
+
+  let stream = null;
+
+  function stopStream() {
+    if (stream) { stream.getTracks().forEach(function(t) { t.stop(); }); }
+  }
+
+  cancelBtn.onclick = function() { stopStream(); overlay.remove(); };
+
+  captureBtn.onclick = function() {
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const base64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+    stopStream();
+    overlay.remove();
+    analyzeLabelImage(base64);
+  };
+
+  bar.appendChild(cancelBtn);
+  bar.appendChild(captureBtn);
+  bar.appendChild(helpText);
+  overlay.appendChild(video);
+  overlay.appendChild(canvas);
+  overlay.appendChild(guide);
+  overlay.appendChild(hint);
+  overlay.appendChild(bar);
+  document.body.appendChild(overlay);
+
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+    audio: false
+  }).then(function(s) {
+    stream = s;
+    video.srcObject = s;
+    video.play();
+  }).catch(function(err) {
+    overlay.remove();
+    showToast('Camera error: ' + (err.message || 'permission denied'));
+  });
+}
+
+async function analyzeLabelImage(base64) {
+  const settings = DB.get('settings', {});
+  const key = settings.anthropicKey;
+  if (!key) { showToast('No Anthropic API key set'); return; }
+
+  // Show scanning state
+  const label = document.getElementById('fi-ai-btn-label');
+  if (label) label.textContent = '⏳ Scanning...';
+  showToast('Reading label...');
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 150,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
+            { type: 'text', text: 'Read this nutrition label. Reply ONLY with compact JSON, no explanation: {"cal":number,"protein":number,"carbs":number,"fat":number,"serving":"string"}. Per-serving values only. All numbers are grams except cal. If unclear use 0.' }
+          ]
+        }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error('API ' + res.status + ': ' + err.slice(0, 120));
+    }
+
+    const data = await res.json();
+    const text = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text.trim() : '';
+    const jsonMatch = text.match(/\{[^}]+\}/);
+    if (!jsonMatch) throw new Error('Could not parse response: ' + text.slice(0, 80));
+    const m = JSON.parse(jsonMatch[0]);
+
+    // Populate food item modal fields
+    function setField(id, val) {
+      const el = document.getElementById(id);
+      if (el && val !== undefined && val !== null && val !== 0) el.value = val;
+    }
+    setField('fi-cal',     m.cal);
+    setField('fi-protein', m.protein);
+    setField('fi-carbs',   m.carbs);
+    setField('fi-fat',     m.fat);
+    if (m.serving) {
+      const servEl = document.getElementById('fi-serving');
+      if (servEl && !servEl.value) servEl.value = m.serving;
+    }
+
+    if (label) label.textContent = '✓ Label scanned';
+    showToast('Label scanned — review and save');
+
+  } catch(e) {
+    if (label) label.textContent = '✦ Lookup';
+    showToast('Scan failed: ' + e.message);
+  }
+}
+
+// ============================================================
 // BODY / WEIGHT LOG
 // ============================================================
 let bodyWindowDays = 30;
@@ -10232,11 +10456,17 @@ function deleteWeightEntry(date) {
       </div>
     </div>
 
-    <!-- AI Calculate button -->
-    <button onclick="aiCalculateMacros()" id="fi-ai-btn" style="width:100%;background:rgba(186,104,200,0.12);border:1px solid rgba(186,104,200,0.35);border-radius:8px;padding:10px;font-family:'DM Mono',monospace;font-size:11px;color:#ba68c8;cursor:pointer;margin-bottom:12px;letter-spacing:0.06em;display:flex;align-items:center;justify-content:center;gap:6px">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><circle cx="18" cy="6" r="3" fill="#ba68c8" stroke="none"/></svg>
-      <span id="fi-ai-btn-label">✦ Lookup Macros</span>
-    </button>
+    <!-- AI / Scan buttons -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <button onclick="aiCalculateMacros()" id="fi-ai-btn" style="background:rgba(186,104,200,0.12);border:1px solid rgba(186,104,200,0.35);border-radius:8px;padding:10px;font-family:'DM Mono',monospace;font-size:11px;color:#ba68c8;cursor:pointer;letter-spacing:0.06em;display:flex;align-items:center;justify-content:center;gap:6px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><circle cx="18" cy="6" r="3" fill="#ba68c8" stroke="none"/></svg>
+        <span id="fi-ai-btn-label">✦ Lookup</span>
+      </button>
+      <button onclick="openLabelScanner()" style="background:rgba(71,200,255,0.1);border:1px solid rgba(71,200,255,0.3);border-radius:8px;padding:10px;font-family:'DM Mono',monospace;font-size:11px;color:#47c8ff;cursor:pointer;letter-spacing:0.06em;display:flex;align-items:center;justify-content:center;gap:6px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Scan Label
+      </button>
+    </div>
 
     <!-- AI confidence note -->
     <div id="fi-ai-note" style="display:none;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:10px;padding:8px 10px;background:var(--surface);border-radius:6px;border:1px solid var(--border)"></div>
