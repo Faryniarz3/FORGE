@@ -8678,11 +8678,14 @@ function initDragReorder(container) {
 
     el.addEventListener('touchend', e => {
       clearTimeout(pressTimer);
-      if (!dragTouchEl || dragTouchEl !== el) return;
+      pressTimer = null;
 
-      // Remove clone
-      if (dragTouchClone) { dragTouchClone.remove(); dragTouchClone = null; }
+      // Always clean up visual state — guards against stuck clone in any edge case
       el.classList.remove('ex-block-dragging');
+      if (dragTouchClone) { dragTouchClone.remove(); dragTouchClone = null; }
+      container.querySelectorAll('.ex-block-drag-over').forEach(n => n.classList.remove('ex-block-drag-over'));
+
+      if (!dragTouchEl || dragTouchEl !== el) return;
 
       // Find drop target
       const touch = e.changedTouches[0];
@@ -8698,7 +8701,6 @@ function initDragReorder(container) {
         }
       }
 
-      container.querySelectorAll('.ex-block-drag-over').forEach(n => n.classList.remove('ex-block-drag-over'));
       dragTouchEl = null;
     });
 
