@@ -1949,11 +1949,34 @@ function addExerciseBlock(name = '', prefillSets = null) {
   blockMetaState[id] = buildDefaultMeta(name, exType);
 
   const container = document.getElementById('exercises-container');
+
+  // Wrapper holds the up/down arrows + the actual card
   const div = document.createElement('div');
-  div.className = 'card';
   div.id = 'ex-block-' + id;
-  div.style.marginBottom = '12px';
-  div.innerHTML = buildExerciseBlockHTML(id, name, exType, prefillSets);
+  div.style.marginBottom = '4px';
+
+  const upBtn = document.createElement('button');
+  upBtn.type = 'button';
+  upBtn.textContent = '▲';
+  upBtn.title = 'Move up';
+  upBtn.style.cssText = 'display:block;width:100%;background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 0;text-align:center;font-size:15px;opacity:0.55;line-height:1';
+  upBtn.onclick = function() { moveExerciseBlock(id, 'up'); };
+
+  const innerCard = document.createElement('div');
+  innerCard.className = 'card';
+  innerCard.style.cssText = 'margin-bottom:0';
+  innerCard.innerHTML = buildExerciseBlockHTML(id, name, exType, prefillSets);
+
+  const downBtn = document.createElement('button');
+  downBtn.type = 'button';
+  downBtn.textContent = '▼';
+  downBtn.title = 'Move down';
+  downBtn.style.cssText = 'display:block;width:100%;background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 0;text-align:center;font-size:15px;opacity:0.55;line-height:1';
+  downBtn.onclick = function() { moveExerciseBlock(id, 'down'); };
+
+  div.appendChild(upBtn);
+  div.appendChild(innerCard);
+  div.appendChild(downBtn);
   container.appendChild(div);
   initDragReorder(container);
   setTimeout(() => renderSupersetJoinButtons(), 20);
@@ -2117,10 +2140,6 @@ function buildExerciseBlockHTML(id, name, exType, prefillSets) {
 
   return `
     <div style="display:flex;align-items:center;gap:5px;margin-bottom:8px">
-      <div style="display:flex;flex-direction:column;gap:0">
-        <button type="button" onclick="moveExerciseBlock(${id},'up')" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:1px 4px;line-height:1;font-size:11px" title="Move up">▲</button>
-        <button type="button" onclick="moveExerciseBlock(${id},'down')" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:1px 4px;line-height:1;font-size:11px" title="Move down">▼</button>
-      </div>
       <input type="text" class="input" style="flex:1;padding:7px 10px;font-size:13px" placeholder="Exercise name" value="${name}"
         id="ex-name-${id}" oninput="onExNameChange(${id},this.value)">
       ${typeTag ? `<div id="ex-type-tag-${id}">${typeTag}</div>` : `<div id="ex-type-tag-${id}"></div>`}
