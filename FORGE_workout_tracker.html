@@ -2117,8 +2117,9 @@ function buildExerciseBlockHTML(id, name, exType, prefillSets) {
 
   return `
     <div style="display:flex;align-items:center;gap:5px;margin-bottom:8px">
-      <div class="ex-drag-handle" draggable="false" title="Hold to reorder">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
+      <div style="display:flex;flex-direction:column;gap:0">
+        <button type="button" onclick="moveExerciseBlock(${id},'up')" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:1px 4px;line-height:1;font-size:11px" title="Move up">▲</button>
+        <button type="button" onclick="moveExerciseBlock(${id},'down')" style="background:none;border:none;color:var(--text3);cursor:pointer;padding:1px 4px;line-height:1;font-size:11px" title="Move down">▼</button>
       </div>
       <input type="text" class="input" style="flex:1;padding:7px 10px;font-size:13px" placeholder="Exercise name" value="${name}"
         id="ex-name-${id}" oninput="onExNameChange(${id},this.value)">
@@ -8716,14 +8717,38 @@ function initDragReorder(container) {
   const observer = new MutationObserver(mutations => {
     mutations.forEach(m => {
       m.addedNodes.forEach(node => {
-        if (node.nodeType === 1) { attachDrag(node); attachTouch(node); }
+        if (node.nodeType === 1) { attachDrag(node); }
       });
     });
   });
   observer.observe(container, { childList: true });
 
   // Attach to existing children
-  Array.from(container.children).forEach(el => { attachDrag(el); attachTouch(el); });
+  Array.from(container.children).forEach(el => { attachDrag(el); });
+}
+
+// Move an exercise block up or down within exercises-container.
+// Works for standalone blocks and superset groups (walks up to the
+// direct child of exercises-container before moving).
+function moveExerciseBlock(id, dir) {
+  const container = document.getElementById('exercises-container');
+  if (!container) return;
+  const block = document.getElementById('ex-block-' + id);
+  if (!block) return;
+  // Find the direct child of the container (handles nested superset groups)
+  let topEl = block;
+  while (topEl.parentElement && topEl.parentElement !== container) {
+    topEl = topEl.parentElement;
+  }
+  if (topEl.parentElement !== container) return;
+  const children = Array.from(container.children).filter(c => !c.classList.contains('ss-join-btn-wrap'));
+  const all = Array.from(container.children);
+  const idx = all.indexOf(topEl);
+  if (dir === 'up' && idx > 0) {
+    container.insertBefore(topEl, all[idx - 1]);
+  } else if (dir === 'down' && idx < all.length - 1) {
+    container.insertBefore(all[idx + 1], topEl);
+  }
 }
 
 // ============================================================
